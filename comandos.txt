@@ -1,0 +1,12 @@
+
+// generar controladores
+nest generate controller users
+// generar dto
+
+nest generate class users/dto/create-user-dto
+
+// ORM
+https://docs.nestjs.com/recipes/sql-typeorm#getting-started
+ npm install --save typeorm mysql
+
+ // https://docs.nestjs.com/techniques/database
