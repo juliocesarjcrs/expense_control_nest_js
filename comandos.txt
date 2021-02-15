@@ -10,3 +10,5 @@ https://docs.nestjs.com/recipes/sql-typeorm#getting-started
  npm install --save typeorm mysql
 
  // https://docs.nestjs.com/techniques/database
+
+ /home/gbp/.npm-global/bin/nest new p

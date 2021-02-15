@@ -1,14 +1,34 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
-// import { CreateUserDto } from './dto/create-user-dto';
+import { Body, Controller, Get, HttpStatus, Post, Res } from '@nestjs/common';
+import { UsersService } from './users.service';
+import { CreateUserDto } from './dto/create-user-dto';
 
 @Controller('users')
 export class UsersController {
-  // @Post()
-  // create(@Body createuserDto: CreateUserDto ){
-  //   return 'mensaje creado';
-  // }
+  constructor(private userService: UsersService) {}
+  @Post()
+  create(@Body() createUserDto: CreateUserDto, @Res() response) {
+    this.userService
+      .creteUser(createUserDto)
+      .then((user) => {
+        response.status(HttpStatus.OK).json(user);
+      })
+      .catch(
+        response
+          .status(HttpStatus.FORBIDDEN)
+          .json({ message: 'Error en la creación' }),
+      );
+  }
   @Get()
-  getAll() {
-    return 'lista users';
+  getAll(@Res() response) {
+    this.userService
+      .findAll()
+      .then((listUser) => {
+        response.status(HttpStatus.OK).json(listUser);
+      })
+      .catch(
+        response
+          .status(HttpStatus.FORBIDDEN)
+          .json({ message: 'Error en listar usuarios' }),
+      );
   }
 }
