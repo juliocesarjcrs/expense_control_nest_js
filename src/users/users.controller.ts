@@ -9,13 +9,13 @@ export class UsersController {
   create(@Body() createUserDto: CreateUserDto, @Res() response) {
     this.userService
       .creteUser(createUserDto)
-      .then(user => {
+      .then((user) => {
         response.status(HttpStatus.CREATED).json(user);
       })
-      .catch( () =>{
+      .catch(() => {
         response
-        .status(HttpStatus.FORBIDDEN)
-        .json({ message: 'Error en la creación' });
+          .status(HttpStatus.FORBIDDEN)
+          .json({ message: 'Error en la creación' });
       });
   }
   @Get()
@@ -25,12 +25,10 @@ export class UsersController {
       .then((listUser) => {
         response.status(HttpStatus.OK).json(listUser);
       })
-      .catch(()=>{
+      .catch(() => {
         response
-        .status(HttpStatus.FORBIDDEN)
-        .json({ message: 'Error en listar usuarios' })
-      }
-    
-      );
+          .status(HttpStatus.FORBIDDEN)
+          .json({ message: 'Error en listar usuarios' });
+      });
   }
 }
