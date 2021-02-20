@@ -1,10 +1,15 @@
 
-// generar controladores
+1) 
+// generar controladores (crea la carpeta principal)
 nest generate controller users
-// generar dto
 
-nest generate class users/dto/create-user-dto
+2)  generar dto
 
+nest generate class users/dto/create-user-dto --no-spec
+
+3) crear entidad
+nest g class categories/category --no-spec
+crear carpeta entities y renombrar el modelo agragando .entity
 // ORM
 https://docs.nestjs.com/recipes/sql-typeorm#getting-started
  npm install --save typeorm mysql
