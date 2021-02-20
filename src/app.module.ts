@@ -6,6 +6,8 @@ import { User } from './users/entities/user.entity';
 import { UsersController } from './users/users.controller';
 import { UsersService } from './users/users.service';
 import { CategoriesController } from './categories/categories.controller';
+import { CategoriesService } from './categories/categories.service';
+import { Category } from './categories/entities/category.entity';
 
 @Module({
   imports: [
@@ -19,9 +21,9 @@ import { CategoriesController } from './categories/categories.controller';
       entities: [__dirname + '/**/*.entity{.ts,.js}'],
       synchronize: true,
     }),
-    TypeOrmModule.forFeature([User]),
+    TypeOrmModule.forFeature([User, Category]),
   ],
   controllers: [AppController, UsersController, CategoriesController],
-  providers: [AppService, UsersService],
+  providers: [AppService, UsersService, CategoriesService],
 })
 export class AppModule {}

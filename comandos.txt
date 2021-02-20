@@ -10,6 +10,15 @@ nest generate class users/dto/create-user-dto --no-spec
 3) crear entidad
 nest g class categories/category --no-spec
 crear carpeta entities y renombrar el modelo agragando .entity
+
+4) generar elk servicio
+nest g service categories --no-spec
+
+5) inyectar la entidad en app,module
+
+    TypeOrmModule.forFeature([User]),
+
+    para inyectarlo en nuestro servicio
 // ORM
 https://docs.nestjs.com/recipes/sql-typeorm#getting-started
  npm install --save typeorm mysql
