@@ -1,28 +1,21 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable prettier/prettier */
 import { Category } from 'src/categories/entities/category.entity';
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { Content } from 'src/entity/entityBase';
+import { Column, Entity, OneToMany } from 'typeorm';
 
 @Entity({ name: 'users' })
-export class User {
-  @PrimaryGeneratedColumn()
-  id: number;
-
+export class User extends Content {
   @Column()
   name: string;
 
-  @Column()
+  @Column({ nullable: true })
   image: string;
 
-  @Column()
+  @Column({ unique: true })
   email: string;
 
   @Column()
   password: string;
 
-  // @OneToMany( type => Category , category => category.id)
-  // children: Category[];
-
-  @OneToMany(() => Category, category => category.id)
+  @OneToMany(() => Category, (category) => category.id)
   categories: Category[];
 }
