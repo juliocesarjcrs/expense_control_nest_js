@@ -15,7 +15,7 @@ export class UsersController {
       .catch(() => {
         response
           .status(HttpStatus.FORBIDDEN)
-          .json({ message: 'Error en la creación' });
+          .json({ message: 'Error en la creación usuario' });
       });
   }
   @Get()
