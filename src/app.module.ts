@@ -8,6 +8,7 @@ import { UsersService } from './users/users.service';
 import { CategoriesController } from './categories/categories.controller';
 import { CategoriesService } from './categories/categories.service';
 import { Category } from './categories/entities/category.entity';
+// import { IsUserAlreadyExist } from './utils/validations/validation';
 
 @Module({
   imports: [
@@ -16,7 +17,7 @@ import { Category } from './categories/entities/category.entity';
       host: 'localhost',
       port: 3306,
       username: 'root',
-      password: '',
+      password: 'password',
       database: 'expense_control',
       entities: [__dirname + '/**/*.entity{.ts,.js}'],
       synchronize: true,
