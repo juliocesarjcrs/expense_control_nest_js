@@ -7,8 +7,12 @@ import { UsersController } from './users/users.controller';
 import { UsersService } from './users/users.service';
 import { CategoriesController } from './categories/categories.controller';
 import { CategoriesService } from './categories/categories.service';
-import { Category } from './categories/entities/category.entity';
+
 // import { IsUserAlreadyExist } from './utils/validations/validation';
+import { AuthModule } from './auth/auth.module';
+import { UsersModule } from './users/users.module';
+import { AuthService } from './auth/auth.service';
+import { Category } from './categories/entities/category.entity';
 
 @Module({
   imports: [
@@ -23,8 +27,10 @@ import { Category } from './categories/entities/category.entity';
       synchronize: true,
     }),
     TypeOrmModule.forFeature([User, Category]),
+    AuthModule,
+    UsersModule,
   ],
   controllers: [AppController, UsersController, CategoriesController],
-  providers: [AppService, UsersService, CategoriesService],
+  providers: [AppService, UsersService, CategoriesService, AuthService],
 })
 export class AppModule {}

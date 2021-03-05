@@ -49,6 +49,8 @@ export class IsUserAlreadyExist {
   ) {}
 
   async validate(text: string) {
+    console.log('test', text);
+
     const user = await this.userService.findOne(text);
     return !user;
   }

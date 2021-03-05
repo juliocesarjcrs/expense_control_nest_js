@@ -1,4 +1,4 @@
-import { Category } from 'src/categories/entities/category.entity';
+// import { Category } from 'src/categories/entities/category.entity';
 import { Content } from 'src/entity/entityBase';
 import { Column, Entity, OneToMany } from 'typeorm';
 
@@ -16,6 +16,6 @@ export class User extends Content {
   @Column()
   password: string;
 
-  @OneToMany(() => Category, (category) => category.id)
-  categories: Category[];
+  // @OneToMany(() => Category, (category) => category.id)
+  // categories: Category[];
 }

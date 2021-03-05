@@ -17,6 +17,11 @@ export class UsersService {
   async findOne(id: string): Promise<User> {
     return await this.usersRepository.findOne(id);
   }
+  async findOneEmail(email: string): Promise<User | undefined> {
+    return await this.usersRepository.findOne({
+      where: { email: email },
+    });
+  }
   async creteUser(newUser: CreateUserDto): Promise<User> {
     const entityUser = new User();
     entityUser.name = newUser.name;

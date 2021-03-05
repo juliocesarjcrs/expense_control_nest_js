@@ -26,3 +26,5 @@ https://docs.nestjs.com/recipes/sql-typeorm#getting-started
  // https://docs.nestjs.com/techniques/database
 
  /home/gbp/.npm-global/bin/nest new p
+
+ // home/gbp/.npm-global/bin/nest  generate module auth
