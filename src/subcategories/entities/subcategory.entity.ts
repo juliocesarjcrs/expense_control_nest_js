@@ -1,9 +1,8 @@
 import { Content } from 'src/entity/entityBase';
 import { User } from 'src/users/entities/user.entity';
-import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
+import { Column, JoinColumn, ManyToOne } from 'typeorm';
 
-@Entity({ name: 'categories' })
-export class Category extends Content {
+export class Subcategory extends Content {
   @Column('varchar', { length: 200 })
   name: string;
 

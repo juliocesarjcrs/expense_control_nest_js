@@ -13,6 +13,8 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { AuthService } from './auth/auth.service';
 import { Category } from './categories/entities/category.entity';
+import { SubcategoryModule } from './subcategory/subcategory.module';
+import { SubcategoriesModule } from './subcategories/subcategories.module';
 
 @Module({
   imports: [
@@ -29,6 +31,8 @@ import { Category } from './categories/entities/category.entity';
     TypeOrmModule.forFeature([User, Category]),
     AuthModule,
     UsersModule,
+    SubcategoryModule,
+    SubcategoriesModule,
   ],
   controllers: [AppController, UsersController, CategoriesController],
   providers: [AppService, UsersService, CategoriesService, AuthService],
