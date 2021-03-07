@@ -1,7 +1,9 @@
+import { Category } from 'src/categories/entities/category.entity';
 import { Content } from 'src/entity/entityBase';
 import { User } from 'src/users/entities/user.entity';
-import { Column, JoinColumn, ManyToOne } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 
+@Entity()
 export class Subcategory extends Content {
   @Column('varchar', { length: 200 })
   name: string;
@@ -9,7 +11,11 @@ export class Subcategory extends Content {
   @Column({ nullable: true })
   icon: string;
 
-  @ManyToOne(() => User)
+  @ManyToOne(() => Category, { nullable: false })
+  @JoinColumn({ name: 'category_id' })
+  categoryId: Category;
+
+  @ManyToOne(() => User, { nullable: false })
   @JoinColumn({ name: 'user_id' })
   userId: User;
 }

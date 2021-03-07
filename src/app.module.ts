@@ -13,8 +13,10 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { AuthService } from './auth/auth.service';
 import { Category } from './categories/entities/category.entity';
-import { SubcategoryModule } from './subcategory/subcategory.module';
 import { SubcategoriesModule } from './subcategories/subcategories.module';
+import { Subcategory } from './subcategories/entities/subcategory.entity';
+import { SubcategoriesController } from './subcategories/subcategories.controller';
+import { SubcategoriesService } from './subcategories/subcategories.service';
 
 @Module({
   imports: [
@@ -23,18 +25,28 @@ import { SubcategoriesModule } from './subcategories/subcategories.module';
       host: 'localhost',
       port: 3306,
       username: 'root',
-      password: 'password',
+      password: '',
       database: 'expense_control',
       entities: [__dirname + '/**/*.entity{.ts,.js}'],
       synchronize: true,
     }),
-    TypeOrmModule.forFeature([User, Category]),
+    TypeOrmModule.forFeature([User, Category, Subcategory]),
     AuthModule,
     UsersModule,
-    SubcategoryModule,
     SubcategoriesModule,
   ],
-  controllers: [AppController, UsersController, CategoriesController],
-  providers: [AppService, UsersService, CategoriesService, AuthService],
+  controllers: [
+    AppController,
+    UsersController,
+    CategoriesController,
+    SubcategoriesController,
+  ],
+  providers: [
+    AppService,
+    UsersService,
+    CategoriesService,
+    AuthService,
+    SubcategoriesService,
+  ],
 })
 export class AppModule {}

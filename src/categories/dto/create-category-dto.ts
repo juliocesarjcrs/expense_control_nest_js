@@ -6,8 +6,9 @@ export class CreateCategoryDto {
   @IsString()
   readonly name: string;
   readonly icon: string;
-  @IsInt()
-  // @Validate(IsUserAlreadyExist)
-  // @IsUserAlreadyExist()
-  readonly userId: User;
+  readonly userId: number;
+  // @IsInt()
+  // // @Validate(IsUserAlreadyExist)
+  // // @IsUserAlreadyExist()
+  // readonly userId: User;
 }

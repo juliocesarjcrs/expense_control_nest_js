@@ -1,4 +1,12 @@
-import { Body, Controller, Get, HttpStatus, Post, Res } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpStatus,
+  Post,
+  Request,
+  Res,
+} from '@nestjs/common';
 import { CategoriesService } from './categories.service';
 import { CreateCategoryDto } from './dto/create-category-dto';
 
@@ -6,16 +14,24 @@ import { CreateCategoryDto } from './dto/create-category-dto';
 export class CategoriesController {
   constructor(private categoryService: CategoriesService) {}
   @Post()
-  create(@Body() createCategoryDto: CreateCategoryDto, @Res() response) {
+  create(
+    @Body() createCategoryDto: CreateCategoryDto,
+    @Res() response,
+    @Request() req,
+  ) {
+    console.log('req', req.user.id);
+    createCategoryDto = { ...createCategoryDto, userId: req.user.id };
+    console.log(createCategoryDto);
+
     this.categoryService
       .createCategory(createCategoryDto)
       .then((category) => {
         response.status(HttpStatus.CREATED).json(category);
       })
-      .catch(() => {
-        response
-          .status(HttpStatus.FORBIDDEN)
-          .json({ message: 'Error en la creaciónde una categoria' });
+      .catch((error) => {
+        response.status(HttpStatus.FORBIDDEN).json({
+          message: error.message || 'Error en la creaciónde una categoria',
+        });
       });
   }
   @Get()

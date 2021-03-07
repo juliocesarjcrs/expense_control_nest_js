@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Request, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  HttpStatus,
+  Post,
+  Request,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
 import { AppService } from './app.service';
 import { AuthService } from './auth/auth.service';
 import { Public } from './utils/decorators/custumDecorators';
@@ -15,10 +23,15 @@ export class AppController {
   }
   @Public()
   @Post('auth/login')
-  async login(@Request() req) {
-    const user = { ...req.body };
-    console.log('USER', user);
-
-    return this.authService.login(user);
+  async login(@Request() req, @Res() response) {
+    try {
+      const user = { ...req.body };
+      const data = await this.authService.login(user);
+      response.status(HttpStatus.OK).json(data);
+    } catch (error) {
+      response
+        .status(HttpStatus.FORBIDDEN)
+        .json({ message: error.message || 'Error en login usuario' });
+    }
   }
 }

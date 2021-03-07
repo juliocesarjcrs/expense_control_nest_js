@@ -1,6 +1,7 @@
 import { Content } from 'src/entity/entityBase';
+import { Subcategory } from 'src/subcategories/entities/subcategory.entity';
 import { User } from 'src/users/entities/user.entity';
-import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 
 @Entity({ name: 'categories' })
 export class Category extends Content {
@@ -10,7 +11,10 @@ export class Category extends Content {
   @Column({ nullable: true })
   icon: string;
 
-  @ManyToOne(() => User)
+  @ManyToOne(() => User, { nullable: false })
   @JoinColumn({ name: 'user_id' })
-  userId: User;
+  userId: number;
+
+  @OneToMany(() => Subcategory, (Subcategory) => Subcategory.id)
+  categories: Subcategory[];
 }
