@@ -16,9 +16,8 @@ export class SubcategoriesService {
     SubcategoryEntity.name = createSubcategoryDto.name;
     SubcategoryEntity.icon = createSubcategoryDto.icon;
     SubcategoryEntity.userId = createSubcategoryDto.userId;
+    SubcategoryEntity.categoryId = createSubcategoryDto.categoryId;
     return await this.subcategoriesRepository.save(SubcategoryEntity);
-
-    // return 'This action adds a new subcategory';
   }
 
   findAll() {
@@ -33,7 +32,7 @@ export class SubcategoriesService {
     return `This action updates a #${id} subcategory`;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} subcategory`;
+  async remove(id: number) {
+    return await this.subcategoriesRepository.delete(id);
   }
 }

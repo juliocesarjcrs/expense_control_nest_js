@@ -32,3 +32,6 @@ https://docs.nestjs.com/recipes/sql-typeorm#getting-started
  // steps to create module 
  1) home/gbp/.npm-global/bin/nest  generate module subcategory
 THis comand craated a folter and file main
+
+nest  generate resource expenses
+colocar @Entity() en la entidad

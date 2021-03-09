@@ -19,10 +19,7 @@ export class CategoriesController {
     @Res() response,
     @Request() req,
   ) {
-    console.log('req', req.user.id);
     createCategoryDto = { ...createCategoryDto, userId: req.user.id };
-    console.log(createCategoryDto);
-
     this.categoryService
       .createCategory(createCategoryDto)
       .then((category) => {

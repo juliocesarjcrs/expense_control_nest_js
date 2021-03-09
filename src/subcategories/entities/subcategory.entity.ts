@@ -13,9 +13,9 @@ export class Subcategory extends Content {
 
   @ManyToOne(() => Category, { nullable: false })
   @JoinColumn({ name: 'category_id' })
-  categoryId: Category;
+  categoryId: number;
 
   @ManyToOne(() => User, { nullable: false })
   @JoinColumn({ name: 'user_id' })
-  userId: User;
+  userId: number;
 }

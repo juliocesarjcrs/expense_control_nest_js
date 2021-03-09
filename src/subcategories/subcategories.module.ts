@@ -10,7 +10,5 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 
   controllers: [SubcategoriesController],
   providers: [SubcategoriesService],
-  exports: [SubcategoriesService],
-
 })
 export class SubcategoriesModule {}

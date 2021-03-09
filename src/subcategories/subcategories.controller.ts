@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Body, Put, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Put,
+  Param,
+  Delete,
+  Request,
+} from '@nestjs/common';
 import { SubcategoriesService } from './subcategories.service';
 import { CreateSubcategoryDto } from './dto/create-subcategory.dto';
 import { UpdateSubcategoryDto } from './dto/update-subcategory.dto';
@@ -8,7 +17,8 @@ export class SubcategoriesController {
   constructor(private readonly subcategoriesService: SubcategoriesService) {}
 
   @Post()
-  create(@Body() createSubcategoryDto: CreateSubcategoryDto) {
+  create(@Body() createSubcategoryDto: CreateSubcategoryDto, @Request() req) {
+    createSubcategoryDto = { ...createSubcategoryDto, userId: req.user.id };
     return this.subcategoriesService.create(createSubcategoryDto);
   }
 
@@ -23,7 +33,10 @@ export class SubcategoriesController {
   }
 
   @Put(':id')
-  update(@Param('id') id: string, @Body() updateSubcategoryDto: UpdateSubcategoryDto) {
+  update(
+    @Param('id') id: string,
+    @Body() updateSubcategoryDto: UpdateSubcategoryDto,
+  ) {
     return this.subcategoriesService.update(+id, updateSubcategoryDto);
   }
 
