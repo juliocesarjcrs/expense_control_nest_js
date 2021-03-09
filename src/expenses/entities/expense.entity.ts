@@ -4,14 +4,14 @@ import { User } from 'src/users/entities/user.entity';
 import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 @Entity()
 export class Expense extends Content {
-  @Column('varchar')
-  costs: number;
+  @Column('int')
+  cost: number;
 
   @ManyToOne(() => User, { nullable: false })
   @JoinColumn({ name: 'user_id' })
   userId: number;
 
   @ManyToOne(() => Subcategory, { nullable: false })
-  @JoinColumn({ name: 'category_id' })
-  categoryId: number;
+  @JoinColumn({ name: 'subcategory_id' })
+  subcategoryId: number;
 }

@@ -6,6 +6,7 @@ import {
   Put,
   Param,
   Delete,
+  Request,
 } from '@nestjs/common';
 import { ExpensesService } from './expenses.service';
 import { CreateExpenseDto } from './dto/create-expense.dto';
@@ -16,13 +17,15 @@ export class ExpensesController {
   constructor(private readonly expensesService: ExpensesService) {}
 
   @Post()
-  create(@Body() createExpenseDto: CreateExpenseDto) {
+  create(@Body() createExpenseDto: CreateExpenseDto, @Request() req) {
+    createExpenseDto = { ...createExpenseDto, userId: req.user.id };
     return this.expensesService.create(createExpenseDto);
   }
 
   @Get()
-  findAll() {
-    return this.expensesService.findAll();
+  findAll(@Request() req) {
+    const userId = req.user.id;
+    return this.expensesService.findAll(userId);
   }
 
   @Get(':id')
