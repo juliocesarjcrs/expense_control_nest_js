@@ -30,8 +30,10 @@ export class AuthService {
       throw Error('Email or password incorrect');
     }
     const payloadSend = { user: userFound, sub: userFound.id };
+    const { password, ...dataUser } = userFound;
     return {
       access_token: this.jwtService.sign(payloadSend),
+      user: dataUser,
     };
   }
 }

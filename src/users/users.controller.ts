@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   HttpStatus,
+  Param,
   Post,
   Request,
   Res,
@@ -30,8 +31,6 @@ export class UsersController {
   }
   @Get()
   getAll(@Res() response, @Request() req) {
-    // console.log('req', req.user.userId);
-
     this.userService
       .findAll()
       .then((listUser) => {
@@ -42,5 +41,9 @@ export class UsersController {
           .status(HttpStatus.FORBIDDEN)
           .json({ message: 'Error en listar usuarios' });
       });
+  }
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return this.userService.findOne(id);
   }
 }
