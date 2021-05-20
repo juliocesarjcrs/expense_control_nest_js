@@ -15,6 +15,8 @@ export class Category extends Content {
   @JoinColumn({ name: 'user_id' })
   userId: number;
 
-  @OneToMany(() => Subcategory, (Subcategory) => Subcategory.id)
-  categories: Subcategory[];
+  @OneToMany(() => Subcategory, (subcategory) => subcategory.categoryId, {
+    cascade: true,
+  })
+  subcategories: Subcategory[];
 }

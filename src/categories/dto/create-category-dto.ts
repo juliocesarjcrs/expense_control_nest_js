@@ -5,6 +5,7 @@ import { User } from 'src/users/entities/user.entity';
 export class CreateCategoryDto {
   @IsString()
   readonly name: string;
+  @IsString()
   readonly icon: string;
   readonly userId: number;
   // @IsInt()

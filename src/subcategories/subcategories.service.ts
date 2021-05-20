@@ -24,8 +24,15 @@ export class SubcategoriesService {
     return `This action returns all subcategories`;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} subcategory`;
+  async findOne(id: number) {
+    return await this.subcategoriesRepository.findOne(id);
+  }
+
+  async findAllByCategory(idCategory: number) {
+    return await this.subcategoriesRepository.find({
+      where: { categoryId: idCategory },
+      relations: ['expenses'],
+    });
   }
 
   update(id: number, updateSubcategoryDto: UpdateSubcategoryDto) {

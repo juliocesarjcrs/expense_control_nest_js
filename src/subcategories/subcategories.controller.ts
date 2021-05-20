@@ -31,6 +31,10 @@ export class SubcategoriesController {
   findOne(@Param('id') id: string) {
     return this.subcategoriesService.findOne(+id);
   }
+  @Get('category/:id')
+  findAllByCategory(@Param('id') id: number){
+    return this.subcategoriesService.findAllByCategory(+id);
+  }
 
   @Put(':id')
   update(

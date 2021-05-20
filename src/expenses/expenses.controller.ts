@@ -27,6 +27,11 @@ export class ExpensesController {
     const userId = req.user.id;
     return this.expensesService.findAll(userId);
   }
+  @Get('subcategory/:id')
+  findAllFromSubcategory(@Param('id') id: string,@Request() req) {
+    const userId = req.user.id;
+    return this.expensesService.findAllFromSubcategory(userId, +id);
+  }
 
   @Get(':id')
   findOne(@Param('id') id: string) {

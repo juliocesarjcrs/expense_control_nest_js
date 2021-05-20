@@ -7,11 +7,17 @@ export class Expense extends Content {
   @Column('int')
   cost: number;
 
+  @Column('varchar', { length: 200, nullable: true })
+  commentary: string;
+
   @ManyToOne(() => User, { nullable: false })
   @JoinColumn({ name: 'user_id' })
   userId: number;
 
-  @ManyToOne(() => Subcategory, { nullable: false })
+  @ManyToOne(() => Subcategory, (subcategory) => subcategory.expenses, {
+    nullable: false,
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'subcategory_id' })
   subcategoryId: number;
 }
