@@ -22,6 +22,9 @@ import { Expense } from './expenses/entities/expense.entity';
 import { ExpensesController } from './expenses/expenses.controller';
 import { ExpensesService } from './expenses/expenses.service';
 import { ConfigModule } from '@nestjs/config';
+console.log('users', process.env);
+console.log('password', process.env.DB_PASS);
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -30,11 +33,11 @@ import { ConfigModule } from '@nestjs/config';
     }),
     TypeOrmModule.forRoot({
       type: 'mysql',
-      host: 'localhost',
+      host: process.env.DB_HOST,
       port: 3306,
       username: process.env.DB_USER,
       password: process.env.DB_PASS,
-      database: 'expense_control',
+      database: process.env.DB_NAME,
       entities: [__dirname + '/**/*.entity{.ts,.js}'],
       synchronize: true,
     }),
