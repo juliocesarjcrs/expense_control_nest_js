@@ -18,6 +18,8 @@ export class ExpensesService {
     ExpenseEntity.userId = createExpenseDto.userId;
     ExpenseEntity.subcategoryId = createExpenseDto.subcategoryId;
     ExpenseEntity.cost = createExpenseDto.cost;
+    ExpenseEntity.commentary = createExpenseDto.commentary;
+    console.log('ExpenseEntity', ExpenseEntity);
     return this.expensesRepository.save(ExpenseEntity);
   }
 

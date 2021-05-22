@@ -18,7 +18,9 @@ export class ExpensesController {
 
   @Post()
   create(@Body() createExpenseDto: CreateExpenseDto, @Request() req) {
+    console.log('Antess', createExpenseDto);
     createExpenseDto = { ...createExpenseDto, userId: req.user.id };
+    console.log('controller', createExpenseDto);
     return this.expensesService.create(createExpenseDto);
   }
 

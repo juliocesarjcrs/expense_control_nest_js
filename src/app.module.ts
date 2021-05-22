@@ -22,8 +22,6 @@ import { Expense } from './expenses/entities/expense.entity';
 import { ExpensesController } from './expenses/expenses.controller';
 import { ExpensesService } from './expenses/expenses.service';
 import { ConfigModule } from '@nestjs/config';
-console.log('users', process.env);
-console.log('password', process.env.DB_PASS);
 
 @Module({
   imports: [

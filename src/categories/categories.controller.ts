@@ -35,10 +35,12 @@ export class CategoriesController {
         });
       });
   }
+
   @Get()
-  getAll(@Res() response) {
+  getAll(@Res() response, @Request() req) {
+    const userId = req.user.id;
     this.categoryService
-      .findAll()
+      .findAll(userId)
       .then((listCategories) => {
         response.status(HttpStatus.OK).json(listCategories);
       })

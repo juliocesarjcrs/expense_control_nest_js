@@ -20,8 +20,11 @@ export class CategoriesService {
 
     return this.categoriesRepository.save(CategoryEntity);
   }
-  async findAll() {
-    return this.categoriesRepository.find({ order: { name: 'ASC' } });
+  async findAll(userId: number) {
+    return this.categoriesRepository.find({
+      where: { userId: userId },
+      order: { name: 'ASC' },
+    });
   }
   async findAllWithSubcategories(userId: number) {
     const data = await this.categoriesRepository.find({
