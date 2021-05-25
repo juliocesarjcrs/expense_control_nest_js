@@ -19,19 +19,21 @@ export class ExpensesService {
     ExpenseEntity.subcategoryId = createExpenseDto.subcategoryId;
     ExpenseEntity.cost = createExpenseDto.cost;
     ExpenseEntity.commentary = createExpenseDto.commentary;
-    console.log('ExpenseEntity', ExpenseEntity);
+    ExpenseEntity.date = createExpenseDto.date;
     return this.expensesRepository.save(ExpenseEntity);
   }
 
   async findAll(userId: number) {
     return this.expensesRepository.find({ where: { userId: userId } });
   }
-  async findAllFromSubcategory(userId: number, subcategoryId: number) {
+  async findAllFromSubcategory(userId: number, subcategoryId: number, query) {
+    console.log('query expe', query);
+    const queryDate = query ? query.date : null;
     return this.expensesRepository.find({
       where: {
         userId,
         subcategoryId,
-        createdAt: Between(startMonth(), endMonth()),
+        date: Between(startMonth(queryDate), endMonth(queryDate)),
       },
       order: { id: 'DESC' },
     });

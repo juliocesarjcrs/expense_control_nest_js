@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   Request,
+  Query,
 } from '@nestjs/common';
 import { ExpensesService } from './expenses.service';
 import { CreateExpenseDto } from './dto/create-expense.dto';
@@ -30,9 +31,13 @@ export class ExpensesController {
     return this.expensesService.findAll(userId);
   }
   @Get('subcategory/:id')
-  findAllFromSubcategory(@Param('id') id: string,@Request() req) {
+  findAllFromSubcategory(
+    @Param('id') id: string,
+    @Request() req,
+    @Query() query,
+  ) {
     const userId = req.user.id;
-    return this.expensesService.findAllFromSubcategory(userId, +id);
+    return this.expensesService.findAllFromSubcategory(userId, +id, query);
   }
 
   @Get(':id')

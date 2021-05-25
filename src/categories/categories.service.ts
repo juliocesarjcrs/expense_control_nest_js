@@ -4,6 +4,8 @@ import { Repository } from 'typeorm';
 import { Category } from './entities/category.entity';
 import { CreateCategoryDto } from './dto/create-category-dto';
 import { UpdateCategoryDto } from './dto/updated-category.dto';
+
+import * as moment from 'moment';
 @Injectable()
 export class CategoriesService {
   constructor(
@@ -26,30 +28,47 @@ export class CategoriesService {
       order: { name: 'ASC' },
     });
   }
-  async findAllWithSubcategories(userId: number) {
+
+  async findAllWithSubcategories(userId: number, query) {
+    const queryDate = query ? query.date : null;
     const data = await this.categoriesRepository.find({
-      where: { userId: userId },
       relations: ['subcategories', 'subcategories.expenses'],
+      where: { userId: userId },
       order: { name: 'ASC' },
     });
     let totalGeneraly = 0;
     const dataFormat = data.map((e) => {
       const { totalCategory, subcategories } = this.mappingSubcategories(
         e.subcategories,
+        queryDate,
       );
       totalGeneraly += totalCategory;
       return { ...e, subcategories, total: totalCategory };
     });
     return { data: dataFormat, total: totalGeneraly };
   }
-  mappingSubcategories(array) {
+  mappingSubcategories(array, queryDate) {
     let totalCategory = 0;
     const subcategories = array.map((m) => {
-      const total = this.calculateTotal(m.expenses);
+      const filtrado = this.filterByDate(m.expenses, queryDate);
+      const total = this.calculateTotal(filtrado);
       totalCategory += total;
-      return { ...m, total };
+      return { ...m, expenses: filtrado, total };
     });
     return { totalCategory, subcategories };
+  }
+  filterByDate(array, queryDate){
+    const start = moment(queryDate).startOf('month');
+    const end = moment(queryDate).endOf('month');
+    const filter = array.filter((e) => {
+      const actual = moment(e.date);
+      if (actual >= start && actual <= end) {
+        return true;
+      } else {
+        return false;
+      }
+    });
+    return filter;
   }
   calculateTotal(array) {
     return array.reduce((acu: number, val) => acu + parseFloat(val.cost), 0);

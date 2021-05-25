@@ -7,6 +7,7 @@ import {
   Param,
   Post,
   Put,
+  Query,
   Request,
   Res,
 } from '@nestjs/common';
@@ -51,10 +52,10 @@ export class CategoriesController {
       });
   }
   @Get('subcategories')
-  findAllWithSubategories(@Res() response, @Request() req) {
+  findAllWithSubategories(@Res() response, @Request() req, @Query() query) {
     const userId = req.user.id;
     this.categoryService
-      .findAllWithSubcategories(userId)
+      .findAllWithSubcategories(userId, query)
       .then((listCategories) => {
         response.status(HttpStatus.OK).json(listCategories);
       })

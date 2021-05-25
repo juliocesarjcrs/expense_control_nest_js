@@ -1,7 +1,13 @@
 import { Content } from 'src/entity/entityBase';
 import { Subcategory } from 'src/subcategories/entities/subcategory.entity';
 import { User } from 'src/users/entities/user.entity';
-import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+} from 'typeorm';
 @Entity()
 export class Expense extends Content {
   @Column('int')
@@ -9,6 +15,9 @@ export class Expense extends Content {
 
   @Column('varchar', { length: 200, nullable: true })
   commentary: string;
+
+  @Column({ type: 'date', nullable: false })
+  date: Date;
 
   @ManyToOne(() => User, { nullable: false })
   @JoinColumn({ name: 'user_id' })

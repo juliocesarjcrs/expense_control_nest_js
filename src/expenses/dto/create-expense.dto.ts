@@ -1,4 +1,10 @@
-import { IsInt, IsNotEmpty, IsString, MaxLength } from 'class-validator';
+import {
+  IsDateString,
+  IsInt,
+  IsNotEmpty,
+  IsString,
+  MaxLength,
+} from 'class-validator';
 
 export class CreateExpenseDto {
   @IsNotEmpty()
@@ -8,6 +14,10 @@ export class CreateExpenseDto {
   })
   @IsString()
   readonly commentary: string;
+
+  @IsDateString()
+  readonly date: Date;
+
   readonly userId: number;
   @IsNotEmpty()
   @IsInt()
