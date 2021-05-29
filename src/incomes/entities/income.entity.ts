@@ -1,11 +1,12 @@
+import { Category } from 'src/categories/entities/category.entity';
 import { Content } from 'src/entity/entityBase';
-import { Subcategory } from 'src/subcategories/entities/subcategory.entity';
 import { User } from 'src/users/entities/user.entity';
 import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
+
 @Entity()
-export class Expense extends Content {
+export class Income extends Content {
   @Column('int')
-  cost: number;
+  amount: number;
 
   @Column('varchar', { length: 200, nullable: true })
   commentary: string;
@@ -17,10 +18,10 @@ export class Expense extends Content {
   @JoinColumn({ name: 'user_id' })
   userId: number;
 
-  @ManyToOne(() => Subcategory, (subcategory) => subcategory.expenses, {
+  @ManyToOne(() => Category, (category) => category.subcategories, {
     nullable: false,
     onDelete: 'CASCADE',
   })
-  @JoinColumn({ name: 'subcategory_id' })
-  subcategoryId: number;
+  @JoinColumn({ name: 'category_id' })
+  categoryId: number;
 }

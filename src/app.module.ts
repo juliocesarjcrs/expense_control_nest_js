@@ -22,6 +22,10 @@ import { Expense } from './expenses/entities/expense.entity';
 import { ExpensesController } from './expenses/expenses.controller';
 import { ExpensesService } from './expenses/expenses.service';
 import { ConfigModule } from '@nestjs/config';
+import { IncomesModule } from './incomes/incomes.module';
+import { IncomesService } from './incomes/incomes.service';
+import { Income } from './incomes/entities/income.entity';
+import { IncomesController } from './incomes/incomes.controller';
 
 @Module({
   imports: [
@@ -39,11 +43,12 @@ import { ConfigModule } from '@nestjs/config';
       entities: [__dirname + '/**/*.entity{.ts,.js}'],
       synchronize: true,
     }),
-    TypeOrmModule.forFeature([User, Category, Subcategory, Expense]),
+    TypeOrmModule.forFeature([User, Category, Subcategory, Expense, Income]),
     AuthModule,
     UsersModule,
     SubcategoriesModule,
     ExpensesModule,
+    IncomesModule,
   ],
   controllers: [
     AppController,
@@ -51,6 +56,7 @@ import { ConfigModule } from '@nestjs/config';
     CategoriesController,
     SubcategoriesController,
     ExpensesController,
+    IncomesController,
   ],
   providers: [
     AppService,
@@ -59,6 +65,7 @@ import { ConfigModule } from '@nestjs/config';
     AuthService,
     SubcategoriesService,
     ExpensesService,
+    IncomesService,
   ],
 })
 export class AppModule {}

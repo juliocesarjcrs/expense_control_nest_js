@@ -38,10 +38,10 @@ export class CategoriesController {
   }
 
   @Get()
-  getAll(@Res() response, @Request() req) {
+  getAll(@Res() response, @Request() req, @Query() query) {
     const userId = req.user.id;
     this.categoryService
-      .findAll(userId)
+      .findAll(userId, query)
       .then((listCategories) => {
         response.status(HttpStatus.OK).json(listCategories);
       })
@@ -51,6 +51,7 @@ export class CategoriesController {
           .json({ message: 'Error en listar categorias' });
       });
   }
+
   @Get('subcategories')
   findAllWithSubategories(@Res() response, @Request() req, @Query() query) {
     const userId = req.user.id;
@@ -64,6 +65,21 @@ export class CategoriesController {
           .status(HttpStatus.FORBIDDEN)
           .json({ message: 'Error en listar categorias con subcategorias' });
       });
+  }
+  @Get('incomes')
+  async findAllTypeIncome(@Res() response, @Request() req, @Query() query) {
+    try {
+      const userId = req.user.id;
+      const listCategoriesIncomes = await this.categoryService.findAllTypeIncome(
+        userId,
+        query,
+      );
+      response.status(HttpStatus.OK).json(listCategoriesIncomes);
+    } catch (error) {
+      response
+        .status(HttpStatus.FORBIDDEN)
+        .json({ message: 'Error en listar categorias de ingresos' });
+    }
   }
 
   @Get(':id')

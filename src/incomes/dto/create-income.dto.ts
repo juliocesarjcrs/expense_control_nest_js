@@ -6,9 +6,13 @@ import {
   MaxLength,
 } from 'class-validator';
 
-export class CreateExpenseDto {
+export class CreateIncomeDto {
   @IsNotEmpty()
-  readonly cost: number;
+  readonly amount: number;
+
+  @IsNotEmpty()
+  @IsInt()
+  readonly categoryId: number;
 
   @MaxLength(200, {
     message: 'El comentario supera los 200 caracteres',
@@ -20,8 +24,4 @@ export class CreateExpenseDto {
   readonly date: Date;
 
   readonly userId: number;
-
-  @IsNotEmpty()
-  @IsInt()
-  readonly subcategoryId: number;
 }

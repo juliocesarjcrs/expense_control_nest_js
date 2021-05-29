@@ -19,12 +19,14 @@ export class CategoriesService {
     CategoryEntity.name = createCategoryDto.name;
     CategoryEntity.icon = createCategoryDto.icon;
     CategoryEntity.userId = createCategoryDto.userId;
+    CategoryEntity.type = createCategoryDto.type;
 
     return this.categoriesRepository.save(CategoryEntity);
   }
-  async findAll(userId: number) {
+  async findAll(userId: number, query) {
+    const type = query ? query.type : 0;
     return this.categoriesRepository.find({
-      where: { userId: userId },
+      where: { userId: userId, type },
       order: { name: 'ASC' },
     });
   }
@@ -33,7 +35,7 @@ export class CategoriesService {
     const queryDate = query ? query.date : null;
     const data = await this.categoriesRepository.find({
       relations: ['subcategories', 'subcategories.expenses'],
-      where: { userId: userId },
+      where: { userId: userId, type: 0 },
       order: { name: 'ASC' },
     });
     let totalGeneraly = 0;
@@ -57,7 +59,7 @@ export class CategoriesService {
     });
     return { totalCategory, subcategories };
   }
-  filterByDate(array, queryDate){
+  filterByDate(array, queryDate) {
     const start = moment(queryDate).startOf('month');
     const end = moment(queryDate).endOf('month');
     const filter = array.filter((e) => {
@@ -86,5 +88,28 @@ export class CategoriesService {
   }
   async remove(id: number) {
     return this.categoriesRepository.delete(id);
+  }
+
+  async findAllTypeIncome(userId: number, query) {
+    const queryDate = query ? query.date : null;
+    const data = await this.categoriesRepository.find({
+      relations: ['incomes'],
+      where: { userId: userId, type: 1 },
+      order: { name: 'ASC' },
+    });
+    let totalGeneraly = 0;
+    const dataFormat = data.map((category) => {
+      const filtrado = this.filterByDate(category.incomes, queryDate);
+      const total = this.calculateTotalIncomes(filtrado);
+      totalGeneraly += total;
+      return { ...category, total };
+    });
+    return { data: dataFormat, total: totalGeneraly };
+  }
+  calculateTotalIncomes(myArray) {
+    return myArray.reduce(
+      (acu: number, val) => acu + parseFloat(val.amount),
+      0,
+    );
   }
 }
