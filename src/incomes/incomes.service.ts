@@ -18,6 +18,7 @@ export class IncomesService {
     IncomeEntity.date = createIncomeDto.date;
     IncomeEntity.userId = createIncomeDto.userId;
     IncomeEntity.categoryId = createIncomeDto.categoryId;
+    IncomeEntity.commentary = createIncomeDto.commentary;
     return this.IncomeRepository.save(IncomeEntity);
   }
 
@@ -25,7 +26,7 @@ export class IncomesService {
     return this.IncomeRepository.find({ where: { userId: userId } });
   }
 
-  findOne(id: number): Promise<Income>{
+  findOne(id: number): Promise<Income> {
     return this.IncomeRepository.findOne(id);
   }
 
