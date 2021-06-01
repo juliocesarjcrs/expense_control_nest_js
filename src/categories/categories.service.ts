@@ -102,7 +102,7 @@ export class CategoriesService {
       const filtrado = this.filterByDate(category.incomes, queryDate);
       const total = this.calculateTotalIncomes(filtrado);
       totalGeneraly += total;
-      return { ...category, total };
+      return { ...category, incomes: filtrado, total };
     });
     return { data: dataFormat, total: totalGeneraly };
   }
