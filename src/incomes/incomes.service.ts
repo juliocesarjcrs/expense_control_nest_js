@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { monthAgo } from 'src/utils/dates/date';
 import { Repository } from 'typeorm';
 import { CreateIncomeDto } from './dto/create-income.dto';
 import { UpdateIncomeDto } from './dto/update-income.dto';
@@ -22,8 +23,20 @@ export class IncomesService {
     return this.IncomeRepository.save(IncomeEntity);
   }
 
-  findAll(userId: number) {
-    return this.IncomeRepository.find({ where: { userId: userId } });
+  async findAll(userId: number) {
+    const incomesGroupByMonth = await this.IncomeRepository.createQueryBuilder(
+      'income',
+    )
+      .select('MONTH(income.date) as month')
+      .addSelect('SUM(income.amount)', 'sum')
+      .where('income.date >= :mydate', { mydate: monthAgo() })
+      .andWhere('income.user_id = :userId', { userId })
+      .groupBy('MONTH(income.date)')
+      .getRawMany();
+
+    const costs = incomesGroupByMonth.map((e) => e.sum);
+
+    return { incomes: costs, data: incomesGroupByMonth };
   }
 
   findOne(id: number): Promise<Income> {

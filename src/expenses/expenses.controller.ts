@@ -8,6 +8,8 @@ import {
   Delete,
   Request,
   Query,
+  Res,
+  HttpStatus,
 } from '@nestjs/common';
 import { ExpensesService } from './expenses.service';
 import { CreateExpenseDto } from './dto/create-expense.dto';
@@ -19,16 +21,22 @@ export class ExpensesController {
 
   @Post()
   create(@Body() createExpenseDto: CreateExpenseDto, @Request() req) {
-    console.log('Antess', createExpenseDto);
     createExpenseDto = { ...createExpenseDto, userId: req.user.id };
-    console.log('controller', createExpenseDto);
     return this.expensesService.create(createExpenseDto);
   }
 
   @Get()
-  findAll(@Request() req) {
-    const userId = req.user.id;
-    return this.expensesService.findAll(userId);
+  async findAll(@Request() req, @Res() response) {
+    try {
+      const userId = req.user.id;
+      const expenses = await this.expensesService.findAll(userId);
+      response.status(HttpStatus.OK).json(expenses);
+    } catch (error) {
+      console.log(error);
+      response
+        .status(HttpStatus.FORBIDDEN)
+        .json({ message: 'Error en listar gastos agrupados' });
+    }
   }
   @Get('subcategory/:id')
   findAllFromSubcategory(

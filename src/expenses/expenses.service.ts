@@ -1,6 +1,11 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { endMonth, startMonth } from 'src/utils/dates/date';
+import {
+  endMonth,
+  monthAgo,
+  startMonth,
+  getMonthString,
+} from 'src/utils/dates/date';
 import { Between, Repository } from 'typeorm';
 import { CreateExpenseDto } from './dto/create-expense.dto';
 import { UpdateExpenseDto } from './dto/update-expense.dto';
@@ -24,10 +29,22 @@ export class ExpensesService {
   }
 
   async findAll(userId: number) {
-    return this.expensesRepository.find({ where: { userId: userId } });
+    const expensesGroupByMonth = await this.expensesRepository
+      .createQueryBuilder('expense')
+      .select('MONTH(expense.date) as month')
+      .addSelect('SUM(expense.cost)', 'sum')
+      .where('expense.date >= :mydate', { mydate: monthAgo() })
+      .andWhere('expense.user_id = :userId', { userId })
+      .groupBy('MONTH(expense.date)')
+      .getRawMany();
+
+    const costs = expensesGroupByMonth.map((e) => e.sum);
+    const labels = expensesGroupByMonth.map((e) => {
+      return getMonthString(e.month);
+    });
+    return { graph: costs, labels, data: expensesGroupByMonth };
   }
   async findAllFromSubcategory(userId: number, subcategoryId: number, query) {
-    console.log('query expe', query);
     const queryDate = query ? query.date : null;
     return this.expensesRepository.find({
       where: {
