@@ -38,18 +38,10 @@ export class CategoriesController {
   }
 
   @Get()
-  getAll(@Res() response, @Request() req, @Query() query) {
+  async getAll(@Res() response, @Request() req, @Query() query) {
     const userId = req.user.id;
-    this.categoryService
-      .findAll(userId, query)
-      .then((listCategories) => {
-        response.status(HttpStatus.OK).json(listCategories);
-      })
-      .catch(() => {
-        response
-          .status(HttpStatus.FORBIDDEN)
-          .json({ message: 'Error en listar categorias' });
-      });
+    const listCategories = await this.categoryService.findAll(userId, query);
+    response.status(HttpStatus.OK).json(listCategories);
   }
 
   @Get('subcategories')

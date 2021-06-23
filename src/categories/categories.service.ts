@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Category } from './entities/category.entity';
@@ -6,6 +6,7 @@ import { CreateCategoryDto } from './dto/create-category-dto';
 import { UpdateCategoryDto } from './dto/updated-category.dto';
 
 import * as moment from 'moment';
+import { HttpException } from '@nestjs/common';
 @Injectable()
 export class CategoriesService {
   constructor(
@@ -81,10 +82,11 @@ export class CategoriesService {
   }
 
   async update(id: number, updateCategoryDto: UpdateCategoryDto) {
-    const expense = await this.categoriesRepository.findOne(id);
-    if (!expense) throw new NotFoundException();
-    const editExpense = Object.assign(expense, updateCategoryDto);
-    return this.categoriesRepository.save(editExpense);
+    const category = await this.categoriesRepository.findOne(id);
+    if (!category)
+      throw new HttpException('Id not fount', HttpStatus.NOT_FOUND);
+    const editCategory = Object.assign(category, updateCategoryDto);
+    return this.categoriesRepository.save(editCategory);
   }
   async remove(id: number) {
     return this.categoriesRepository.delete(id);

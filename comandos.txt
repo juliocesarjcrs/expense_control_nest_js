@@ -50,3 +50,9 @@ Errores comunes
 1) Al realizar repsitorio ageregar en el {entity}.module 
 
   imports: [TypeOrmModule.forFeature([Entity])],
+
+
+
+  SOnar lint
+
+  sonar-scanner -D sonar.login=cff314f687bf452f66e66559312ed32ce3151969

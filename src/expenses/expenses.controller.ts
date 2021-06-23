@@ -20,24 +20,23 @@ export class ExpensesController {
   constructor(private readonly expensesService: ExpensesService) {}
 
   @Post()
-  create(@Body() createExpenseDto: CreateExpenseDto, @Request() req) {
+  async create(
+    @Body() createExpenseDto: CreateExpenseDto,
+    @Request() req,
+    @Res() response,
+  ) {
     createExpenseDto = { ...createExpenseDto, userId: req.user.id };
-    return this.expensesService.create(createExpenseDto);
+    const newExpense = await this.expensesService.create(createExpenseDto);
+    response.status(HttpStatus.CREATED).json(newExpense);
   }
 
   @Get()
   async findAll(@Request() req, @Res() response) {
-    try {
-      const userId = req.user.id;
-      const expenses = await this.expensesService.findAll(userId);
-      response.status(HttpStatus.OK).json(expenses);
-    } catch (error) {
-      console.log(error);
-      response
-        .status(HttpStatus.FORBIDDEN)
-        .json({ message: 'Error en listar gastos agrupados' });
-    }
+    const userId = req.user.id;
+    const expenses = await this.expensesService.findAll(userId);
+    response.status(HttpStatus.OK).json(expenses);
   }
+
   @Get('subcategory/:id')
   findAllFromSubcategory(
     @Param('id') id: string,
@@ -46,6 +45,13 @@ export class ExpensesController {
   ) {
     const userId = req.user.id;
     return this.expensesService.findAllFromSubcategory(userId, +id, query);
+  }
+
+  @Get('last')
+  async findLast(@Request() req, @Query() query, @Res() response) {
+    const userId = req.user.id;
+    const expenses = await this.expensesService.findLast(userId, query);
+    response.status(HttpStatus.OK).json(expenses);
   }
 
   @Get(':id')

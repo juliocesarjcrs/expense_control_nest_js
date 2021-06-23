@@ -17,6 +17,7 @@ export class ExpensesService {
     @InjectRepository(Expense)
     private expensesRepository: Repository<Expense>,
   ) {}
+
   async create(createExpenseDto: CreateExpenseDto) {
     const ExpenseEntity = new Expense();
 
@@ -44,6 +45,7 @@ export class ExpensesService {
     });
     return { graph: costs, labels, data: expensesGroupByMonth };
   }
+
   async findAllFromSubcategory(userId: number, subcategoryId: number, query) {
     const queryDate = query ? query.date : null;
     return this.expensesRepository.find({
@@ -69,5 +71,35 @@ export class ExpensesService {
 
   async remove(id: number) {
     return this.expensesRepository.delete(id);
+  }
+
+  async findLast(userId: number, query) {
+    const take = query.take || 5;
+    const page = query.page || 1;
+    const skip = (page - 1) * take;
+    const [result, total] = await this.expensesRepository.findAndCount({
+      relations: ['subcategoryId', 'subcategoryId.categoryId'],
+      where: { userId: userId },
+      order: { id: 'DESC' },
+      take,
+      skip,
+    });
+
+    const dataTrasform = result.map((e) => {
+      return {
+        id: e.id,
+        createdAt: e.createdAt,
+        cost: e.cost,
+        commentary: e.commentary,
+        date: e.date,
+        category: e.subcategoryId.categoryId.name,
+        iconCategory: e.subcategoryId.categoryId.icon,
+        subcategory: e.subcategoryId.name,
+      };
+    });
+    return {
+      data: dataTrasform,
+      count: total,
+    };
   }
 }

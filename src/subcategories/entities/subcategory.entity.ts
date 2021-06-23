@@ -17,11 +17,11 @@ export class Subcategory extends Content {
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'category_id' })
-  categoryId: number;
+  categoryId: Category;
 
   @ManyToOne(() => User, { nullable: false })
   @JoinColumn({ name: 'user_id' })
-  userId: number;
+  userId: User;
 
   @OneToMany(() => Expense, (expense) => expense.subcategoryId, {
     cascade: true,
