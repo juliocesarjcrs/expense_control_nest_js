@@ -59,7 +59,10 @@ export class ExpensesService {
   }
 
   findOne(id: number) {
-    return `This action returns a #${id} expense`;
+    return this.expensesRepository.findOne({
+      where: { id },
+      relations: ['subcategoryId', 'subcategoryId.categoryId'],
+    });
   }
 
   async update(id: number, updateExpenseDto: UpdateExpenseDto) {
