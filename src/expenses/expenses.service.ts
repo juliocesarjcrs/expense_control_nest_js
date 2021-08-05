@@ -105,4 +105,23 @@ export class ExpensesService {
       count: total,
     };
   }
+
+  async findLastMonthsFromSubcategory(userId: number, subcategoryId: number) {
+    const expensesOfSubcategoryGroupByMonth = await this.expensesRepository
+      .createQueryBuilder('expense')
+      .select('MONTH(expense.date) as month')
+      .addSelect('SUM(expense.cost)', 'sum')
+      .where('expense.date >= :mydate', { mydate: monthAgo() })
+      .andWhere('expense.user_id = :userId', { userId })
+      .andWhere('expense.subcategory_id = :subcategoryId', { subcategoryId })
+      .groupBy('MONTH(expense.date)')
+      .getRawMany();
+    const costs = expensesOfSubcategoryGroupByMonth.map((e) =>
+      parseFloat(e.sum),
+    );
+    const labels = expensesOfSubcategoryGroupByMonth.map((e) => {
+      return getMonthString(e.month);
+    });
+    return { graph: costs, labels, data: expensesOfSubcategoryGroupByMonth };
+  }
 }

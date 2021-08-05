@@ -47,6 +47,22 @@ export class ExpensesController {
     return this.expensesService.findAllFromSubcategory(userId, +id, query);
   }
 
+  @Get('subcategory/:id/last')
+  async findLastMonthsFromSubcategory(
+    @Param('id') id: string,
+    @Request() req,
+    @Query() query,
+    @Res() response,
+  ) {
+    const userId = req.user.id;
+    const expenses = await this.expensesService.findLastMonthsFromSubcategory(
+      userId,
+      +id,
+      // query,
+    );
+    response.status(HttpStatus.OK).json(expenses);
+  }
+
   @Get('last')
   async findLast(@Request() req, @Query() query, @Res() response) {
     const userId = req.user.id;
