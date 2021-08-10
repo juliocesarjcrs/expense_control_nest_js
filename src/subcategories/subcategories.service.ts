@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateSubcategoryDto } from './dto/create-subcategory.dto';
@@ -31,12 +31,16 @@ export class SubcategoriesService {
   async findAllByCategory(idCategory: number) {
     return await this.subcategoriesRepository.find({
       where: { categoryId: idCategory },
-      relations: ['expenses'],
+      relations: ['expenses', 'categoryId'],
     });
   }
 
-  update(id: number, updateSubcategoryDto: UpdateSubcategoryDto) {
-    return `This action updates a #${id} subcategory`;
+  async update(id: number, updateSubcategoryDto: UpdateSubcategoryDto) {
+    const subcategory = await this.subcategoriesRepository.findOne(id);
+    if (!subcategory)
+      throw new HttpException('Id not found', HttpStatus.NOT_FOUND);
+    const editSubcategory = Object.assign(subcategory, updateSubcategoryDto);
+    return this.subcategoriesRepository.save(editSubcategory);
   }
 
   async remove(id: number) {

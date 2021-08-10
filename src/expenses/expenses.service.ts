@@ -111,7 +111,7 @@ export class ExpensesService {
       .createQueryBuilder('expense')
       .select('MONTH(expense.date) as month')
       .addSelect('SUM(expense.cost)', 'sum')
-      .where('expense.date >= :mydate', { mydate: monthAgo() })
+      .where('expense.date >= :mydate', { mydate: monthAgo(6) })
       .andWhere('expense.user_id = :userId', { userId })
       .andWhere('expense.subcategory_id = :subcategoryId', { subcategoryId })
       .groupBy('MONTH(expense.date)')
@@ -122,6 +122,15 @@ export class ExpensesService {
     const labels = expensesOfSubcategoryGroupByMonth.map((e) => {
       return getMonthString(e.month);
     });
-    return { graph: costs, labels, data: expensesOfSubcategoryGroupByMonth };
+    const sum = costs.reduce((acu, val) => {
+      return acu + val;
+    }, 0);
+    const average = costs.length > 0 ? sum / costs.length : 0;
+    return {
+      graph: costs,
+      labels,
+      data: expensesOfSubcategoryGroupByMonth,
+      average,
+    };
   }
 }
