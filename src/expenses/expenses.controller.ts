@@ -63,6 +63,22 @@ export class ExpensesController {
     response.status(HttpStatus.OK).json(expenses);
   }
 
+  @Get('category/:id')
+  async findLastMonthsFromOnlyCategory(
+    @Param('id') id: string,
+    @Request() req,
+    @Query() query,
+    @Res() response,
+  ) {
+    const userId = req.user.id;
+    const expenses = await this.expensesService.findLastMonthsFromOnlyCategory(
+      userId,
+      +id,
+      // query,
+    );
+    response.status(HttpStatus.OK).json(expenses);
+  }
+
   @Get('last')
   async findLast(@Request() req, @Query() query, @Res() response) {
     const userId = req.user.id;

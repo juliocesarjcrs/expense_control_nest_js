@@ -122,15 +122,41 @@ export class ExpensesService {
     const labels = expensesOfSubcategoryGroupByMonth.map((e) => {
       return getMonthString(e.month);
     });
-    const sum = costs.reduce((acu, val) => {
-      return acu + val;
-    }, 0);
-    const average = costs.length > 0 ? sum / costs.length : 0;
+    const average = this.calculateAverage(costs);
     return {
       graph: costs,
       labels,
       data: expensesOfSubcategoryGroupByMonth,
       average,
     };
+  }
+
+  async findLastMonthsFromOnlyCategory(userId: number, categoryId: number) {
+    console.log('userId', userId, ' categoryId', categoryId);
+
+    const expensesGroupByMonth = await this.expensesRepository
+      .createQueryBuilder('expense')
+      .select('MONTH(expense.date) as month')
+      .leftJoin('expense.subcategoryId', 'subcategory')
+      .addSelect('SUM(expense.cost)', 'sum')
+      .where('expense.date >= :mydate', { mydate: monthAgo(6) })
+      .andWhere('expense.user_id = :userId', { userId })
+      .andWhere('subcategory.category_id = :categoryId', { categoryId })
+      .groupBy('MONTH(expense.date)')
+      .getRawMany();
+    const costs = expensesGroupByMonth.map((e) => parseFloat(e.sum));
+    const labels = expensesGroupByMonth.map((e) => {
+      return getMonthString(e.month);
+    });
+    const average = this.calculateAverage(costs);
+    return { graph: costs, labels, average };
+  }
+
+  calculateAverage(costs) {
+    const sum = costs.reduce((acu, val) => {
+      return acu + val;
+    }, 0);
+    const average = costs.length > 0 ? sum / costs.length : 0;
+    return average;
   }
 }
