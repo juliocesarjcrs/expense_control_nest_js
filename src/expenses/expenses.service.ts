@@ -132,8 +132,6 @@ export class ExpensesService {
   }
 
   async findLastMonthsFromOnlyCategory(userId: number, categoryId: number) {
-    console.log('userId', userId, ' categoryId', categoryId);
-
     const expensesGroupByMonth = await this.expensesRepository
       .createQueryBuilder('expense')
       .select('MONTH(expense.date) as month')
