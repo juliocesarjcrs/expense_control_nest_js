@@ -58,7 +58,7 @@ export class ExpensesController {
     const expenses = await this.expensesService.findLastMonthsFromSubcategory(
       userId,
       +id,
-      // query,
+      query,
     );
     response.status(HttpStatus.OK).json(expenses);
   }
@@ -74,7 +74,7 @@ export class ExpensesController {
     const expenses = await this.expensesService.findLastMonthsFromOnlyCategory(
       userId,
       +id,
-      // query,
+      query,
     );
     response.status(HttpStatus.OK).json(expenses);
   }

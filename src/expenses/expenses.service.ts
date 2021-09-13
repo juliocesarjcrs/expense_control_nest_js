@@ -106,15 +106,21 @@ export class ExpensesService {
     };
   }
 
-  async findLastMonthsFromSubcategory(userId: number, subcategoryId: number) {
+  async findLastMonthsFromSubcategory(
+    userId: number,
+    subcategoryId: number,
+    query: { numMonths: number },
+  ) {
+    const numMonths = query.numMonths || 6;
     const expensesOfSubcategoryGroupByMonth = await this.expensesRepository
       .createQueryBuilder('expense')
       .select('MONTH(expense.date) as month')
       .addSelect('SUM(expense.cost)', 'sum')
-      .where('expense.date >= :mydate', { mydate: monthAgo(6) })
+      .where('expense.date >= :mydate', { mydate: monthAgo(numMonths) })
       .andWhere('expense.user_id = :userId', { userId })
       .andWhere('expense.subcategory_id = :subcategoryId', { subcategoryId })
       .groupBy('MONTH(expense.date)')
+      .orderBy('month')
       .getRawMany();
     const costs = expensesOfSubcategoryGroupByMonth.map((e) =>
       parseFloat(e.sum),
@@ -131,16 +137,22 @@ export class ExpensesService {
     };
   }
 
-  async findLastMonthsFromOnlyCategory(userId: number, categoryId: number) {
+  async findLastMonthsFromOnlyCategory(
+    userId: number,
+    categoryId: number,
+    query: { numMonths: number },
+  ) {
+    const numMonths = query.numMonths || 6;
     const expensesGroupByMonth = await this.expensesRepository
       .createQueryBuilder('expense')
       .select('MONTH(expense.date) as month')
       .leftJoin('expense.subcategoryId', 'subcategory')
       .addSelect('SUM(expense.cost)', 'sum')
-      .where('expense.date >= :mydate', { mydate: monthAgo(6) })
+      .where('expense.date >= :mydate', { mydate: monthAgo(numMonths) })
       .andWhere('expense.user_id = :userId', { userId })
       .andWhere('subcategory.category_id = :categoryId', { categoryId })
       .groupBy('MONTH(expense.date)')
+      .orderBy('month')
       .getRawMany();
     const costs = expensesGroupByMonth.map((e) => parseFloat(e.sum));
     const labels = expensesGroupByMonth.map((e) => {
@@ -150,7 +162,7 @@ export class ExpensesService {
     return { graph: costs, labels, average };
   }
 
-  calculateAverage(costs) {
+  calculateAverage(costs: any[]): number {
     const sum = costs.reduce((acu, val) => {
       return acu + val;
     }, 0);
