@@ -5,11 +5,13 @@ import {
   HttpStatus,
   Param,
   Post,
+  Put,
   Res,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user-dto';
 import { Public } from 'src/utils/decorators/custumDecorators';
+import { ChangePasswordDto } from './dto/change-password-dto';
 
 @Controller('users')
 export class UsersController {
@@ -28,5 +30,10 @@ export class UsersController {
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.userService.findOne(id);
+  }
+
+  @Put('change-password/:id')
+  update(@Param('id') id: string, @Body() data: ChangePasswordDto) {
+    return this.userService.changePassword(id, data);
   }
 }
