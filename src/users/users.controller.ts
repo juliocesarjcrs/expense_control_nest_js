@@ -19,16 +19,18 @@ export class UsersController {
   @Public()
   @Post()
   async create(@Body() createUserDto: CreateUserDto, @Res() response) {
-    const user = this.userService.creteUser(createUserDto);
+    const user = this.userService.createUser(createUserDto);
     response.status(HttpStatus.CREATED).json(user);
   }
+
   @Get()
   async getAll(@Res() response) {
     const listUsers = await this.userService.findAll();
     response.status(HttpStatus.OK).json(listUsers);
   }
+
   @Get(':id')
-  findOne(@Param('id') id: string) {
+  findOne(@Param('id') id: number) {
     return this.userService.findOne(id);
   }
 

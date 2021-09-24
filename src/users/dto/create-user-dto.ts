@@ -5,14 +5,20 @@ export class CreateUserDto {
   @IsString()
   @MaxLength(120)
   readonly name: string;
+
   @IsNotEmpty()
   @IsEmail()
   @MaxLength(120)
   readonly email: string;
+
   @IsNotEmpty()
   @IsString()
   @MaxLength(120)
   readonly password: string;
 
   readonly image: string;
+
+  readonly recoveryCode: number;
+
+  readonly role: number;
 }

@@ -26,6 +26,7 @@ import { IncomesModule } from './incomes/incomes.module';
 import { IncomesService } from './incomes/incomes.service';
 import { Income } from './incomes/entities/income.entity';
 import { IncomesController } from './incomes/incomes.controller';
+import { MailModule } from './mail/mail.module';
 
 @Module({
   imports: [
@@ -49,6 +50,7 @@ import { IncomesController } from './incomes/incomes.controller';
     SubcategoriesModule,
     ExpensesModule,
     IncomesModule,
+    MailModule,
   ],
   controllers: [
     AppController,

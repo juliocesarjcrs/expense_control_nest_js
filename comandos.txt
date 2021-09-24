@@ -22,7 +22,7 @@ nest generate class users/dto/create-user-dto --no-spec
 nest g class categories/category --no-spec
 crear carpeta entities y renombrar el modelo agragando .entity
 
-4) generar elk servicio
+4) generar el servicio
 nest g service categories --no-spec
 
 5) inyectar la entidad en app,module
@@ -47,7 +47,7 @@ THis comand craated a folter and file main
 
 
 Errores comunes
-1) Al realizar repsitorio ageregar en el {entity}.module 
+1) Al realizar repositorio ageregar en el {entity}.module 
 
   imports: [TypeOrmModule.forFeature([Entity])],
 
@@ -56,3 +56,36 @@ Errores comunes
   SOnar lint
 
   sonar-scanner -D sonar.login=cff314f687bf452f66e66559312ed32ce3151969
+
+
+//--------------------- ENVIO CORREO -----------------------------------------------
+
+Generando modulo Mail
+// Crea la carpeta mail y alli el modulo, regustra el moduo en app.modulo
+nest g module mail
+// dentro de la carpeta  anteriormente creada general el servicio y lo registra en mail.module
+nest g service mail
+// instalar
+npm install --save @nestjs-modules/mailer nodemailer
+
+https://notiz.dev/blog/send-emails-with-nestjs
+
+Agregue MailModule a la importslista de sus módulos que necesitan usar el MailService.
+1) se importa en el .module donde se uqiere usar y uego se inyecta en el servicio
+
+
+//--------------------------------MANEJO ERRORES--- -------------------------------------------
+
+Dentro del servicio se usa la excepción HTTP de Nest incorporada:
+https://docs.nestjs.com/exception-filters
+
+Ej:
+throw new HttpException('Email not found', HttpStatus.BAD_REQUEST);
+el controlador la recibe y para enviar respuesta correcta
+Ej:
+  @Post('login')
+  async login(@Request() req, @Res() response) {
+    const user = { ...req.body };
+    const data = await this.authService.login(user);
+    response.status(HttpStatus.OK).json(data);
+  }

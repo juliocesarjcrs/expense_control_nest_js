@@ -5,6 +5,7 @@ import { User } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user-dto';
 import * as bcrypt from 'bcrypt';
 import { ChangePasswordDto } from './dto/change-password-dto';
+import { UpdatedUserDto } from './dto/updated-user-dto';
 @Injectable()
 export class UsersService {
   constructor(
@@ -15,7 +16,7 @@ export class UsersService {
     return await this.usersRepository.find();
   }
 
-  async findOne(id: string): Promise<User> {
+  async findOne(id: number): Promise<User> {
     return await this.usersRepository.findOne(id);
   }
   async findOneEmail(email: string): Promise<User | undefined> {
@@ -23,7 +24,7 @@ export class UsersService {
       where: { email: email },
     });
   }
-  async creteUser(newUser: CreateUserDto): Promise<User> {
+  async createUser(newUser: CreateUserDto): Promise<User> {
     const entityUser = new User();
     entityUser.name = newUser.name;
     entityUser.image = newUser.image;
@@ -34,12 +35,21 @@ export class UsersService {
     entityUser.password = hash;
     return await this.usersRepository.save(entityUser);
   }
+
+  async update(id: number, UpdatedUserDto: UpdatedUserDto): Promise<User> {
+    const UserFound = await this.usersRepository.findOne(id);
+    if (!UserFound)
+      throw new HttpException('Id not found', HttpStatus.NOT_FOUND);
+    const editUser = Object.assign(UserFound, UpdatedUserDto);
+    return this.usersRepository.save(editUser);
+  }
+
   async remove(id: string): Promise<void> {
     await this.usersRepository.delete(id);
   }
 
   async changePassword(id: string, newData: ChangePasswordDto) {
-    const userFound = await this.findOne(id);
+    const userFound = await this.findOne(+id);
     if (!userFound) {
       throw new HttpException('user not found', HttpStatus.NOT_FOUND);
     }
