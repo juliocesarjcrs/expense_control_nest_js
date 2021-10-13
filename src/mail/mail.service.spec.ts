@@ -3,10 +3,16 @@ import { MailService } from './mail.service';
 
 describe('MailService', () => {
   let service: MailService;
+  const mockMailService = {};
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [MailService],
+      providers: [
+        {
+          provide: MailService,
+          useValue: mockMailService,
+        },
+      ],
     }).compile();
 
     service = module.get<MailService>(MailService);

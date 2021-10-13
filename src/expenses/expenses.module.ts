@@ -4,12 +4,13 @@ import { ExpensesController } from './expenses.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from 'src/users/entities/user.entity';
 import { Expense } from './entities/expense.entity';
+import { DatesService } from 'src/utils/dates/dates.service';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Expense])],
 
   controllers: [ExpensesController],
-  providers: [ExpensesService],
+  providers: [ExpensesService, DatesService],
   exports: [ExpensesService],
 })
 export class ExpensesModule {}

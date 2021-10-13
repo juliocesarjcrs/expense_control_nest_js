@@ -27,23 +27,17 @@ import { IncomesService } from './incomes/incomes.service';
 import { Income } from './incomes/entities/income.entity';
 import { IncomesController } from './incomes/incomes.controller';
 import { MailModule } from './mail/mail.module';
+import { DatesModule } from './utils/dates/dates.module';
+import { typeOrmConfigAsync } from './config/typeorm.config';
+console.log(`.env.${process.env.NODE_ENV}`);
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: ['.env.local'],
+      envFilePath: `.env.${process.env.NODE_ENV}`,
     }),
-    TypeOrmModule.forRoot({
-      type: 'mysql',
-      host: process.env.DB_HOST,
-      port: 3306,
-      username: process.env.DB_USER,
-      password: process.env.DB_PASS,
-      database: process.env.DB_NAME,
-      entities: [__dirname + '/**/*.entity{.ts,.js}'],
-      synchronize: true,
-    }),
+    TypeOrmModule.forRootAsync(typeOrmConfigAsync),
     TypeOrmModule.forFeature([User, Category, Subcategory, Expense, Income]),
     AuthModule,
     UsersModule,
@@ -51,6 +45,7 @@ import { MailModule } from './mail/mail.module';
     ExpensesModule,
     IncomesModule,
     MailModule,
+    DatesModule,
   ],
   controllers: [
     AppController,

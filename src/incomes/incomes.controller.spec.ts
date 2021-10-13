@@ -4,12 +4,15 @@ import { IncomesService } from './incomes.service';
 
 describe('IncomesController', () => {
   let controller: IncomesController;
-
+  const mockIncomesService = {};
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [IncomesController],
       providers: [IncomesService],
-    }).compile();
+    })
+      .overrideProvider(IncomesService)
+      .useValue(mockIncomesService)
+      .compile();
 
     controller = module.get<IncomesController>(IncomesController);
   });

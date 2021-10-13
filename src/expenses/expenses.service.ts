@@ -1,11 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import {
-  endMonth,
-  monthAgo,
-  startMonth,
-  getMonthString,
-} from 'src/utils/dates/date';
+import { DatesService } from 'src/utils/dates/dates.service';
 import { Between, Repository } from 'typeorm';
 import { CreateExpenseDto } from './dto/create-expense.dto';
 import { UpdateExpenseDto } from './dto/update-expense.dto';
@@ -16,6 +11,7 @@ export class ExpensesService {
   constructor(
     @InjectRepository(Expense)
     private expensesRepository: Repository<Expense>,
+    private datesService: DatesService,
   ) {}
 
   async create(createExpenseDto: CreateExpenseDto) {
@@ -34,14 +30,16 @@ export class ExpensesService {
       .createQueryBuilder('expense')
       .select('MONTH(expense.date) as month')
       .addSelect('SUM(expense.cost)', 'sum')
-      .where('expense.date >= :mydate', { mydate: monthAgo() })
+      .where('expense.date >= :mydate', {
+        mydate: this.datesService.monthAgo(),
+      })
       .andWhere('expense.user_id = :userId', { userId })
       .groupBy('MONTH(expense.date)')
       .getRawMany();
 
     const costs = expensesGroupByMonth.map((e) => e.sum);
     const labels = expensesGroupByMonth.map((e) => {
-      return getMonthString(e.month);
+      return this.datesService.getMonthString(e.month);
     });
     return { graph: costs, labels, data: expensesGroupByMonth };
   }
@@ -52,7 +50,10 @@ export class ExpensesService {
       where: {
         userId,
         subcategoryId,
-        date: Between(startMonth(queryDate), endMonth(queryDate)),
+        date: Between(
+          this.datesService.startMonth(queryDate),
+          this.datesService.endMonth(queryDate),
+        ),
       },
       order: { id: 'DESC' },
     });
@@ -116,7 +117,9 @@ export class ExpensesService {
       .createQueryBuilder('expense')
       .select('MONTH(expense.date) as month')
       .addSelect('SUM(expense.cost)', 'sum')
-      .where('expense.date >= :mydate', { mydate: monthAgo(numMonths) })
+      .where('expense.date >= :mydate', {
+        mydate: this.datesService.monthAgo(numMonths),
+      })
       .andWhere('expense.user_id = :userId', { userId })
       .andWhere('expense.subcategory_id = :subcategoryId', { subcategoryId })
       .groupBy('MONTH(expense.date)')
@@ -126,7 +129,7 @@ export class ExpensesService {
       parseFloat(e.sum),
     );
     const labels = expensesOfSubcategoryGroupByMonth.map((e) => {
-      return getMonthString(e.month);
+      return this.datesService.getMonthString(e.month);
     });
     const average = this.calculateAverage(costs);
     return {
@@ -148,7 +151,9 @@ export class ExpensesService {
       .select('MONTH(expense.date) as month')
       .leftJoin('expense.subcategoryId', 'subcategory')
       .addSelect('SUM(expense.cost)', 'sum')
-      .where('expense.date >= :mydate', { mydate: monthAgo(numMonths) })
+      .where('expense.date >= :mydate', {
+        mydate: this.datesService.monthAgo(numMonths),
+      })
       .andWhere('expense.user_id = :userId', { userId })
       .andWhere('subcategory.category_id = :categoryId', { categoryId })
       .groupBy('MONTH(expense.date)')
@@ -156,7 +161,7 @@ export class ExpensesService {
       .getRawMany();
     const costs = expensesGroupByMonth.map((e) => parseFloat(e.sum));
     const labels = expensesGroupByMonth.map((e) => {
-      return getMonthString(e.month);
+      return this.datesService.getMonthString(e.month);
     });
     const average = this.calculateAverage(costs);
     return { graph: costs, labels, average };

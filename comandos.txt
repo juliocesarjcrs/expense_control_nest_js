@@ -89,3 +89,12 @@ Ej:
     const data = await this.authService.login(user);
     response.status(HttpStatus.OK).json(data);
   }
+
+
+  //---------------------- UTILS ------------------------------------------
+
+  1 Crea la carpeta utils/dates
+  2) se genera el módulo
+      nest g module utils/dates
+  3) Se genera el seervicio
+  nest g service utils/dates

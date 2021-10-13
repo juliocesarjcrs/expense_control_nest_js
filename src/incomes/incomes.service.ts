@@ -1,6 +1,6 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { monthAgo } from 'src/utils/dates/date';
+import { DatesService } from 'src/utils/dates/dates.service';
 import { Repository } from 'typeorm';
 import { CreateIncomeDto } from './dto/create-income.dto';
 import { UpdateIncomeDto } from './dto/update-income.dto';
@@ -11,9 +11,10 @@ export class IncomesService {
   constructor(
     @InjectRepository(Income)
     private IncomeRepository: Repository<Income>,
+    private datesService: DatesService,
   ) {}
 
-  create(createIncomeDto: CreateIncomeDto) {
+  create(createIncomeDto: CreateIncomeDto): Promise<Income> {
     const IncomeEntity = new Income();
     IncomeEntity.amount = createIncomeDto.amount;
     IncomeEntity.date = createIncomeDto.date;
@@ -29,7 +30,7 @@ export class IncomesService {
     )
       .select('MONTH(income.date) as month')
       .addSelect('SUM(income.amount)', 'sum')
-      .where('income.date >= :mydate', { mydate: monthAgo() })
+      .where('income.date >= :mydate', { mydate: this.datesService.monthAgo() })
       .andWhere('income.user_id = :userId', { userId })
       .groupBy('MONTH(income.date)')
       .getRawMany();
@@ -39,18 +40,25 @@ export class IncomesService {
     return { incomes: costs, data: incomesGroupByMonth };
   }
 
-  findOne(id: number): Promise<Income> {
-    return this.IncomeRepository.findOne(id);
+  async findOne(id: number): Promise<Income> {
+    const income = await this.IncomeRepository.findOne(id);
+    if (!income)
+      throw new HttpException('Income not found', HttpStatus.BAD_REQUEST);
+    return income;
   }
 
   async update(id: number, updateIncomeDto: UpdateIncomeDto) {
     const income = await this.IncomeRepository.findOne(id);
-    if (!income) throw new NotFoundException();
+    if (!income)
+      throw new HttpException('Income not found', HttpStatus.BAD_REQUEST);
     const editExpense = Object.assign(income, updateIncomeDto);
     return this.IncomeRepository.save(editExpense);
   }
 
-  remove(id: number) {
-    return this.IncomeRepository.delete(id);
+  async remove(id: number) {
+    const response = await this.IncomeRepository.delete(id);
+    if (response.affected <= 0)
+      throw new HttpException('Income not found', HttpStatus.BAD_REQUEST);
+    return response;
   }
 }
