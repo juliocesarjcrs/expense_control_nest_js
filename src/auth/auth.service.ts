@@ -6,6 +6,7 @@ import { MailService } from 'src/mail/mail.service';
 import { ForgotPasswordDto } from './dto/forgot-password-dto';
 import { CheckCodeDto } from './dto/check-code-dto';
 import { RecoveryPasswordDto } from './dto/recovery-password-dto';
+import { User } from 'src/users/entities/user.entity';
 
 @Injectable()
 export class AuthService {
@@ -40,12 +41,16 @@ export class AuthService {
         HttpStatus.BAD_REQUEST,
       );
     }
-    const payloadSend = { user: userFound, sub: userFound.id };
-    // delete userFound.password;
     return {
-      access_token: this.jwtService.sign(payloadSend),
+      access_token: this.getTokenForUser(userFound),
       user: userFound,
     };
+  }
+  public getTokenForUser(user: User): string {
+    return this.jwtService.sign({
+      user,
+      sub: user.id,
+    });
   }
 
   async forgotPassword(forgotPasswordDto: ForgotPasswordDto) {

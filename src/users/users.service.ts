@@ -17,7 +17,11 @@ export class UsersService {
   }
 
   async findOne(id: number): Promise<User> {
-    return await this.usersRepository.findOne(id);
+    const userFound = await this.usersRepository.findOne(id);
+    if (!userFound) {
+      throw new HttpException('Id not found', HttpStatus.BAD_REQUEST);
+    }
+    return userFound;
   }
   async findOneEmail(email: string): Promise<User | undefined> {
     return await this.usersRepository.findOne({
@@ -25,6 +29,14 @@ export class UsersService {
     });
   }
   async createUser(newUser: CreateUserDto): Promise<User> {
+    const exitsEmail = await this.findOneEmail(newUser.email);
+    if (exitsEmail) {
+      throw new HttpException(
+        'There is already a user with this email',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
     const entityUser = new User();
     entityUser.name = newUser.name;
     entityUser.image = newUser.image;

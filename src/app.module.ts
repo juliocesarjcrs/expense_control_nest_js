@@ -29,7 +29,6 @@ import { IncomesController } from './incomes/incomes.controller';
 import { MailModule } from './mail/mail.module';
 import { DatesModule } from './utils/dates/dates.module';
 import { typeOrmConfigAsync } from './config/typeorm.config';
-console.log(`.env.${process.env.NODE_ENV}`);
 
 @Module({
   imports: [

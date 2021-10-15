@@ -1,33 +1,46 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
-import { IncomesModule } from '../src/incomes/incomes.module';
-import { IncomesService } from '../src/incomes/incomes.service';
-import { getRepositoryToken } from '@nestjs/typeorm';
-import { Income } from 'src/incomes/entities/income.entity';
+import * as fs from 'fs';
+import * as path from 'path';
+
 import { AppModule } from 'src/app.module';
+import { Connection } from 'typeorm';
+import { AuthService } from 'src/auth/auth.service';
+import { userSaved } from './utils/data';
+import { User } from 'src/users/entities/user.entity';
+let app: INestApplication;
+let mod: TestingModule;
+let connection: Connection;
+const loadFixtures = async (sqlFileName: string) => {
+  const sql = fs.readFileSync(
+    path.join(__dirname, 'fixtures', sqlFileName),
+    'utf8',
+  );
+
+  const queryRunner = connection.driver.createQueryRunner('master');
+
+  for (const c of sql.split(';')) {
+    await queryRunner.query(c);
+  }
+};
+
+export const tokenForUser = (user: Partial<User> = userSaved): string => {
+  const res = app.get(AuthService).getTokenForUser(user as User);
+  return res;
+};
 
 describe('IncomesController (e2e)', () => {
-  let app: INestApplication;
-  // const incomesService = { findAll: () => ['test'] };
-  const mockIncomeRepository = {
-    findAll: jest.fn().mockResolvedValue({
-      incomes: ['200000'],
-      data: [{ month: 6, sum: '200000' }],
-    }),
-  };
-
-  beforeEach(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
+  beforeAll(async () => {
+    mod = await Test.createTestingModule({
       imports: [AppModule],
-    })
-      // .overrideProvider(getRepositoryToken(Income))
-      // .useValue(mockIncomeRepository)
-      .compile();
+    }).compile();
 
-    app = moduleFixture.createNestApplication();
-    // app.useGlobalPipes(new ValidationPipe());
+    app = mod.createNestApplication();
     await app.init();
+
+    connection = app.get(Connection);
+    await loadFixtures('1-users.sql');
   });
 
   afterAll(async () => await app.close());
@@ -35,14 +48,16 @@ describe('IncomesController (e2e)', () => {
   it('/incomes (GET)', () => {
     return request(app.getHttpServer())
       .get('/incomes')
-      .set(
-        'Authorization',
-        'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7ImlkIjoxLCJjcmVhdGVkQXQiOiIyMDIxLTA1LTI0VDE2OjE2OjM4LjU3NVoiLCJuYW1lIjoiSlVseSIsImltYWdlIjpudWxsLCJlbWFpbCI6ImNvcnJlb0Bjb3JyZW8uY29tIiwicGFzc3dvcmQiOiIkMmIkMTAkTkRXdksuLmRMNTFOQzlkYnE4UkpRdTFaU3pnUk54d2Y4VVd4MUhZYXRrNkJvbFpSUkF3ZkciLCJyZWNvdmVyeUNvZGUiOjkzNDEsInJvbGUiOjB9LCJzdWIiOjEsImlhdCI6MTYzMjc3Njc2OSwiZXhwIjoxNjQwNTUyNzY5fQ.edPAPJVraAcTlRG9tAmZWBsJ1UdNHALsWM54XmfW9YA',
-      )
+      .set('Authorization', `Bearer ${tokenForUser()}`)
       .expect(200)
       .then((response) => {
-        console.log(' REPOSMS', response.body);
-        expect(response.body.data.length).toBe(1);
+        expect(response.body.data.length).toBe(0);
+        expect(response.body).toEqual(
+          expect.objectContaining({
+            incomes: expect.any(Array),
+            data: expect.any(Array),
+          }),
+        );
       });
   });
 
