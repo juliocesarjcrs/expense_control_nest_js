@@ -1,30 +1,22 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import * as request from 'supertest';
-import * as fs from 'fs';
-import * as path from 'path';
-
 import { AppModule } from 'src/app.module';
 import { Connection } from 'typeorm';
 import { AuthService } from 'src/auth/auth.service';
 import { User } from 'src/users/entities/user.entity';
 import { userSaved } from './utils/data';
+
+import {
+  loadFixtures as loadFixturesBase,
+  // tokenForUser as tokenForUserBase,
+} from './utils/utils';
 let app: INestApplication;
 let mod: TestingModule;
 let connection: Connection;
 
-const loadFixtures = async (sqlFileName: string) => {
-  const sql = fs.readFileSync(
-    path.join(__dirname, 'fixtures', sqlFileName),
-    'utf8',
-  );
-
-  const queryRunner = connection.driver.createQueryRunner('master');
-
-  for (const c of sql.split(';')) {
-    await queryRunner.query(c);
-  }
-};
+const loadFixtures = async (sqlFileName: string) =>
+  loadFixturesBase(connection, sqlFileName);
 const passwordUser2 = '123';
 
 const newUser = {
@@ -165,6 +157,50 @@ describe('UsersController (e2e)', () => {
           expect.objectContaining({
             name: expect.any(String),
             email: expect.any(String),
+            id: expect.any(Number),
+            createdAt: expect.any(String),
+            role: expect.any(Number),
+          }),
+        );
+      });
+  });
+
+  it('/users/:id (PUT) validation error The mail already exists', () => {
+    const dataUddate = {
+      name: 'julio',
+      email: 'user3@correo.com',
+    };
+    return request(app.getHttpServer())
+      .put('/users/1')
+      .send(dataUddate)
+      .set('Authorization', `Bearer ${tokenForUser()}`)
+      .expect(400)
+      .then((response) => {
+        expect(response.body).toEqual(
+          expect.objectContaining({
+            message: 'The mail already exists',
+          }),
+        );
+      });
+  });
+
+  it('/users/:id (PUT) shoud be update user', () => {
+    const dataUpdate = {
+      name: 'julio',
+      email: 'new@correo.com',
+    };
+    return request(app.getHttpServer())
+      .put('/users/1')
+      .send(dataUpdate)
+      .set('Authorization', `Bearer ${tokenForUser()}`)
+      .expect(200)
+      .then((response) => {
+        expect(response.body).toEqual(
+          expect.objectContaining({
+            name: dataUpdate.name,
+            // image: null,
+            email: dataUpdate.email,
+            // recoveryCode: null,
             id: expect.any(Number),
             createdAt: expect.any(String),
             role: expect.any(Number),

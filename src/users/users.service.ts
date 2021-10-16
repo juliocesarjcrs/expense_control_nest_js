@@ -28,6 +28,13 @@ export class UsersService {
       where: { email: email },
     });
   }
+
+  async findAllEmail(email: string): Promise<User[]> {
+    return await this.usersRepository.find({
+      where: { email: email },
+    });
+  }
+
   async createUser(newUser: CreateUserDto): Promise<User> {
     const exitsEmail = await this.findOneEmail(newUser.email);
     if (exitsEmail) {
@@ -52,6 +59,16 @@ export class UsersService {
     const UserFound = await this.usersRepository.findOne(id);
     if (!UserFound)
       throw new HttpException('Id not found', HttpStatus.NOT_FOUND);
+
+    const emailVarios = await this.findAllEmail(UpdatedUserDto.email);
+    if (emailVarios.length === 1) {
+      if (emailVarios[0].id !== id) {
+        throw new HttpException(
+          'The mail already exists',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+    }
     const editUser = Object.assign(UserFound, UpdatedUserDto);
     return this.usersRepository.save(editUser);
   }

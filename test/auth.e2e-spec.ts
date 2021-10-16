@@ -1,27 +1,20 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
-import * as fs from 'fs';
-import * as path from 'path';
-
 import { AppModule } from 'src/app.module';
 import { Connection } from 'typeorm';
+import {
+  loadFixtures as loadFixturesBase,
+  // tokenForUser as tokenForUserBase,
+} from './utils/utils';
+
 let app: INestApplication;
 let mod: TestingModule;
 let connection: Connection;
 let token: string;
-const loadFixtures = async (sqlFileName: string) => {
-  const sql = fs.readFileSync(
-    path.join(__dirname, 'fixtures', sqlFileName),
-    'utf8',
-  );
 
-  const queryRunner = connection.driver.createQueryRunner('master');
-
-  for (const c of sql.split(';')) {
-    await queryRunner.query(c);
-  }
-};
+const loadFixtures = async (sqlFileName: string) =>
+  loadFixturesBase(connection, sqlFileName);
 const passwordUser2 = '123';
 const user2 = {
   email: 'user2@correo.com',
