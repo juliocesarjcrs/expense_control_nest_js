@@ -36,8 +36,9 @@ lerna-debug.log*
 .env.local
 .env.*
 .env
-
+uploads/*
 
 .sonar/
 .scannerwork/
 .sonarlint/
+

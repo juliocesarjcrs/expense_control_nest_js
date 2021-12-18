@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DatesService } from 'src/utils/dates/dates.service';
-import { Between, Repository } from 'typeorm';
+import { Between, Brackets, Repository } from 'typeorm';
 import { CreateExpenseDto } from './dto/create-expense.dto';
 import { UpdateExpenseDto } from './dto/update-expense.dto';
 import { Expense } from './entities/expense.entity';
@@ -80,30 +80,62 @@ export class ExpensesService {
   async findLast(userId: number, query) {
     const take = query.take || 5;
     const page = query.page || 1;
+    const searchValue = query.query || '';
     const skip = (page - 1) * take;
-    const [result, total] = await this.expensesRepository.findAndCount({
-      relations: ['subcategoryId', 'subcategoryId.categoryId'],
-      where: { userId: userId },
-      order: { id: 'DESC' },
-      take,
-      skip,
-    });
+
+    const result = await this.expensesRepository
+      .createQueryBuilder('expense')
+      .andWhere('expense.user_id = :userId', { userId })
+      .leftJoinAndSelect(
+        'subcategory',
+        'subcategory',
+        'subcategory.id = expense.subcategory_id',
+      )
+      .leftJoinAndSelect(
+        'categories',
+        'categories',
+        'categories.id = subcategory.category_id',
+      )
+      .andWhere(
+        new Brackets((qb) => {
+          if (searchValue) {
+            console.log('searchValue---con FILTRO', qb);
+            qb.where('expense.cost like :searchValue', {
+              searchValue: `%${searchValue}%`,
+            })
+              .orWhere('expense.commentary like :searchValue', {
+                searchValue: `%${searchValue}%`,
+              })
+              .orWhere('subcategory.name like :searchValue', {
+                searchValue: `%${searchValue}%`,
+              });
+          } else {
+            qb.where('expense.user_id = :userId', {
+              userId,
+            });
+          }
+        }),
+      )
+      .orderBy('expense.id', 'DESC')
+      .offset(skip)
+      .limit(take)
+      .getRawMany();
 
     const dataTrasform = result.map((e) => {
       return {
-        id: e.id,
-        createdAt: e.createdAt,
-        cost: e.cost,
-        commentary: e.commentary,
-        date: e.date,
-        category: e.subcategoryId.categoryId.name,
-        iconCategory: e.subcategoryId.categoryId.icon,
-        subcategory: e.subcategoryId.name,
+        id: e.expense_id,
+        createdAt: e.expense_created_at,
+        cost: e.expense_cost,
+        commentary: e.expense_commentary,
+        date: e.expense_date,
+        category: e.categories_name,
+        iconCategory: e.categories_icon,
+        subcategory: e.subcategory_name,
       };
     });
+
     return {
       data: dataTrasform,
-      count: total,
     };
   }
 

@@ -16,7 +16,7 @@ export class CreateUserDto {
   @MaxLength(120)
   readonly password: string;
 
-  readonly image: string;
+  image: string;
 
   readonly recoveryCode: number;
 

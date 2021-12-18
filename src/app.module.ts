@@ -29,6 +29,7 @@ import { IncomesController } from './incomes/incomes.controller';
 import { MailModule } from './mail/mail.module';
 import { DatesModule } from './utils/dates/dates.module';
 import { typeOrmConfigAsync } from './config/typeorm.config';
+import { FilesModule } from './files/files.module';
 
 @Module({
   imports: [
@@ -45,6 +46,7 @@ import { typeOrmConfigAsync } from './config/typeorm.config';
     IncomesModule,
     MailModule,
     DatesModule,
+    FilesModule,
   ],
   controllers: [
     AppController,

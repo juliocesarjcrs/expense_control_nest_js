@@ -98,3 +98,18 @@ Ej:
       nest g module utils/dates
   3) Se genera el seervicio
   nest g service utils/dates
+
+
+  // ---------------------- Module Files  --------------------
+
+ 1 Crea la carpeta files
+  2) se genera el módulo
+      nest g module files
+  3)Genero el controllador
+    nest generate controller files
+  3) Se genera el seervicio
+  nest g service files
+
+
+  NOTAS:
+  -Las rutas las dinámicas Ej:  /products/:id.  Se dejan al final de las que no
