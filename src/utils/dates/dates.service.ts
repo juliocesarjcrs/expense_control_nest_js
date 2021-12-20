@@ -6,30 +6,28 @@ moment.locale('es');
 @Injectable()
 export class DatesService {
   startMonth(date): string {
-    const send = moment(date).startOf('month').format('YYYY-MM-DD');
-    return send;
+    return moment(date).startOf('month').format('YYYY-MM-DD');
   }
 
   endMonth(date): string {
-    const send = moment(date).endOf('month').format('YYYY-MM-DD');
-    return send;
+    return moment(date).endOf('month').format('YYYY-MM-DD');
   }
 
   monthAgo(num = 3): string {
-    const send = moment()
+    return moment()
       .subtract(num, 'months')
       .startOf('month')
       .format('YYYY-MM-DD');
-    return send;
   }
 
   endActualyMonth() {
-    const send = moment().endOf('month').format('YYYY-MM-DD');
-    return send;
+    return moment().endOf('month').format('YYYY-MM-DD');
   }
 
   getMonthString(month: number): string {
-    const send = moment(month, 'MM').format('MMMM');
-    return send;
+    return moment(month, 'MM').format('MMMM');
+  }
+  getFormatDate(date: Date, format = 'YYYY-MM-DD'): string {
+    return moment(date).format(format);
   }
 }

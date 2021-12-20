@@ -120,7 +120,6 @@ export class ExpensesService {
       .offset(skip)
       .limit(take)
       .getRawMany();
-
     const dataTrasform = result.map((e) => {
       return {
         id: e.expense_id,
@@ -128,11 +127,13 @@ export class ExpensesService {
         cost: e.expense_cost,
         commentary: e.expense_commentary,
         date: e.expense_date,
+        dateFormat: this.datesService.getFormatDate(e.expense_date),
         category: e.categories_name,
         iconCategory: e.categories_icon,
         subcategory: e.subcategory_name,
       };
     });
+    console.log('dataTrasform', dataTrasform);
 
     return {
       data: dataTrasform,
