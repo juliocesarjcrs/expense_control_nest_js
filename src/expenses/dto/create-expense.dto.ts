@@ -5,7 +5,7 @@ import {
   IsString,
   MaxLength,
 } from 'class-validator';
-import { Subcategory } from 'src/subcategories/entities/subcategory.entity';
+// import { Subcategory } from 'src/subcategories/entities/subcategory.entity';
 
 export class CreateExpenseDto {
   @IsNotEmpty()
@@ -24,5 +24,5 @@ export class CreateExpenseDto {
 
   @IsNotEmpty()
   @IsInt()
-  readonly subcategoryId: Subcategory;
+  readonly subcategoryId: number;
 }

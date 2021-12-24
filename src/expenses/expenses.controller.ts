@@ -23,11 +23,12 @@ export class ExpensesController {
   async create(
     @Body() createExpenseDto: CreateExpenseDto,
     @Request() req,
-    @Res() response,
+    // @Res() response,
   ) {
     createExpenseDto = { ...createExpenseDto, userId: req.user.id };
-    const newExpense = await this.expensesService.create(createExpenseDto);
-    response.status(HttpStatus.CREATED).json(newExpense);
+    return this.expensesService.create(createExpenseDto);
+    // return this.incomesService.create(createIncomeDto);
+    // response.status(HttpStatus.CREATED).json(newExpense);
   }
 
   @Get()

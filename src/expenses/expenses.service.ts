@@ -59,7 +59,7 @@ export class ExpensesService {
     });
   }
 
-  findOne(id: number) {
+  async findOne(id: number) {
     return this.expensesRepository.findOne({
       where: { id },
       relations: ['subcategoryId', 'subcategoryId.categoryId'],
@@ -99,7 +99,6 @@ export class ExpensesService {
       .andWhere(
         new Brackets((qb) => {
           if (searchValue) {
-            console.log('searchValue---con FILTRO', qb);
             qb.where('expense.cost like :searchValue', {
               searchValue: `%${searchValue}%`,
             })
@@ -133,8 +132,6 @@ export class ExpensesService {
         subcategory: e.subcategory_name,
       };
     });
-    console.log('dataTrasform', dataTrasform);
-
     return {
       data: dataTrasform,
     };
@@ -204,7 +201,6 @@ export class ExpensesService {
     const sum = costs.reduce((acu, val) => {
       return acu + val;
     }, 0);
-    const average = costs.length > 0 ? sum / costs.length : 0;
-    return average;
+    return costs.length > 0 ? sum / costs.length : 0;
   }
 }

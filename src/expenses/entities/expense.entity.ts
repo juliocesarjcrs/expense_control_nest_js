@@ -22,5 +22,5 @@ export class Expense extends Content {
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'subcategory_id' })
-  subcategoryId: Subcategory;
+  subcategoryId: number;
 }
