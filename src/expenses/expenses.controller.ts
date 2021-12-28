@@ -20,15 +20,9 @@ export class ExpensesController {
   constructor(private readonly expensesService: ExpensesService) {}
 
   @Post()
-  async create(
-    @Body() createExpenseDto: CreateExpenseDto,
-    @Request() req,
-    // @Res() response,
-  ) {
+  async create(@Body() createExpenseDto: CreateExpenseDto, @Request() req) {
     createExpenseDto = { ...createExpenseDto, userId: req.user.id };
     return this.expensesService.create(createExpenseDto);
-    // return this.incomesService.create(createIncomeDto);
-    // response.status(HttpStatus.CREATED).json(newExpense);
   }
 
   @Get()
@@ -38,6 +32,11 @@ export class ExpensesController {
     response.status(HttpStatus.OK).json(expenses);
   }
 
+  @Get('last/download')
+  async findLastDownload(@Request() req, @Query() query, @Res() response) {
+    const userId = req.user.id;
+    return this.expensesService.findAllDownload(userId, response);
+  }
   @Get('subcategory/:id')
   findAllFromSubcategory(
     @Param('id') id: string,

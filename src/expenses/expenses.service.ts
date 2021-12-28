@@ -5,7 +5,7 @@ import { Between, Brackets, Repository } from 'typeorm';
 import { CreateExpenseDto } from './dto/create-expense.dto';
 import { UpdateExpenseDto } from './dto/update-expense.dto';
 import { Expense } from './entities/expense.entity';
-
+import { downloadResourceCsv } from 'src/utils/helpers/file-helper';
 @Injectable()
 export class ExpensesService {
   constructor(
@@ -202,5 +202,51 @@ export class ExpensesService {
       return acu + val;
     }, 0);
     return costs.length > 0 ? sum / costs.length : 0;
+  }
+
+  async findAllDownload(userId: number, res) {
+    const data = await this.expensesRepository
+      .createQueryBuilder('expense')
+      .andWhere('expense.user_id = :userId', { userId })
+      .leftJoinAndSelect(
+        'subcategory',
+        'subcategory',
+        'subcategory.id = expense.subcategory_id',
+      )
+      .leftJoinAndSelect(
+        'categories',
+        'categories',
+        'categories.id = subcategory.category_id',
+      )
+      .orderBy('expense.id', 'DESC')
+      .getRawMany();
+    const fields = [
+      {
+        label: 'id',
+        value: 'expense_id',
+      },
+      {
+        label: 'cost',
+        value: 'expense_cost',
+      },
+      {
+        label: 'category',
+        value: 'categories_name',
+      },
+      {
+        label: 'subcategory',
+        value: 'subcategory_name',
+      },
+      {
+        label: 'created at',
+        value: 'expense_created_at',
+      },
+      {
+        label: 'date',
+        value: 'expense_date',
+      },
+    ];
+
+    return downloadResourceCsv(res, 'expenses.csv', fields, data);
   }
 }
