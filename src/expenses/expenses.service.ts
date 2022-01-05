@@ -35,6 +35,7 @@ export class ExpensesService {
       })
       .andWhere('expense.user_id = :userId', { userId })
       .groupBy('MONTH(expense.date)')
+      .orderBy('month', 'DESC')
       .getRawMany();
 
     const costs = expensesGroupByMonth.map((e) => e.sum);
@@ -153,7 +154,7 @@ export class ExpensesService {
       .andWhere('expense.user_id = :userId', { userId })
       .andWhere('expense.subcategory_id = :subcategoryId', { subcategoryId })
       .groupBy('MONTH(expense.date)')
-      .orderBy('month')
+      .orderBy('month', 'DESC')
       .getRawMany();
     const costs = expensesOfSubcategoryGroupByMonth.map((e) =>
       parseFloat(e.sum),
@@ -187,7 +188,7 @@ export class ExpensesService {
       .andWhere('expense.user_id = :userId', { userId })
       .andWhere('subcategory.category_id = :categoryId', { categoryId })
       .groupBy('MONTH(expense.date)')
-      .orderBy('month')
+      .orderBy('month', 'DESC')
       .getRawMany();
     const costs = expensesGroupByMonth.map((e) => parseFloat(e.sum));
     const labels = expensesGroupByMonth.map((e) => {
