@@ -147,7 +147,7 @@ export class ExpensesService {
     const numMonths = query.numMonths || 6;
     const expensesOfSubcategoryGroupByMonth = await this.expensesRepository
       .createQueryBuilder('expense')
-      .select('MONTH(expense.date) as month')
+      .select(['MONTH(expense.date) as month', 'YEAR(expense.date) as year'])
       .addSelect('SUM(expense.cost)', 'sum')
       .where('expense.date >= :mydate', {
         mydate: this.datesService.monthAgo(numMonths),
@@ -155,7 +155,9 @@ export class ExpensesService {
       .andWhere('expense.user_id = :userId', { userId })
       .andWhere('expense.subcategory_id = :subcategoryId', { subcategoryId })
       .groupBy('MONTH(expense.date)')
-      .orderBy('month', 'DESC')
+      .addGroupBy('YEAR(expense.date)')
+      .orderBy('YEAR(expense.date)', 'ASC')
+      .addOrderBy('MONTH(expense.date)', 'ASC')
       .getRawMany();
     const costs = expensesOfSubcategoryGroupByMonth.map((e) =>
       parseFloat(e.sum),
@@ -180,7 +182,7 @@ export class ExpensesService {
     const numMonths = query.numMonths || 6;
     const expensesGroupByMonth = await this.expensesRepository
       .createQueryBuilder('expense')
-      .select('MONTH(expense.date) as month')
+      .select(['MONTH(expense.date) as month', 'YEAR(expense.date) as year'])
       .leftJoin('expense.subcategoryId', 'subcategory')
       .addSelect('SUM(expense.cost)', 'sum')
       .where('expense.date >= :mydate', {
@@ -189,7 +191,9 @@ export class ExpensesService {
       .andWhere('expense.user_id = :userId', { userId })
       .andWhere('subcategory.category_id = :categoryId', { categoryId })
       .groupBy('MONTH(expense.date)')
-      .orderBy('month', 'DESC')
+      .addGroupBy('YEAR(expense.date)')
+      .orderBy('YEAR(expense.date)', 'ASC')
+      .addOrderBy('MONTH(expense.date)', 'ASC')
       .getRawMany();
     const costs = expensesGroupByMonth.map((e) => parseFloat(e.sum));
     const labels = expensesGroupByMonth.map((e) => {
