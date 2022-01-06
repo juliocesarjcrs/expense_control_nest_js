@@ -164,7 +164,9 @@ describe('ExpensesService', () => {
         },
       ];
     });
-    const response = await service.findAll(1);
+    const response = await service.findAll(1, {
+      numMonths: 4,
+    });
     expect(response).toEqual(expected);
     expect(response).toEqual(
       expect.objectContaining({

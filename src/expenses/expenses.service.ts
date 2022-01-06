@@ -25,13 +25,14 @@ export class ExpensesService {
     return this.expensesRepository.save(ExpenseEntity);
   }
 
-  async findAll(userId: number) {
+  async findAll(userId: number, query: { numMonths: number }) {
+    const numMonths = query.numMonths || 4;
     const expensesGroupByMonth = await this.expensesRepository
       .createQueryBuilder('expense')
       .select(['MONTH(expense.date) as month', 'YEAR(expense.date) as year'])
       .addSelect('SUM(expense.cost)', 'sum')
       .where('expense.date >= :mydate', {
-        mydate: this.datesService.monthAgo(),
+        mydate: this.datesService.monthAgo(numMonths),
       })
       .andWhere('expense.user_id = :userId', { userId })
       .groupBy('MONTH(expense.date)')

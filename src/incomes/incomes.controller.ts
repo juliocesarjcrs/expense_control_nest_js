@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   Request,
+  Query,
 } from '@nestjs/common';
 import { IncomesService } from './incomes.service';
 import { CreateIncomeDto } from './dto/create-income.dto';
@@ -23,9 +24,9 @@ export class IncomesController {
   }
 
   @Get()
-  findAll(@Request() req) {
+  findAll(@Request() req, @Query() query) {
     const userId = req.user.id;
-    return this.incomesService.findAll(userId);
+    return this.incomesService.findAll(userId, query);
   }
 
   @Get(':id')

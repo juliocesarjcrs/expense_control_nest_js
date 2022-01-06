@@ -24,13 +24,16 @@ export class IncomesService {
     return this.IncomeRepository.save(IncomeEntity);
   }
 
-  async findAll(userId: number) {
+  async findAll(userId: number, query: { numMonths: number }) {
+    const numMonths = query.numMonths || 4;
     const incomesGroupByMonth = await this.IncomeRepository.createQueryBuilder(
       'income',
     )
       .select('MONTH(income.date) as month')
       .addSelect('SUM(income.amount)', 'sum')
-      .where('income.date >= :mydate', { mydate: this.datesService.monthAgo() })
+      .where('income.date >= :mydate', {
+        mydate: this.datesService.monthAgo(numMonths),
+      })
       .andWhere('income.user_id = :userId', { userId })
       .groupBy('MONTH(income.date)')
       .addGroupBy('YEAR(income.date)')

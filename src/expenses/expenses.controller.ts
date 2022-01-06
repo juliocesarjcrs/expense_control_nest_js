@@ -26,9 +26,9 @@ export class ExpensesController {
   }
 
   @Get()
-  async findAll(@Request() req, @Res() response) {
+  async findAll(@Request() req, @Query() query, @Res() response) {
     const userId = req.user.id;
-    const expenses = await this.expensesService.findAll(userId);
+    const expenses = await this.expensesService.findAll(userId, query);
     response.status(HttpStatus.OK).json(expenses);
   }
 
