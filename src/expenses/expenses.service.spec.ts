@@ -11,8 +11,10 @@ describe('ExpensesService', () => {
   const whereSpy = jest.fn().mockReturnThis();
   const andWhereSpy = jest.fn().mockReturnThis();
   const groupBySpy = jest.fn().mockReturnThis();
+  const addGroupBySpy = jest.fn().mockReturnThis();
   const leftJoinAndSelectSpy = jest.fn().mockReturnThis();
   const orderBySpy = jest.fn().mockReturnThis();
+  const addOrderBySpy = jest.fn().mockReturnThis();
   const offsetSpy = jest.fn().mockReturnThis();
   const limitSpy = jest.fn().mockReturnThis();
   const getRawManySpy = jest.fn();
@@ -68,9 +70,11 @@ describe('ExpensesService', () => {
       andWhere: andWhereSpy,
       leftJoinAndSelect: leftJoinAndSelectSpy,
       orderBy: orderBySpy,
+      addOrderBy: addOrderBySpy,
       offset: offsetSpy,
       limit: limitSpy,
       groupBy: groupBySpy,
+      addGroupBy: addGroupBySpy,
       getRawMany: getRawManySpy,
     })),
   };

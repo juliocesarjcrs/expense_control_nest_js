@@ -28,16 +28,17 @@ export class ExpensesService {
   async findAll(userId: number) {
     const expensesGroupByMonth = await this.expensesRepository
       .createQueryBuilder('expense')
-      .select('MONTH(expense.date) as month')
+      .select(['MONTH(expense.date) as month', 'YEAR(expense.date) as year'])
       .addSelect('SUM(expense.cost)', 'sum')
       .where('expense.date >= :mydate', {
         mydate: this.datesService.monthAgo(),
       })
       .andWhere('expense.user_id = :userId', { userId })
       .groupBy('MONTH(expense.date)')
-      .orderBy('month', 'DESC')
+      .addGroupBy('YEAR(expense.date)')
+      .orderBy('YEAR(expense.date)', 'ASC')
+      .addOrderBy('MONTH(expense.date)', 'ASC')
       .getRawMany();
-
     const costs = expensesGroupByMonth.map((e) => e.sum);
     const labels = expensesGroupByMonth.map((e) => {
       return this.datesService.getMonthString(e.month);

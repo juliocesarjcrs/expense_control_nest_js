@@ -33,7 +33,9 @@ export class IncomesService {
       .where('income.date >= :mydate', { mydate: this.datesService.monthAgo() })
       .andWhere('income.user_id = :userId', { userId })
       .groupBy('MONTH(income.date)')
-      .orderBy('month', 'DESC')
+      .addGroupBy('YEAR(income.date)')
+      .orderBy('YEAR(income.date)', 'ASC')
+      .addOrderBy('MONTH(income.date)', 'ASC')
       .getRawMany();
 
     const costs = incomesGroupByMonth.map((e) => e.sum);

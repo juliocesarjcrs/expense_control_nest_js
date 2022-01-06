@@ -11,7 +11,9 @@ describe('IncomesService', () => {
   const whereSpy = jest.fn().mockReturnThis();
   const andWhereSpy = jest.fn().mockReturnThis();
   const groupBySpy = jest.fn().mockReturnThis();
+  const addGroupBySpy = jest.fn().mockReturnThis();
   const orderBySpy = jest.fn().mockReturnThis();
+  const addOrderBySpy = jest.fn().mockReturnThis();
   const getRawManySpy = jest
     .fn()
     .mockReturnValueOnce([{ month: 6, sum: '200000' }]);
@@ -53,6 +55,8 @@ describe('IncomesService', () => {
       andWhere: andWhereSpy,
       groupBy: groupBySpy,
       orderBy: orderBySpy,
+      addOrderBy: addOrderBySpy,
+      addGroupBy: addGroupBySpy,
       getRawMany: getRawManySpy,
     })),
   };
