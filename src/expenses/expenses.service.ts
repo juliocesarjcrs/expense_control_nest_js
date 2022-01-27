@@ -44,7 +44,12 @@ export class ExpensesService {
     const labels = expensesGroupByMonth.map((e) => {
       return this.datesService.getMonthString(e.month);
     });
-    return { graph: costs, labels, data: expensesGroupByMonth };
+    return {
+      graph: costs,
+      labels,
+      data: expensesGroupByMonth,
+      average: this.calculateAverage(costs),
+    };
   }
 
   async findAllFromSubcategory(userId: number, subcategoryId: number, query) {
@@ -206,7 +211,7 @@ export class ExpensesService {
 
   calculateAverage(costs: any[]): number {
     const sum = costs.reduce((acu, val) => {
-      return acu + val;
+      return acu + parseFloat(val);
     }, 0);
     return costs.length > 0 ? sum / costs.length : 0;
   }

@@ -43,7 +43,18 @@ export class IncomesService {
 
     const costs = incomesGroupByMonth.map((e) => e.sum);
 
-    return { incomes: costs, data: incomesGroupByMonth };
+    return {
+      incomes: costs,
+      data: incomesGroupByMonth,
+      average: this.calculateAverage(costs),
+    };
+  }
+
+  calculateAverage(costs: any[]): number {
+    const sum = costs.reduce((acu, val) => {
+      return acu + parseFloat(val);
+    }, 0);
+    return costs.length > 0 ? sum / costs.length : 0;
   }
 
   async findOne(id: number): Promise<Income> {
