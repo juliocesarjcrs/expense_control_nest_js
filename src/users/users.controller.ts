@@ -9,6 +9,7 @@ import {
   Res,
   UploadedFile,
   UseInterceptors,
+  Req,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user-dto';
@@ -16,6 +17,9 @@ import { Public } from 'src/utils/decorators/custumDecorators';
 import { ChangePasswordDto } from './dto/change-password-dto';
 import { UpdatedUserDto } from './dto/updated-user-dto';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { createReadStream } from 'fs';
+import { join } from 'path';
+import { Request, Response } from 'express';
 
 @Controller('users')
 export class UsersController {
@@ -55,7 +59,6 @@ export class UsersController {
     @Param('id') id: number,
     @Body() updatedUserDto: UpdatedUserDto,
   ) {
-    console.log('image post', image);
     if (image) {
       updatedUserDto.image = image.path;
     }
@@ -65,5 +68,16 @@ export class UsersController {
   @Put('change-password/:id')
   update(@Param('id') id: string, @Body() data: ChangePasswordDto) {
     return this.userService.changePassword(id, data);
+  }
+
+  @Put('voice/recording/son')
+  @UseInterceptors(FileInterceptor('file', {}))
+  uploadFile(
+    @Res() res,
+    @UploadedFile() file: Express.Multer.File,
+    @Req() req: Request,
+  ) {
+    return ['algo 2'];
+    // return this.filesService.saveFile(res, file, req);
   }
 }

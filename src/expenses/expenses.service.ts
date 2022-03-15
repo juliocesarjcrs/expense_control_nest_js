@@ -165,16 +165,30 @@ export class ExpensesService {
       .orderBy('YEAR(expense.date)', 'ASC')
       .addOrderBy('MONTH(expense.date)', 'ASC')
       .getRawMany();
-    const costs = expensesOfSubcategoryGroupByMonth.map((e) =>
-      parseFloat(e.sum),
+    const arrayIdxMonths = this.datesService.getPreviosMonthsLabelsIndex(
+      numMonths,
     );
-    const labels = expensesOfSubcategoryGroupByMonth.map((e) => {
-      return this.datesService.getMonthString(e.month);
+    const expenses = [];
+    arrayIdxMonths.index.forEach((element) => {
+      const found = expensesOfSubcategoryGroupByMonth.some(
+        (a) => a.month == element,
+      );
+      if (found) {
+        let myCost = 0;
+        expensesOfSubcategoryGroupByMonth.map((e) => {
+          if (e.month === element) {
+            myCost = e.sum;
+          }
+        });
+        expenses.push(myCost);
+      } else {
+        expenses.push(0);
+      }
     });
-    const average = this.calculateAverage(costs);
+    const average = this.calculateAverage(expenses);
     return {
-      graph: costs,
-      labels,
+      graph: expenses,
+      labels: arrayIdxMonths.labels,
       data: expensesOfSubcategoryGroupByMonth,
       average,
     };
@@ -201,12 +215,26 @@ export class ExpensesService {
       .orderBy('YEAR(expense.date)', 'ASC')
       .addOrderBy('MONTH(expense.date)', 'ASC')
       .getRawMany();
-    const costs = expensesGroupByMonth.map((e) => parseFloat(e.sum));
-    const labels = expensesGroupByMonth.map((e) => {
-      return this.datesService.getMonthString(e.month);
+    const arrayIdxMonths = this.datesService.getPreviosMonthsLabelsIndex(
+      numMonths,
+    );
+    const expenses = [];
+    arrayIdxMonths.index.forEach((element) => {
+      const found = expensesGroupByMonth.some((a) => a.month == element);
+      if (found) {
+        let myCost = 0;
+        expensesGroupByMonth.map((e) => {
+          if (e.month === element) {
+            myCost = e.sum;
+          }
+        });
+        expenses.push(myCost);
+      } else {
+        expenses.push(0);
+      }
     });
-    const average = this.calculateAverage(costs);
-    return { graph: costs, labels, average };
+    const average = this.calculateAverage(expenses);
+    return { graph: expenses, labels: arrayIdxMonths.labels, average };
   }
 
   calculateAverage(costs: any[]): number {

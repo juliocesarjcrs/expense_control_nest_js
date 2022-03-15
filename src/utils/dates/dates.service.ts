@@ -30,4 +30,23 @@ export class DatesService {
   getFormatDate(date: Date, format = 'YYYY-MM-DD'): string {
     return moment(date).format(format);
   }
+
+  actualyMonth() {
+    return {
+      endMonth: moment().endOf('month').format('YYYY-MM-DD'),
+      numMonth: moment().month(),
+    };
+  }
+
+  getPreviosMonthsLabelsIndex(take: number) {
+    const index = [];
+    const labels = [];
+    const dateStart = moment().subtract(take, 'months').startOf('month');
+    for (let i = 0; i < take; i++) {
+      const a = dateStart.add(1, 'months').month() + 1;
+      index.push(a);
+      labels.push(moment(a, 'MM').format('MMMM'));
+    }
+    return { index, labels };
+  }
 }
