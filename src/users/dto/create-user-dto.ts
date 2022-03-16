@@ -19,6 +19,6 @@ export class CreateUserDto {
   image: string;
 
   readonly recoveryCode: number;
-
+  @IsString()
   readonly role: number;
 }

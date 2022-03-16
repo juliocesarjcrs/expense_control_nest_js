@@ -35,6 +35,7 @@ export class UsersController {
   ) {
     console.log(image);
     if (image) {
+      console.log('detectó imagen');
       createUserDto.image = image.path;
     }
     const user = await this.userService.createUser(createUserDto);

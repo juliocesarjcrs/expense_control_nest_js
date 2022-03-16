@@ -165,9 +165,8 @@ export class ExpensesService {
       .orderBy('YEAR(expense.date)', 'ASC')
       .addOrderBy('MONTH(expense.date)', 'ASC')
       .getRawMany();
-    const arrayIdxMonths = this.datesService.getPreviosMonthsLabelsIndex(
-      numMonths,
-    );
+    const arrayIdxMonths =
+      this.datesService.getPreviosMonthsLabelsIndex(numMonths);
     const expenses = [];
     arrayIdxMonths.index.forEach((element) => {
       const found = expensesOfSubcategoryGroupByMonth.some(
@@ -215,9 +214,8 @@ export class ExpensesService {
       .orderBy('YEAR(expense.date)', 'ASC')
       .addOrderBy('MONTH(expense.date)', 'ASC')
       .getRawMany();
-    const arrayIdxMonths = this.datesService.getPreviosMonthsLabelsIndex(
-      numMonths,
-    );
+    const arrayIdxMonths =
+      this.datesService.getPreviosMonthsLabelsIndex(numMonths);
     const expenses = [];
     arrayIdxMonths.index.forEach((element) => {
       const found = expensesGroupByMonth.some((a) => a.month == element);
