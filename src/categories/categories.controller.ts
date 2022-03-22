@@ -62,10 +62,8 @@ export class CategoriesController {
   async findAllTypeIncome(@Res() response, @Request() req, @Query() query) {
     try {
       const userId = req.user.id;
-      const listCategoriesIncomes = await this.categoryService.findAllTypeIncome(
-        userId,
-        query,
-      );
+      const listCategoriesIncomes =
+        await this.categoryService.findAllTypeIncome(userId, query);
       response.status(HttpStatus.OK).json(listCategoriesIncomes);
     } catch (error) {
       response

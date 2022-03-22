@@ -15,6 +15,9 @@ export class Category extends Content {
   @Column('tinyint', { default: 0, comment: '0-Gastos, 1-Ingresos' })
   type: number;
 
+  @Column('int', { default: 0 })
+  budget: number;
+
   @ManyToOne(() => User, { nullable: false })
   @JoinColumn({ name: 'user_id' })
   userId: number;

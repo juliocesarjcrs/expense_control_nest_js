@@ -12,6 +12,9 @@ export class CreateCategoryDto {
   @IsOptional()
   readonly type: number;
 
+  @IsOptional()
+  readonly budget: number;
+
   readonly userId: number;
   // @IsInt()
   // // @Validate(IsUserAlreadyExist)

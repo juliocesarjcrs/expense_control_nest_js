@@ -21,7 +21,7 @@ export class CategoriesService {
     CategoryEntity.icon = createCategoryDto.icon;
     CategoryEntity.userId = createCategoryDto.userId;
     CategoryEntity.type = createCategoryDto.type;
-
+    CategoryEntity.budget = createCategoryDto.budget;
     return this.categoriesRepository.save(CategoryEntity);
   }
   async findAll(userId: number, query) {
