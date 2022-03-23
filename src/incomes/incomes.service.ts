@@ -42,11 +42,16 @@ export class IncomesService {
       .getRawMany();
 
     const costs = incomesGroupByMonth.map((e) => e.sum);
+    const previosExpenses = costs.slice(0);
+    previosExpenses.pop();
+
+    const previosAverage = this.calculateAverage(previosExpenses);
 
     return {
       incomes: costs,
       data: incomesGroupByMonth,
       average: this.calculateAverage(costs),
+      previosAverage,
     };
   }
 

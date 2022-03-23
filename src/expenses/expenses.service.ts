@@ -44,11 +44,16 @@ export class ExpensesService {
     const labels = expensesGroupByMonth.map((e) => {
       return this.datesService.getMonthString(e.month);
     });
+    const previosExpenses = costs.slice(0);
+    previosExpenses.pop();
+
+    const previosAverage = this.calculateAverage(previosExpenses);
     return {
       graph: costs,
       labels,
       data: expensesGroupByMonth,
       average: this.calculateAverage(costs),
+      previosAverage,
     };
   }
 
@@ -184,12 +189,17 @@ export class ExpensesService {
         expenses.push(0);
       }
     });
+    const previosExpenses = expenses.slice(0);
+    previosExpenses.pop();
     const average = this.calculateAverage(expenses);
+    const previosAverage = this.calculateAverage(previosExpenses);
+
     return {
       graph: expenses,
       labels: arrayIdxMonths.labels,
       data: expensesOfSubcategoryGroupByMonth,
       average,
+      previosAverage,
     };
   }
 
@@ -231,8 +241,16 @@ export class ExpensesService {
         expenses.push(0);
       }
     });
+    const previosExpenses = expenses.slice(0);
+    previosExpenses.pop();
     const average = this.calculateAverage(expenses);
-    return { graph: expenses, labels: arrayIdxMonths.labels, average };
+    const previosAverage = this.calculateAverage(previosExpenses);
+    return {
+      graph: expenses,
+      labels: arrayIdxMonths.labels,
+      average,
+      previosAverage,
+    };
   }
 
   calculateAverage(costs: any[]): number {
