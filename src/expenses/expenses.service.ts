@@ -193,6 +193,9 @@ export class ExpensesService {
     previosExpenses.pop();
     const average = this.calculateAverage(expenses);
     const previosAverage = this.calculateAverage(previosExpenses);
+    const sum = expenses.reduce((acu, val) => {
+      return acu + parseFloat(val);
+    }, 0);
 
     return {
       graph: expenses,
@@ -200,6 +203,7 @@ export class ExpensesService {
       data: expensesOfSubcategoryGroupByMonth,
       average,
       previosAverage,
+      sum,
     };
   }
 

@@ -19,7 +19,7 @@ import { AuthController } from './auth.controller';
     PassportModule,
     JwtModule.register({
       secret: jwtConstants.secret,
-      signOptions: { expiresIn: '90d' },
+      signOptions: { expiresIn: '180d' },
     }),
     TypeOrmModule.forFeature([User, Category]),
     MailModule,
