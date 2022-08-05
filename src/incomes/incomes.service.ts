@@ -1,7 +1,7 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DatesService } from 'src/utils/dates/dates.service';
-import { Repository } from 'typeorm';
+import { Repository, Brackets } from 'typeorm';
 import { CreateIncomeDto } from './dto/create-income.dto';
 import { UpdateIncomeDto } from './dto/update-income.dto';
 import { Income } from './entities/income.entity';
@@ -67,6 +67,59 @@ export class IncomesService {
     if (!income)
       throw new HttpException('Income not found', HttpStatus.BAD_REQUEST);
     return income;
+  }
+
+  async findLast(userId: number, query) {
+    const take = query.take || 5;
+    const page = query.page || 1;
+    const searchValue = query.query || '';
+    const skip = (page - 1) * take;
+    const result = await this.IncomeRepository.createQueryBuilder('income')
+      .andWhere('income.user_id = :userId', { userId })
+      .leftJoinAndSelect(
+        'categories',
+        'categories',
+        'categories.id = income.category_id',
+      )
+      .andWhere(
+        new Brackets((qb) => {
+          if (searchValue) {
+            qb.where('income.amount like :searchValue', {
+              searchValue: `%${searchValue}%`,
+            })
+              .orWhere('income.commentary like :searchValue', {
+                searchValue: `%${searchValue}%`,
+              })
+              .orWhere('categories.name like :searchValue', {
+                searchValue: `%${searchValue}%`,
+              });
+          } else {
+            qb.where('income.user_id = :userId', {
+              userId,
+            });
+          }
+        }),
+      )
+      .orderBy('income.id', 'DESC')
+      .offset(skip)
+      .limit(take)
+      .getRawMany();
+    const dataTrasform = result.map((e) => {
+      return {
+        id: e.income_id,
+        createdAt: e.income_created_at,
+        cost: e.income_amount,
+        commentary: e.income_commentary,
+        date: e.income_date,
+        dateFormat: this.datesService.getFormatDate(e.income_date),
+        category: e.categories_name,
+        idCategory: e.categories_id,
+        iconCategory: e.categories_icon,
+      };
+    });
+    return {
+      data: dataTrasform,
+    };
   }
 
   async update(id: number, updateIncomeDto: UpdateIncomeDto) {

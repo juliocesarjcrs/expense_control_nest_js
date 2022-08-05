@@ -8,6 +8,8 @@ import {
   Delete,
   Request,
   Query,
+  Res,
+  HttpStatus,
 } from '@nestjs/common';
 import { IncomesService } from './incomes.service';
 import { CreateIncomeDto } from './dto/create-income.dto';
@@ -27,6 +29,13 @@ export class IncomesController {
   findAll(@Request() req, @Query() query) {
     const userId = req.user.id;
     return this.incomesService.findAll(userId, query);
+  }
+
+  @Get('last')
+  async findLast(@Request() req, @Query() query, @Res() response) {
+    const userId = req.user.id;
+    const incomes = await this.incomesService.findLast(userId, query);
+    response.status(HttpStatus.OK).json(incomes);
   }
 
   @Get(':id')
