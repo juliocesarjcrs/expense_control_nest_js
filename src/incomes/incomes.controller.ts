@@ -38,6 +38,22 @@ export class IncomesController {
     response.status(HttpStatus.OK).json(incomes);
   }
 
+  @Get('category/:id')
+  async findLastMonthsFromOnlyCategory(
+    @Param('id') id: string,
+    @Request() req,
+    @Query() query,
+    @Res() response,
+  ) {
+    const userId = req.user.id;
+    const incomes = await this.incomesService.findLastMonthsFromOnlyCategory(
+      userId,
+      +id,
+      query,
+    );
+    response.status(HttpStatus.OK).json(incomes);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.incomesService.findOne(+id);

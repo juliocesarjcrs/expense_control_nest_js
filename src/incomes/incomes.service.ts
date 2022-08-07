@@ -42,10 +42,10 @@ export class IncomesService {
       .getRawMany();
 
     const costs = incomesGroupByMonth.map((e) => e.sum);
-    const previosExpenses = costs.slice(0);
-    previosExpenses.pop();
+    const previosIncomes = costs.slice(0);
+    previosIncomes.pop();
 
-    const previosAverage = this.calculateAverage(previosExpenses);
+    const previosAverage = this.calculateAverage(previosIncomes);
 
     return {
       incomes: costs,
@@ -126,8 +126,8 @@ export class IncomesService {
     const income = await this.IncomeRepository.findOne(id);
     if (!income)
       throw new HttpException('Income not found', HttpStatus.BAD_REQUEST);
-    const editExpense = Object.assign(income, updateIncomeDto);
-    return this.IncomeRepository.save(editExpense);
+    const editIncome = Object.assign(income, updateIncomeDto);
+    return this.IncomeRepository.save(editIncome);
   }
 
   async remove(id: number) {
@@ -135,5 +135,60 @@ export class IncomesService {
     if (response.affected <= 0)
       throw new HttpException('Income not found', HttpStatus.BAD_REQUEST);
     return response;
+  }
+
+  async findLastMonthsFromOnlyCategory(
+    userId: number,
+    categoryId: number,
+    query: { numMonths: number },
+  ) {
+    const numMonths = query.numMonths || 6;
+    const incomesGroupByMonth = await this.IncomeRepository.createQueryBuilder(
+      'income',
+    )
+      .select(['MONTH(income.date) as month', 'YEAR(income.date) as year'])
+      .leftJoin('income.categoryId', 'category')
+      .addSelect('SUM(income.amount)', 'sum')
+      .where('income.date >= :mydate', {
+        mydate: this.datesService.monthAgo(numMonths),
+      })
+      .andWhere('income.user_id = :userId', { userId })
+      .andWhere('category.id = :categoryId', { categoryId })
+      .groupBy('MONTH(income.date)')
+      .addGroupBy('YEAR(income.date)')
+      .orderBy('YEAR(income.date)', 'ASC')
+      .addOrderBy('MONTH(income.date)', 'ASC')
+      .getRawMany();
+    const arrayIdxMonths =
+      this.datesService.getPreviosMonthsLabelsIndex(numMonths);
+    const incomes = [];
+    arrayIdxMonths.index.forEach((element) => {
+      const found = incomesGroupByMonth.some((a) => a.month == element);
+      if (found) {
+        let myCost = 0;
+        incomesGroupByMonth.forEach((e) => {
+          if (e.month === element) {
+            myCost = e.sum;
+          }
+        });
+        incomes.push(myCost);
+      } else {
+        incomes.push(0);
+      }
+    });
+    const previosIncomes = incomes.slice(0);
+    previosIncomes.pop();
+    const average = this.calculateAverage(incomes);
+    const previosAverage = this.calculateAverage(previosIncomes);
+    const sum = incomes.reduce((acu, val) => {
+      return acu + parseFloat(val);
+    }, 0);
+    return {
+      graph: incomes,
+      labels: arrayIdxMonths.labels,
+      average,
+      previosAverage,
+      sum,
+    };
   }
 }
