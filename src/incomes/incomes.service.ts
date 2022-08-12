@@ -29,7 +29,7 @@ export class IncomesService {
     const incomesGroupByMonth = await this.IncomeRepository.createQueryBuilder(
       'income',
     )
-      .select('MONTH(income.date) as month')
+      .select(['MONTH(income.date) as month', 'YEAR(income.date) as year'])
       .addSelect('SUM(income.amount)', 'sum')
       .where('income.date >= :mydate', {
         mydate: this.datesService.monthAgo(numMonths),
