@@ -28,6 +28,12 @@
 
 ## Installation
 
+- Copy o rename the file env.example as `.env.local`
+- Set new environment Variables,
+for local DB_HOST should be `DB_HOST=localhost`,
+with Docker DB_HOST should be `DB_HOST=db`
+
+
 ```bash
 $ npm install
 ```
@@ -57,7 +63,19 @@ $ npm run test:e2e
 # test coverage
 $ npm run test:cov
 ```
+## Running with Docker
+Note: Made with Docker version 20.10.17 and
+Docker Compose version v2.6.0
+- Run in development
+```bash
+$ docker compose up dev
+```
+Open url:
 
+http://0.0.0.0:3000/
+
+For open phpMyAdmin
+http://0.0.0.0:3000/
 ## Support
 
 Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).

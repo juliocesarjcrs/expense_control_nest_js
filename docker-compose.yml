@@ -1,6 +1,39 @@
 version: '3.9'
-
 services:
+    admin:
+        image: phpmyadmin/phpmyadmin:latest
+        links:
+            # - db:${MYSQL_HOST}
+            - db:mysql
+        depends_on:
+            - db
+        ports:
+            - "8080:80"
+        # environment:
+        #     MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+        #     PMA_HOST: ${MYSQL_HOST}
+        #     PMA_PORT: ${MYSQL_PORT}
+        env_file:
+            - .env.local
+        networks:
+            - nesjs-network
+    db:
+        build: ./database
+        image: mysql:5.7
+        container_name: mydb_nestjs
+        volumes:
+            - ./database/data:/var/lib/mysql
+        ports:
+            # - "3308:3308"
+            - "${MYSQL_PORT}:3308"
+        # environment:
+        #     MYSQL_TCP_PORT: ${MYSQL_PORT}
+        #     MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+        #     MYSQL_DATABASE: ${MYSQL_DB_NAME}
+        env_file:
+            - .env.local
+        networks:
+            - nesjs-network
     dev:
         container_name: nestjs_api_dev
         image: nestjs-api-dev:1.0.0
@@ -11,12 +44,20 @@ services:
         command: npm run start:debug
         ports:
             - 3000:4000
+            # - 3000:${PORT}
             - 9229:9229
         networks:
             - nesjs-network
         volumes:
             - .:/usr/src/app
             - /usr/src/app/node_modules
+        links:
+            - db:${MYSQL_HOST}
+        depends_on:
+            - db
+            - admin
+        env_file:
+            - .env.local
         restart: unless-stopped
     prod:
         container_name: nestjs_api_prod

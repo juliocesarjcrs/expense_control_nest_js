@@ -42,3 +42,6 @@ uploads/*
 .scannerwork/
 .sonarlint/
 
+# Docker
+/database
+
