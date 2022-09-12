@@ -18,9 +18,12 @@ export class Category extends Content {
   @Column('int', { default: 0 })
   budget: number;
 
+  @Column({ name: 'user_id' , nullable: false })
+  userId: number
+
   @ManyToOne(() => User, { nullable: false })
   @JoinColumn({ name: 'user_id' })
-  userId: number;
+  user: number;
 
   @OneToMany(() => Subcategory, (subcategory) => subcategory.categoryId, {
     cascade: true,
