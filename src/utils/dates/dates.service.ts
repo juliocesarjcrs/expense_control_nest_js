@@ -5,12 +5,14 @@ moment.locale('es');
 
 @Injectable()
 export class DatesService {
-  startMonth(date): string {
-    return moment(date).startOf('month').format('YYYY-MM-DD');
+  startMonth(date: string): Date {
+    let mydate = moment(date).startOf('month').format('YYYY-MM-DD');
+    return new Date(mydate);
   }
 
-  endMonth(date): string {
-    return moment(date).endOf('month').format('YYYY-MM-DD');
+  endMonth(date: string): Date {
+    let mydate = moment(date).endOf('month').format('YYYY-MM-DD');
+    return new Date(mydate);
   }
 
   monthAgo(num = 3): string {

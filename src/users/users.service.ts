@@ -17,7 +17,7 @@ export class UsersService {
   }
 
   async findOne(id: number): Promise<User> {
-    const userFound = await this.usersRepository.findOne(id);
+    const userFound = await this.usersRepository.findOne({where: {id: id}});
     if (!userFound) {
       throw new HttpException('Id not found', HttpStatus.BAD_REQUEST);
     }
@@ -56,7 +56,7 @@ export class UsersService {
   }
 
   async update(id: number, UpdatedUserDto: UpdatedUserDto): Promise<User> {
-    const UserFound = await this.usersRepository.findOne(id);
+    const UserFound = await this.usersRepository.findOne({where: {id: id}});
     if (!UserFound)
       throw new HttpException('Id not found', HttpStatus.NOT_FOUND);
 

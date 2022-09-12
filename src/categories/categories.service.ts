@@ -78,11 +78,11 @@ export class CategoriesService {
   }
 
   async findOne(id: number): Promise<Category> {
-    return this.categoriesRepository.findOne(id);
+    return this.categoriesRepository.findOne({where: {id: id}});
   }
 
   async update(id: number, updateCategoryDto: UpdateCategoryDto) {
-    const category = await this.categoriesRepository.findOne(id);
+    const category = await this.categoriesRepository.findOne({where: {id: id}});
     if (!category)
       throw new HttpException('Id not fount', HttpStatus.NOT_FOUND);
     const editCategory = Object.assign(category, updateCategoryDto);

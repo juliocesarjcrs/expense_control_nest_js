@@ -63,7 +63,7 @@ export class IncomesService {
   }
 
   async findOne(id: number): Promise<Income> {
-    const income = await this.IncomeRepository.findOne(id);
+    const income = await this.IncomeRepository.findOne({where: {id: id}});
     if (!income)
       throw new HttpException('Income not found', HttpStatus.BAD_REQUEST);
     return income;
@@ -123,7 +123,7 @@ export class IncomesService {
   }
 
   async update(id: number, updateIncomeDto: UpdateIncomeDto) {
-    const income = await this.IncomeRepository.findOne(id);
+    const income = await this.IncomeRepository.findOne({where: {id: id}});
     if (!income)
       throw new HttpException('Income not found', HttpStatus.BAD_REQUEST);
     const editIncome = Object.assign(income, updateIncomeDto);

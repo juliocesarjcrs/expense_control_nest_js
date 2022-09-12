@@ -80,7 +80,7 @@ export class ExpensesService {
   }
 
   async update(id: number, updateExpenseDto: UpdateExpenseDto) {
-    const expense = await this.expensesRepository.findOne(id);
+    const expense = await this.expensesRepository.findOne({where: {id: id}});
     if (!expense) throw new NotFoundException();
     const editExpense = Object.assign(expense, updateExpenseDto);
     return this.expensesRepository.save(editExpense);
