@@ -31,7 +31,7 @@ export class SubcategoriesService {
   async findAllByCategory(idCategory: number) {
     return await this.subcategoriesRepository.find({
       where: { categoryId: Equal(idCategory) },
-      relations: ['expenses', 'categoryId'],
+      relations: ['expenses', 'category'],
     });
   }
 

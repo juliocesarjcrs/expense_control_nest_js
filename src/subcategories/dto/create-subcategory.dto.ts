@@ -6,10 +6,14 @@ export class CreateSubcategoryDto {
   @IsString()
   readonly name: string;
   readonly icon: string;
-  readonly userId: User;
+  readonly userId: number;
   @IsNotEmpty()
   @IsInt()
   // @Validate(IsUserAlreadyExist)
   // @IsUserAlreadyExist()
-  readonly categoryId: Category;
+  readonly categoryId: number;
+  readonly category: Category;
+  readonly user: User;
+
 }
+

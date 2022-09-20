@@ -17,10 +17,13 @@ export class Expense extends Content {
   @JoinColumn({ name: 'user_id' })
   userId: number;
 
+  @Column({ name: 'subcategory_id' , nullable: false })
+  subcategoryId: number
+
   @ManyToOne(() => Subcategory, (subcategory) => subcategory.expenses, {
     nullable: false,
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'subcategory_id' })
-  subcategoryId: number;
+  subcategories: number;
 }

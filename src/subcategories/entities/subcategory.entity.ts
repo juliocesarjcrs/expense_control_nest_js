@@ -12,18 +12,24 @@ export class Subcategory extends Content {
   @Column({ nullable: true })
   icon: string;
 
+  @Column({ name: 'category_id' , nullable: false })
+  categoryId: number
+
   @ManyToOne(() => Category, (category) => category.subcategories, {
     nullable: false,
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'category_id' })
-  categoryId: Category;
+  category: Category;
+
+  @Column({ name: 'user_id' , nullable: false })
+  userId: number
 
   @ManyToOne(() => User, { nullable: false })
   @JoinColumn({ name: 'user_id' })
-  userId: User;
+  user: User;
 
-  @OneToMany(() => Expense, (expense) => expense.subcategoryId, {
+  @OneToMany(() => Expense, (expense) => expense.subcategories, {
     cascade: true,
   })
   expenses: Expense[];
