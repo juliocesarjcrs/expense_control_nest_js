@@ -13,9 +13,12 @@ export class Expense extends Content {
   @Column({ type: 'date', nullable: false })
   date: Date;
 
+  @Column({ name: 'user_id' , nullable: false })
+  userId: number
+
   @ManyToOne(() => User, { nullable: false })
   @JoinColumn({ name: 'user_id' })
-  userId: number;
+  user: number;
 
   @Column({ name: 'subcategory_id' , nullable: false })
   subcategoryId: number

@@ -21,10 +21,13 @@ export class Income extends Content {
   @JoinColumn({ name: 'user_id' })
   user: number;
 
+  @Column({ name: 'category_id' , nullable: false })
+  categoryId: number
+
   @ManyToOne(() => Category, (category) => category.subcategories, {
     nullable: false,
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'category_id' })
-  categoryId: number;
+  category: number;
 }
