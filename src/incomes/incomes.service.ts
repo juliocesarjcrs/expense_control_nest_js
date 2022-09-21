@@ -147,7 +147,7 @@ export class IncomesService {
       'income',
     )
       .select(['MONTH(income.date) as month', 'YEAR(income.date) as year'])
-      .leftJoin('income.categoryId', 'category')
+      .leftJoin('income.category', 'category')
       .addSelect('SUM(income.amount)', 'sum')
       .where('income.date >= :mydate', {
         mydate: this.datesService.monthAgo(numMonths),

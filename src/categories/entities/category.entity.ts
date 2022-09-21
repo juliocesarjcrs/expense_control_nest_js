@@ -30,7 +30,7 @@ export class Category extends Content {
   })
   subcategories: Subcategory[];
 
-  @OneToMany(() => Income, (income) => income.categoryId, {
+  @OneToMany(() => Income, (income) => income.category, {
     cascade: true,
   })
   incomes: Income[];

@@ -216,7 +216,7 @@ export class ExpensesService {
     const expensesGroupByMonth = await this.expensesRepository
       .createQueryBuilder('expense')
       .select(['MONTH(expense.date) as month', 'YEAR(expense.date) as year'])
-      .leftJoin('expense.subcategoryId', 'subcategory')
+      .leftJoin('expense.subcategories', 'subcategory')
       .addSelect('SUM(expense.cost)', 'sum')
       .where('expense.date >= :mydate', {
         mydate: this.datesService.monthAgo(numMonths),
