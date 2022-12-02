@@ -95,6 +95,8 @@ export class ExpensesService {
     const page = query.page || 1;
     const searchValue = query.query || '';
     const skip = (page - 1) * take;
+    const orderBy = query.orderBy || 'id';
+
 
     const result = await this.expensesRepository
       .createQueryBuilder('expense')
@@ -128,7 +130,7 @@ export class ExpensesService {
           }
         }),
       )
-      .orderBy('expense.id', 'DESC')
+      .orderBy(`expense.${orderBy}`, 'DESC')
       .offset(skip)
       .limit(take)
       .getRawMany();
