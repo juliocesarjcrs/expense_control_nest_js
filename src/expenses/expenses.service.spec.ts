@@ -151,6 +151,8 @@ describe('ExpensesService', () => {
           sum: '74000',
         },
       ],
+      average: 42000,
+      previosAverage: 10000,
     };
     getRawManySpy.mockImplementation(() => {
       return [

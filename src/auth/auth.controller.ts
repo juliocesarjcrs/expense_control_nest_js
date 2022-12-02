@@ -14,6 +14,7 @@ import { Public } from 'src/utils/decorators/custumDecorators';
 import { AuthService } from './auth.service';
 import { CheckCodeDto } from './dto/check-code-dto';
 import { ForgotPasswordDto } from './dto/forgot-password-dto';
+import { LoginDto } from './dto/login-dto';
 import { RecoveryPasswordDto } from './dto/recovery-password-dto';
 
 @Controller('auth')
@@ -22,8 +23,7 @@ export class AuthController {
 
   @Public()
   @Post('login')
-  async login(@Request() req, @Res() response) {
-    const user = { ...req.body };
+  async login(@Body() user: LoginDto, @Res() response) {
     const data = await this.authService.login(user);
     response.status(HttpStatus.OK).json(data);
   }

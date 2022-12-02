@@ -35,6 +35,17 @@ describe('AuthController (e2e)', () => {
 
   afterAll(async () => await app.close());
 
+  it('/auth/login (POST) should return a validation body login', async () => {
+    return request(app.getHttpServer())
+      .post('/auth/login')
+      .set('Accept', 'application/json')
+      .send({})
+      .expect(400)
+      .expect((res) => {
+        expect(res.body.message).toBeDefined();
+      });
+  });
+
   it('/auth/login (POST) should return a JWT token on successful login', async () => {
     await loadFixtures('1-users.sql');
     return request(app.getHttpServer())
@@ -52,7 +63,7 @@ describe('AuthController (e2e)', () => {
     return request(app.getHttpServer())
       .post('/auth/login')
       .set('Accept', 'application/json')
-      .send({})
+      .send({ email: 'email@ccorreo.com', password: 'xx'})
       .expect(400)
       .expect((res) => {
         expect(res.body.access_token).toBeUndefined();

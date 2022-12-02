@@ -26,11 +26,13 @@ describe('IncomesService', () => {
       ),
     findOne: jest.fn().mockImplementation((id) =>
       Promise.resolve({
-        id,
+        id: 5,
         createdAt: '2021-06-01T14:49:08.952Z',
         amount: 300000,
         commentary: null,
         date: '2021-05-31',
+        userId: 1,
+        categoryId: 23
       }),
     ),
     delete: jest.fn().mockImplementation(() =>
@@ -109,6 +111,9 @@ describe('IncomesService', () => {
     const expected = {
       incomes: ['200000'],
       data: [{ month: 6, sum: '200000' }],
+      previosAverage: 0,
+      average: 200000,
+
     };
     const response = await service.findAll(1, {
       numMonths: 4,
@@ -129,6 +134,8 @@ describe('IncomesService', () => {
       amount: 300000,
       commentary: null,
       date: '2021-05-31',
+      userId: 1,
+      categoryId: 23
     };
     const response = await service.findOne(5);
     expect(response).toEqual(expected);

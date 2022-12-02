@@ -7,6 +7,7 @@ import { ForgotPasswordDto } from './dto/forgot-password-dto';
 import { CheckCodeDto } from './dto/check-code-dto';
 import { RecoveryPasswordDto } from './dto/recovery-password-dto';
 import { User } from 'src/users/entities/user.entity';
+import { LoginDto } from './dto/login-dto';
 
 @Injectable()
 export class AuthService {
@@ -23,7 +24,7 @@ export class AuthService {
     }
     return null;
   }
-  async login(user: any) {
+  async login(user: LoginDto) {
     const email = user.email;
     const pass = user.password;
     const userFound = await this.usersService.findOneEmail(email);
@@ -33,7 +34,6 @@ export class AuthService {
         HttpStatus.BAD_REQUEST,
       );
     }
-
     const valid = await bcrypt.compare(pass, userFound.password);
     if (!valid) {
       throw new HttpException(
