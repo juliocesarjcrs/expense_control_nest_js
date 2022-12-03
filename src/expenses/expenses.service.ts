@@ -183,7 +183,7 @@ export class ExpensesService {
         let myCost = 0;
         expensesOfSubcategoryGroupByMonth.map((e) => {
           if (e.month === element) {
-            myCost = e.sum;
+            myCost =parseFloat(e.sum);
           }
         });
         expenses.push(myCost);
