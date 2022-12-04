@@ -175,14 +175,14 @@ export class ExpensesService {
     const arrayIdxMonths =
       this.datesService.getPreviosMonthsLabelsIndex(numMonths);
     const expenses = [];
-    arrayIdxMonths.index.forEach((element) => {
+    arrayIdxMonths.fullDate.forEach((element) => {
       const found = expensesOfSubcategoryGroupByMonth.some(
-        (a) => a.month == element,
+        (a) => a.month === element.month && a.year === element.year,
       );
       if (found) {
         let myCost = 0;
         expensesOfSubcategoryGroupByMonth.map((e) => {
-          if (e.month === element) {
+          if (e.month === element.month && e.year === element.year) {
             myCost =parseFloat(e.sum);
           }
         });
@@ -233,13 +233,15 @@ export class ExpensesService {
     const arrayIdxMonths =
       this.datesService.getPreviosMonthsLabelsIndex(numMonths);
     const expenses = [];
-    arrayIdxMonths.index.forEach((element) => {
-      const found = expensesGroupByMonth.some((a) => a.month == element);
+    arrayIdxMonths.fullDate.forEach((element) => {
+      const found = expensesGroupByMonth.some(
+        (a) => a.month === element.month && a.year === element.year,
+      );
       if (found) {
         let myCost = 0;
         expensesGroupByMonth.map((e) => {
-          if (e.month === element) {
-            myCost = e.sum;
+          if (e.month === element.month && e.year === element.year) {
+            myCost =parseFloat(e.sum);
           }
         });
         expenses.push(myCost);
@@ -247,6 +249,20 @@ export class ExpensesService {
         expenses.push(0);
       }
     });
+    // arrayIdxMonths.index.forEach((element) => {
+    //   const found = expensesGroupByMonth.some((a) => a.month == element);
+    //   if (found) {
+    //     let myCost = 0;
+    //     expensesGroupByMonth.map((e) => {
+    //       if (e.month === element) {
+    //         myCost = e.sum;
+    //       }
+    //     });
+    //     expenses.push(myCost);
+    //   } else {
+    //     expenses.push(0);
+    //   }
+    // });
     const previosExpenses = expenses.slice(0);
     previosExpenses.pop();
     const average = this.calculateAverage(expenses);

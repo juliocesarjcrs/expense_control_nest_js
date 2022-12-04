@@ -43,12 +43,16 @@ export class DatesService {
   getPreviosMonthsLabelsIndex(take: number) {
     const index = [];
     const labels = [];
+    const fullDate = [];
     const dateStart = moment().subtract(take, 'months').startOf('month');
+    const dateStartYear = moment().subtract(take, 'months').startOf('month');
     for (let i = 0; i < take; i++) {
       const a = dateStart.add(1, 'months').month() + 1;
+      const year =  dateStartYear.add(1, 'months').year();
       index.push(a);
       labels.push(moment(a, 'MM').format('MMMM'));
+      fullDate.push({month: a, year})
     }
-    return { index, labels };
+    return { index, labels, fullDate };
   }
 }
