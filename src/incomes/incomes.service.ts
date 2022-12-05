@@ -162,13 +162,13 @@ export class IncomesService {
     const arrayIdxMonths =
       this.datesService.getPreviosMonthsLabelsIndex(numMonths);
     const incomes = [];
-    arrayIdxMonths.index.forEach((element) => {
-      const found = incomesGroupByMonth.some((a) => a.month == element);
+    arrayIdxMonths.fullDate.forEach((element) => {
+      const found = incomesGroupByMonth.some((a) => a.month == element.month && a.year == element.year);
       if (found) {
         let myCost = 0;
         incomesGroupByMonth.forEach((e) => {
-          if (e.month === element) {
-            myCost = e.sum;
+          if (e.month === element.month && e.year === element.year) {
+            myCost = parseFloat(e.sum);
           }
         });
         incomes.push(myCost);

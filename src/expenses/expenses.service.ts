@@ -42,7 +42,7 @@ export class ExpensesService {
       .getRawMany();
     const costs = expensesGroupByMonth.map((e) => e.sum);
     const labels = expensesGroupByMonth.map((e) => {
-      return this.datesService.getMonthString(e.month);
+      return `${this.datesService.getMonthString(e.month)} ${e.year}`;
     });
     const previosExpenses = costs.slice(0);
     previosExpenses.pop();
@@ -249,20 +249,7 @@ export class ExpensesService {
         expenses.push(0);
       }
     });
-    // arrayIdxMonths.index.forEach((element) => {
-    //   const found = expensesGroupByMonth.some((a) => a.month == element);
-    //   if (found) {
-    //     let myCost = 0;
-    //     expensesGroupByMonth.map((e) => {
-    //       if (e.month === element) {
-    //         myCost = e.sum;
-    //       }
-    //     });
-    //     expenses.push(myCost);
-    //   } else {
-    //     expenses.push(0);
-    //   }
-    // });
+
     const previosExpenses = expenses.slice(0);
     previosExpenses.pop();
     const average = this.calculateAverage(expenses);

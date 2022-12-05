@@ -27,7 +27,7 @@ export class DatesService {
   }
 
   getMonthString(month: number): string {
-    return moment(month, 'MM').format('MMMM');
+    return moment(month, 'MM').format('MMM');
   }
   getFormatDate(date: Date, format = 'YYYY-MM-DD'): string {
     return moment(date).format(format);
@@ -50,7 +50,7 @@ export class DatesService {
       const a = dateStart.add(1, 'months').month() + 1;
       const year =  dateStartYear.add(1, 'months').year();
       index.push(a);
-      labels.push(moment(a, 'MM').format('MMMM'));
+      labels.push(`${moment(a, 'MM').format('MMM')} ${year}`);
       fullDate.push({month: a, year})
     }
     return { index, labels, fullDate };
