@@ -131,6 +131,7 @@ export class ExpensesService {
         }),
       )
       .orderBy(`expense.${orderBy}`, 'DESC')
+      .addOrderBy('expense.id', 'DESC')
       .offset(skip)
       .limit(take)
       .getRawMany();
