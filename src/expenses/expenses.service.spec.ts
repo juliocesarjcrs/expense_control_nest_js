@@ -88,11 +88,36 @@ describe('ExpensesService', () => {
       }
     }),
     getMonthString: jest.fn().mockImplementation((month) => {
-      if (month == 9) {
-        return 'septiembre';
-      } else {
-        return 'diciembre';
+
+      switch (month) {
+        case 1:
+          return 'ene';
+        case 2:
+          return 'feb';
+        case 3:
+          return 'mar';
+        case 4:
+          return 'abr';
+        case 5:
+          return 'may';
+        case 6:
+          return 'jun';
+        case 7:
+          return 'jul';
+        case 8:
+          return 'ago';
+        case 9:
+          return 'sep';
+        case 10:
+          return 'oct';
+        case 11:
+          return 'nov';
+        case 12:
+          return 'dic';
+        default:
+          break;
       }
+
     }),
   };
 
@@ -140,14 +165,16 @@ describe('ExpensesService', () => {
   it('should be return all expenses', async () => {
     const expected = {
       graph: ['10000', '74000'],
-      labels: ['septiembre', 'diciembre'],
+      labels: ['sep 2021', 'dic 2021'],
       data: [
         {
           month: 9,
+          year: 2021,
           sum: '10000',
         },
         {
           month: 12,
+          year: 2021,
           sum: '74000',
         },
       ],
@@ -158,10 +185,12 @@ describe('ExpensesService', () => {
       return [
         {
           month: 9,
+          year: 2021,
           sum: '10000',
         },
         {
           month: 12,
+          year: 2021,
           sum: '74000',
         },
       ];
