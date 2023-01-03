@@ -30,6 +30,10 @@ import { MailModule } from './mail/mail.module';
 import { DatesModule } from './utils/dates/dates.module';
 import { typeOrmConfigAsync } from './config/typeorm.config';
 import { FilesModule } from './files/files.module';
+import { SavingModule } from './saving/saving.module';
+import { Saving } from './saving/entities/saving.entity';
+import { SavingController } from './saving/saving.controller';
+import { SavingService } from './saving/saving.service';
 
 @Module({
   imports: [
@@ -38,7 +42,7 @@ import { FilesModule } from './files/files.module';
       envFilePath: `.env.${process.env.NODE_ENV}`,
     }),
     TypeOrmModule.forRootAsync(typeOrmConfigAsync),
-    TypeOrmModule.forFeature([User, Category, Subcategory, Expense, Income]),
+    TypeOrmModule.forFeature([User, Category, Subcategory, Expense, Income, Saving]),
     AuthModule,
     UsersModule,
     SubcategoriesModule,
@@ -47,6 +51,7 @@ import { FilesModule } from './files/files.module';
     MailModule,
     DatesModule,
     FilesModule,
+    SavingModule,
   ],
   controllers: [
     AppController,
@@ -55,6 +60,7 @@ import { FilesModule } from './files/files.module';
     SubcategoriesController,
     ExpensesController,
     IncomesController,
+    SavingController
   ],
   providers: [
     AppService,
@@ -64,6 +70,7 @@ import { FilesModule } from './files/files.module';
     SubcategoriesService,
     ExpensesService,
     IncomesService,
+    SavingService
   ],
 })
 export class AppModule {}
