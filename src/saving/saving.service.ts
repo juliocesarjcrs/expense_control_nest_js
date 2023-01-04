@@ -82,7 +82,7 @@ export class SavingService {
         .insert()
         .into('saving')
         .values(savingInsert)
-        .orUpdate(['saving', 'income'], ['expense'], {
+        .orUpdate(['saving', 'income','expense'], ['user_id'], {
           skipUpdateIfNoValuesChanged: true,
         })
         .execute();
