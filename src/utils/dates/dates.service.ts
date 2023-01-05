@@ -1,69 +1,66 @@
 import { Injectable } from '@nestjs/common';
-import * as moment from 'moment';
-import 'moment/locale/es'; // without this line it didn't work
-moment.locale('es');
+import * as dayjs  from 'dayjs';
+import * as isLeapYear from 'dayjs/plugin/isLeapYear'; // import plugin
+import 'dayjs/locale/es'; // import locale
+
+dayjs.extend(isLeapYear); // use plugin
+dayjs.locale('es');
 
 @Injectable()
 export class DatesService {
   startMonth(date: string): Date {
-    let mydate = moment(date).startOf('month').format('YYYY-MM-DD');
+    let mydate = dayjs(date).startOf('month').format('YYYY-MM-DD');
     return new Date(mydate);
   }
 
   endMonth(date: string): Date {
-    let mydate = moment(date).endOf('month').format('YYYY-MM-DD');
+    let mydate = dayjs(date).endOf('month').format('YYYY-MM-DD');
     return new Date(mydate);
   }
 
   monthAgo(num = 3): string {
-    return moment()
+    return dayjs()
       .subtract(num, 'months')
       .startOf('month')
       .format('YYYY-MM-DD');
   }
 
-  endActualyMonth() {
-    return moment().endOf('month').format('YYYY-MM-DD');
-  }
-
   getMonthString(month: number): string {
-    return moment(month, 'MM').format('MMM');
-  }
-  getFormatDate(date: Date, format = 'YYYY-MM-DD'): string {
-    return moment(date).format(format);
+    return dayjs(month, 'MM').format('MMM');
   }
 
-  actualyMonth() {
-    return {
-      endMonth: moment().endOf('month').format('YYYY-MM-DD'),
-      numMonth: moment().month(),
-    };
+  getFormatDate(date: Date, format = 'YYYY-MM-DD'): string {
+    return dayjs(date).format(format);
   }
 
   getPreviosMonthsLabelsIndex(take: number) {
     const index = [];
     const labels = [];
     const fullDate = [];
-    const dateStart = moment().subtract(take, 'months').startOf('month');
-    const dateStartYear = moment().subtract(take, 'months').startOf('month');
-    let dateStartDate = moment().subtract(take, 'months').startOf('month');
+    const dateStart = dayjs().subtract(take, 'months').startOf('month');
+    const dateStartYear = dayjs().subtract(take, 'months').startOf('month');
+    let dateStartDate = dayjs().subtract(take, 'months').startOf('month');
     for (let i = 0; i < take; i++) {
       const a = dateStart.add(1, 'months').month() + 1;
       const year =  dateStartYear.add(1, 'months').year();
       let date =  dateStartDate.add(1, 'months').format('YYYY-MM-DD');
       index.push(a);
-      labels.push(`${moment(a, 'MM').format('MMM')} ${year}`);
+      labels.push(`${dayjs(a, 'MM').format('MMM')} ${year}`);
       fullDate.push({month: a, year, date})
     }
     return { index, labels, fullDate };
   }
 
-  customFormatDate(date: Date) {
-    const myDate = moment(date)
-    const year =  myDate.year();
-    return {
-      monthYear: `${moment(myDate, 'MM').format('MMM')} ${year}`
-    }
-
+  startMonthRaw(date: string): dayjs.Dayjs {
+    return  dayjs(date).startOf('month');
   }
+
+  endMonthRaw(date: string):  dayjs.Dayjs {
+    return  dayjs(date).endOf('month');
+  }
+
+  getDate(date: Date):  dayjs.Dayjs {
+    return dayjs(date);
+  }
+
 }

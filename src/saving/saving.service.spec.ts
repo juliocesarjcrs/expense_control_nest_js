@@ -49,9 +49,8 @@ describe('SavingService', () => {
     })),
   };
   const mockDatesService = {
-    monthAgo: jest.fn().mockImplementation(() => '12-05-2021'),
-    customFormatDate: jest.fn().mockImplementation((date) => {
-      return { monthYear: 'Oct. 2023' };
+    getFormatDate: jest.fn().mockImplementation((date) => {
+        return 'junio-2021';
     }),
   };
 
@@ -112,7 +111,7 @@ describe('SavingService', () => {
   it('should be return all savings of user', async () => {
     const expected = {
       graph: {
-        labels: ['Oct. 2023'],
+        labels: ['junio-2021'],
         expenses: [4082624],
         incomes: [4110549],
         savings: [27925],

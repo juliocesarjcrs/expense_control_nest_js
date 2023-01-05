@@ -5,13 +5,14 @@ import { Category } from './entities/category.entity';
 import { CreateCategoryDto } from './dto/create-category-dto';
 import { UpdateCategoryDto } from './dto/updated-category.dto';
 
-import * as moment from 'moment';
 import { HttpException } from '@nestjs/common';
+import { DatesService } from 'src/utils/dates/dates.service';
 @Injectable()
 export class CategoriesService {
   constructor(
     @InjectRepository(Category)
     private categoriesRepository: Repository<Category>,
+    private datesService: DatesService,
   ) {}
   async createCategory(
     createCategoryDto: CreateCategoryDto,
@@ -61,10 +62,11 @@ export class CategoriesService {
     return { totalCategory, subcategories };
   }
   filterByDate(array, queryDate) {
-    const start = moment(queryDate).startOf('month');
-    const end = moment(queryDate).endOf('month');
+    const start = this.datesService.startMonthRaw(queryDate);
+    const end = this.datesService.endMonthRaw(queryDate);
     const filter = array.filter((e) => {
-      const actual = moment(e.date);
+      const actual =this.datesService.getDate(e.date);
+      console.log('actual', actual, start, end);
       if (actual >= start && actual <= end) {
         return true;
       } else {

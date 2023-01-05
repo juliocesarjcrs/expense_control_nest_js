@@ -41,7 +41,7 @@ export class SavingService {
     const incomes = savingsByuser.map((e) => e.income);
     const savings = savingsByuser.map((e) => e.saving);
     const labels = savingsByuser.map(
-      (e) => this.datesService.customFormatDate(e.date).monthYear,
+      (e) => this.datesService.getFormatDate(e.date, 'MMMM-YYYY')
     );
     return {
       data: savingsByuser,
