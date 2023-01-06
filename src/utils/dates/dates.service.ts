@@ -41,7 +41,7 @@ export class DatesService {
       const tempDate = dateStartDate.add(i, 'months');
       labels.push(`${tempDate.format('MMM -YYYY')}`);
       fullDate.push({
-        month: tempDate.month(),
+        month: tempDate.month() +1,
         year: tempDate.year(),
         date: tempDate.format('YYYY-MM-DD')
       })
