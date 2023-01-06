@@ -159,10 +159,10 @@ export class IncomesService {
       .orderBy('YEAR(income.date)', 'ASC')
       .addOrderBy('MONTH(income.date)', 'ASC')
       .getRawMany();
-    const arrayIdxMonths =
+    const { fullDate , labels} =
       this.datesService.getPreviosMonthsLabelsIndex(numMonths);
     const incomes = [];
-    arrayIdxMonths.fullDate.forEach((element) => {
+    fullDate.forEach((element) => {
       const found = incomesGroupByMonth.some((a) => a.month == element.month && a.year == element.year);
       if (found) {
         let myCost = 0;
@@ -185,7 +185,7 @@ export class IncomesService {
     }, 0);
     return {
       graph: incomes,
-      labels: arrayIdxMonths.labels,
+      labels,
       average,
       previosAverage,
       sum,

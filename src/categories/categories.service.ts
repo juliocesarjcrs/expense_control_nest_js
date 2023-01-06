@@ -66,7 +66,6 @@ export class CategoriesService {
     const end = this.datesService.endMonthRaw(queryDate);
     const filter = array.filter((e) => {
       const actual =this.datesService.getDate(e.date);
-      console.log('actual', actual, start, end);
       if (actual >= start && actual <= end) {
         return true;
       } else {

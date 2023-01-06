@@ -34,21 +34,19 @@ export class DatesService {
   }
 
   getPreviosMonthsLabelsIndex(take: number) {
-    const index = [];
     const labels = [];
     const fullDate = [];
-    const dateStart = dayjs().subtract(take, 'months').startOf('month');
-    const dateStartYear = dayjs().subtract(take, 'months').startOf('month');
     let dateStartDate = dayjs().subtract(take, 'months').startOf('month');
     for (let i = 0; i < take; i++) {
-      const a = dateStart.add(1, 'months').month() + 1;
-      const year =  dateStartYear.add(1, 'months').year();
-      let date =  dateStartDate.add(1, 'months').format('YYYY-MM-DD');
-      index.push(a);
-      labels.push(`${dayjs(a, 'MM').format('MMM')} ${year}`);
-      fullDate.push({month: a, year, date})
+      const tempDate = dateStartDate.add(i, 'months');
+      labels.push(`${tempDate.format('MMM -YYYY')}`);
+      fullDate.push({
+        month: tempDate.month(),
+        year: tempDate.year(),
+        date: tempDate.format('YYYY-MM-DD')
+      })
     }
-    return { index, labels, fullDate };
+    return { labels, fullDate };
   }
 
   startMonthRaw(date: string): dayjs.Dayjs {
