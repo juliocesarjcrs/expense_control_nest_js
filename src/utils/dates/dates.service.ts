@@ -37,7 +37,7 @@ export class DatesService {
     const labels = [];
     const fullDate = [];
     let dateStartDate = dayjs().subtract(take, 'months').startOf('month');
-    for (let i = 0; i < take; i++) {
+    for (let i = 1; i <= take; i++) {
       const tempDate = dateStartDate.add(i, 'months');
       labels.push(`${tempDate.format('MMM -YYYY')}`);
       fullDate.push({
