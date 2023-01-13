@@ -1,6 +1,9 @@
 import {
   Controller,
+  Delete,
   Get,
+  HttpStatus,
+  Param,
   Post,
   Query,
   Req,
@@ -18,10 +21,11 @@ import { FilesService } from './files.service';
 export class FilesController {
   constructor(private filesService: FilesService) {}
 
-  @Public()
+  // @Public()
   @Get('load')
-  seeUploadedFile(@Query() query, @Res() res: Response) {
-    return this.filesService.laodFile(query.file, res);
+  async  seeUploadedFile(@Query() query, @Res() res: Response) {
+    const data =  await this.filesService.laodFile(query.file, res);
+    res.status(HttpStatus.OK).json(data);
     // return res.sendFile(query.file, { root: './' });
   }
 
@@ -36,7 +40,23 @@ export class FilesController {
     @UploadedFile() file: Express.Multer.File,
     @Req() req: Request,
   ) {
-    // console.log('file', file);
     return this.filesService.saveFile(res, file, req);
+  }
+
+  @Post('upload/s3')
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadFileAWSs3(
+    @Res() res,
+    @UploadedFile() file: Express.Multer.File,
+    @Req() req: Request,
+  ) {
+    console.log(file);
+    const data =  await this.filesService.saveFileAwsS3(res, file, null);
+    res.status(HttpStatus.OK).json(data);
+  }
+
+  @Delete(':fileName')
+  remove(@Param('fileName') fileName: string) {
+    return this.filesService.deleteFile(fileName);
   }
 }

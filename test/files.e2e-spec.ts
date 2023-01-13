@@ -50,15 +50,14 @@ describe('FilesController (e2e)', () => {
 
   afterAll(async () => await app.close());
 
-  it('/files//load (GET) validation error File not found', () => {
+  it('/files/load (GET) return string  iamge path', () => {
     return request(app.getHttpServer())
       .get('/files/load?file=uploads/users/89axxx')
-      .expect(400)
+      .set('Authorization', `Bearer ${tokenForUser()}`)
+      .expect(200)
       .then((response) => {
         expect(response.body).toEqual(
-          expect.objectContaining({
-            message: 'File not found',
-          }),
+          expect.any(String)
         );
       });
   });

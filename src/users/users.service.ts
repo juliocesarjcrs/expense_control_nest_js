@@ -6,11 +6,13 @@ import { CreateUserDto } from './dto/create-user-dto';
 import * as bcrypt from 'bcrypt';
 import { ChangePasswordDto } from './dto/change-password-dto';
 import { UpdatedUserDto } from './dto/updated-user-dto';
+import { FilesService } from 'src/files/files.service';
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User)
     private usersRepository: Repository<User>,
+    private filesService: FilesService
   ) {}
   async findAll(): Promise<User[]> {
     return await this.usersRepository.find();
@@ -100,5 +102,27 @@ export class UsersService {
     const password = newPassword;
     const hash = await bcrypt.hash(password, salt);
     return hash;
+  }
+
+  async updateProfile(id: number, UpdatedUserDto: UpdatedUserDto, res, image: Express.Multer.File): Promise<User> {
+    const UserFound = await this.usersRepository.findOne({where: {id: id}});
+    if (!UserFound)
+      throw new HttpException('Id not found', HttpStatus.NOT_FOUND);
+
+    const emailVarios = await this.findAllEmail(UpdatedUserDto.email);
+    if (emailVarios.length === 1) {
+      if (emailVarios[0].id !== id) {
+        throw new HttpException(
+          'The mail already exists',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+    }
+    if (image) {
+      const keyImg = await this.filesService.saveFileAwsS3(res, image, UserFound.image);
+      UpdatedUserDto.image =  String(keyImg);
+    }
+    const editUser = Object.assign(UserFound, UpdatedUserDto);
+    return this.usersRepository.save(editUser);
   }
 }

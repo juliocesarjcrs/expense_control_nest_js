@@ -12,7 +12,15 @@ import { jwtConstants } from './constants';
 import { JwtStrategy } from './jwt.strategy';
 import { LocalStrategy } from './local.strategy';
 import { AuthController } from './auth.controller';
-
+import { FilesService } from 'src/files/files.service';
+import { StorageMethodFactory } from 'src/files/factory/storage-method.factory';
+import { TYPE_STORAGE_IMAGE } from 'src/config/global.env';
+const StorageMethodFactoryProvider = {
+  provide: 'IStorageMethod',
+  useFactory: () => {
+    return StorageMethodFactory.createStorageType(TYPE_STORAGE_IMAGE);
+  },
+};
 @Module({
   imports: [
     UsersModule,
@@ -24,7 +32,7 @@ import { AuthController } from './auth.controller';
     TypeOrmModule.forFeature([User, Category]),
     MailModule,
   ],
-  providers: [AuthService, LocalStrategy, UsersService, JwtStrategy],
+  providers: [AuthService, LocalStrategy, UsersService, JwtStrategy, FilesService, StorageMethodFactoryProvider],
   exports: [AuthService, JwtModule, UsersService],
   controllers: [AuthController],
 })

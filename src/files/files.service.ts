@@ -1,6 +1,7 @@
 import {
   HttpException,
   HttpStatus,
+  Inject,
   Injectable,
   Req,
   Res,
@@ -16,9 +17,15 @@ import {
   imageFileFilter,
   saveImageToStorage,
 } from 'src/utils/helpers/file-helper';
+import { uuid } from 'uuidv4';
+import { IStorageMethod } from './factory/interfaces/storage-method.interface';
 
 @Injectable()
 export class FilesService {
+  constructor(
+    @Inject('IStorageMethod')
+    private readonly storageMethod: IStorageMethod,
+  ) {}
   fileExists(path: string): boolean {
     if (fs.existsSync(path)) {
       return true;
@@ -26,15 +33,17 @@ export class FilesService {
     return false;
   }
 
-  laodFile(path: string, @Res() res): boolean {
-    if (!path) {
-      throw new HttpException('File not found', HttpStatus.BAD_REQUEST);
-    }
-    const existFile = this.fileExists(path);
-    if (!existFile) {
-      throw new HttpException('File not found', HttpStatus.BAD_REQUEST);
-    }
-    return res.sendFile(path, { root: './' });
+  async laodFile(path: string, @Res() res) {
+    // if (!path) {
+    //   throw new HttpException('File not found', HttpStatus.BAD_REQUEST);
+    // }
+    // const existFile = this.fileExists(path);
+    // if (!existFile) {
+    //   throw new HttpException('File not found', HttpStatus.BAD_REQUEST);
+    // }
+    // return res.sendFile(path, { root: './' });
+    const result = await this.storageMethod.readFile(path);
+    return result;
   }
 
   saveFile(res: any, file: Express.Multer.File, @Req() req: Request) {
@@ -95,5 +104,28 @@ export class FilesService {
     // const buffer = file.buffer;
     // const stream = intoStream(file.buffer);
     // const stream = intoStream(file.buffer).pipe(process.stdout);
+  }
+
+  async saveFileAwsS3(
+    res: any,
+    file: Express.Multer.File,
+    fileNameOld: string | null
+  ) {
+    if (!file || res.fileValidationError) {
+      throw new HttpException('File not found', HttpStatus.BAD_REQUEST);
+    }
+    let nameFile = fileNameOld;
+    if (!fileNameOld){
+      const ext = file.originalname.split('.').slice(-1)[0];
+      nameFile = `${uuid()}.${ext}`;
+    }
+    this.storageMethod.setFilename(nameFile);
+    const result = await this.storageMethod.uploadFile(file);
+    return result;
+
+  }
+
+  async deleteFile(path: string){
+    await this.storageMethod.deleteFile(path);
   }
 }

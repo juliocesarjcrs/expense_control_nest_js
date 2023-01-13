@@ -23,17 +23,17 @@ import { Request, Response } from 'express';
 
 @Controller('users')
 export class UsersController {
-  constructor(private userService: UsersService) {}
+  constructor(private userService: UsersService
+    ) {}
 
   @Public()
   @Post()
-  @UseInterceptors(FileInterceptor('image', { dest: './uploads/users' }))
+  @UseInterceptors(FileInterceptor('image'))
   async create(
     @UploadedFile() image: Express.Multer.File,
     @Body() createUserDto: CreateUserDto,
     @Res() response,
   ) {
-    console.log(image);
     if (image) {
       console.log('detectó imagen');
       createUserDto.image = image.path;
@@ -54,16 +54,15 @@ export class UsersController {
   }
 
   @Put(':id')
-  @UseInterceptors(FileInterceptor('image', { dest: './uploads/users' }))
-  updateUser(
+  @UseInterceptors(FileInterceptor('image'))
+  async updateUser(
+    @Res() res,
     @UploadedFile() image: Express.Multer.File,
     @Param('id') id: number,
     @Body() updatedUserDto: UpdatedUserDto,
   ) {
-    if (image) {
-      updatedUserDto.image = image.path;
-    }
-    return this.userService.update(+id, updatedUserDto);
+    const data = await this.userService.updateProfile(+id, updatedUserDto, res, image);
+    res.status(HttpStatus.OK).json(data);
   }
 
   @Put('change-password/:id')

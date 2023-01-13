@@ -25,6 +25,8 @@
     "test:e2e:watch": "jest --config ./test/jest-e2e.json --watch --detectOpenHandles"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.245.0",
+    "@aws-sdk/s3-request-presigner": "^3.245.0",
     "@nestjs-modules/mailer": "^1.8.1",
     "@nestjs/common": "^9.0.0",
     "@nestjs/config": "^2.2.0",
@@ -49,7 +51,9 @@
     "reflect-metadata": "^0.1.13",
     "rimraf": "^3.0.2",
     "rxjs": "^7.2.0",
-    "typeorm": "^0.3.9"
+    "sharp": "^0.31.3",
+    "typeorm": "^0.3.9",
+    "uuidv4": "^6.2.13"
   },
   "devDependencies": {
     "@nestjs/cli": "^9.0.0",
