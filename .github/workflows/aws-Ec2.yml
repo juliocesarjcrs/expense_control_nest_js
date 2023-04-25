@@ -29,7 +29,7 @@ jobs:
 
       - name: Set environment variables
         run: |
-          ssh -i /home/ubuntu/par-clave-instancia-ec2-backend-expense-control-nodejs.pem ubuntu@${{ secrets.pwd }} "echo 'export DB_HOST=${{ secrets.DB_HOST }} DB_PASS=${{ secrets.DB_PASS }} DB_PORT=${{ secrets.DB_PORT }} DB_USER=${{ secrets.DB_USER }} DB_NAME=${{ secrets.DB_NAME }} DB_USER=${{ secrets.DB_USER }} MAIL_FROM=${{ secrets.MAIL_FROM }} MAIL_HOST=${{ secrets.MAIL_HOST }} MAIL_USER=${{ secrets.MAIL_USER }} SECRET_KEY=${{ secrets.SECRET_KEY }} TYPE_STORAGE=${{ secrets.TYPE_STORAGE }}' >> ~/.bashrc && source ~/.bashrc"
+          ssh -i /home/ubuntu/par-clave-instancia-ec2-backend-expense-control-nodejs.pem ubuntu@${{ secrets.AWS_EC2_INSTANCE }} "echo 'export DB_HOST=${{ secrets.DB_HOST }} DB_PASS=${{ secrets.DB_PASS }} DB_PORT=${{ secrets.DB_PORT }} DB_USER=${{ secrets.DB_USER }} DB_NAME=${{ secrets.DB_NAME }} DB_USER=${{ secrets.DB_USER }} MAIL_FROM=${{ secrets.MAIL_FROM }} MAIL_HOST=${{ secrets.MAIL_HOST }} MAIL_USER=${{ secrets.MAIL_USER }} SECRET_KEY=${{ secrets.SECRET_KEY }} TYPE_STORAGE=${{ secrets.TYPE_STORAGE }}' >> ~/.bashrc && source ~/.bashrc"
 
       - name: Install dependencies and start server
         run: |
