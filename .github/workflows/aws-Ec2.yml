@@ -1,0 +1,36 @@
+name: Deploy to AWS EC2
+
+on:
+  workflow_dispatch:
+    branches:
+      - deploy
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Install AWS CLI
+        run: |
+          sudo apt-get update
+          sudo apt-get install awscli
+
+      - name: Configure AWS credentials
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        run: |
+          aws configure set aws_access_key_id ${{ env.AWS_ACCESS_KEY_ID }}
+          aws configure set aws_secret_access_key ${{ env.AWS_SECRET_ACCESS_KEY }}
+          aws configure set default.region us-east-1
+
+      - name: Set environment variables
+        run: |
+          ssh -i /home/ubuntu/par-clave-instancia-ec2-backend-expense-control-nodejs.pem ubuntu@${{ secrets.pwd }} "echo 'export DB_HOST=${{ secrets.DB_HOST }} DB_PASS=${{ secrets.DB_PASS }} DB_PORT=${{ secrets.DB_PORT }} DB_USER=${{ secrets.DB_USER }} DB_NAME=${{ secrets.DB_NAME }} DB_USER=${{ secrets.DB_USER }} MAIL_FROM=${{ secrets.MAIL_FROM }} MAIL_HOST=${{ secrets.MAIL_HOST }} MAIL_USER=${{ secrets.MAIL_USER }} SECRET_KEY=${{ secrets.SECRET_KEY }} TYPE_STORAGE=${{ secrets.TYPE_STORAGE }}' >> ~/.bashrc && source ~/.bashrc"
+
+      - name: Install dependencies and start server
+        run: |
+          ssh -i /home/ubuntu/par-clave-instancia-ec2-backend-expense-control-nodejs.pem ubuntu@${{ secrets.AWS_EC2_INSTANCE }} "cd /home/ubuntu/app && sudo apt-get install -y build-essential && curl -fsSL https://deb.nodesource.com/setup_16.x | sudo -E bash - && sudo apt-get install -y nodejs && npm install && npm start"
