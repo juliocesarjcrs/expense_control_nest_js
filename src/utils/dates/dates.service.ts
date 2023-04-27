@@ -61,4 +61,18 @@ export class DatesService {
     return dayjs(date);
   }
 
+  startMonthRawNew(date: string | null): string {
+    const today = dayjs();
+    const selectedMonth = date ? dayjs(date) : today;
+    const startMonth = selectedMonth.startOf('month');
+    return startMonth.format('YYYY-MM-DD HH:mm:ss.SSS');
+  }
+
+  endMonthRawNew(date: string | null): string {
+    const today = dayjs();
+    const selectedMonth = date ? dayjs(date) : today;
+    const endMonth = selectedMonth.endOf('month');
+    return endMonth.format('YYYY-MM-DD HH:mm:ss.SSS');
+  }
+
 }

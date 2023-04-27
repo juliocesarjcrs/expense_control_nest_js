@@ -32,6 +32,36 @@ export class CategoriesService {
       order: { name: 'ASC' },
     });
   }
+  async findAllExpensesByMonth(userId: number, query) {
+    const queryDate = query ? query.date : null;
+    const data = await this.categoriesRepository.createQueryBuilder('category')
+      .leftJoinAndSelect('category.subcategories', 'subcategory')
+      .leftJoinAndSelect('subcategory.expenses', 'expense', 'expense.date BETWEEN :startDate AND :endDate', {
+        startDate: this.datesService.startMonthRawNew(queryDate),
+        endDate: this.datesService.endMonthRawNew(queryDate)
+      })
+      .where('category.userId = :userId', { userId: userId })
+      .andWhere('category.type = :type', { type: 0 })
+      .groupBy('category.id')
+      .select([
+        'category.id AS id',
+        'category.name AS name',
+        'category.icon AS icon',
+        'category.userId AS userId',
+        'SUM(expense.cost) AS total', // cálculo del total gastado en la categoría por mes
+      ])
+      .orderBy('category.name', 'ASC')
+      .getRawMany();
+    let totalGeneraly = 0;
+    const dataFormat = data.map((category) => {
+      const totalCategory = category.total ? parseFloat(category.total) : 0
+      totalGeneraly += totalCategory;
+      return { ...category, total:totalCategory };
+    });
+
+    return { data: dataFormat, total: totalGeneraly  };
+
+  }
 
   async findAllWithSubcategories(userId: number, query) {
     const queryDate = query ? query.date : null;

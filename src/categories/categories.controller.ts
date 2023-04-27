@@ -52,7 +52,23 @@ export class CategoriesController {
       .then((listCategories) => {
         response.status(HttpStatus.OK).json(listCategories);
       })
-      .catch(() => {
+      .catch((e) => {
+        console.log(e);
+        response
+          .status(HttpStatus.FORBIDDEN)
+          .json({ message: 'Error en listar categorias con subcategorias' });
+      });
+  }
+  @Get('expenses/month')
+  findAllExpensesByMonth(@Res() response, @Request() req, @Query() query) {
+    const userId = req.user.id;
+    this.categoryService
+      .findAllExpensesByMonth(userId, query)
+      .then((listCategories) => {
+        response.status(HttpStatus.OK).json(listCategories);
+      })
+      .catch((e) => {
+        console.log(e);
         response
           .status(HttpStatus.FORBIDDEN)
           .json({ message: 'Error en listar categorias con subcategorias' });
