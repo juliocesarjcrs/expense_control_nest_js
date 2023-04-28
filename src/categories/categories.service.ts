@@ -34,12 +34,18 @@ export class CategoriesService {
   }
   async findAllExpensesByMonth(userId: number, query) {
     const queryDate = query ? query.date : null;
-    const data = await this.categoriesRepository.createQueryBuilder('category')
+    const data = await this.categoriesRepository
+      .createQueryBuilder('category')
       .leftJoinAndSelect('category.subcategories', 'subcategory')
-      .leftJoinAndSelect('subcategory.expenses', 'expense', 'expense.date BETWEEN :startDate AND :endDate', {
-        startDate: this.datesService.startMonthRawNew(queryDate),
-        endDate: this.datesService.endMonthRawNew(queryDate)
-      })
+      .leftJoinAndSelect(
+        'subcategory.expenses',
+        'expense',
+        'expense.date BETWEEN :startDate AND :endDate',
+        {
+          startDate: this.datesService.startMonthRawNew(queryDate),
+          endDate: this.datesService.endMonthRawNew(queryDate),
+        },
+      )
       .where('category.userId = :userId', { userId: userId })
       .andWhere('category.type = :type', { type: 0 })
       .groupBy('category.id')
@@ -54,13 +60,12 @@ export class CategoriesService {
       .getRawMany();
     let totalGeneraly = 0;
     const dataFormat = data.map((category) => {
-      const totalCategory = category.total ? parseFloat(category.total) : 0
+      const totalCategory = category.total ? parseFloat(category.total) : 0;
       totalGeneraly += totalCategory;
-      return { ...category, total:totalCategory };
+      return { ...category, total: totalCategory };
     });
 
-    return { data: dataFormat, total: totalGeneraly  };
-
+    return { data: dataFormat, total: totalGeneraly };
   }
 
   async findAllWithSubcategories(userId: number, query) {
@@ -95,7 +100,7 @@ export class CategoriesService {
     const start = this.datesService.startMonthRaw(queryDate);
     const end = this.datesService.endMonthRaw(queryDate);
     const filter = array.filter((e) => {
-      const actual =this.datesService.getDate(e.date);
+      const actual = this.datesService.getDate(e.date);
       if (actual >= start && actual <= end) {
         return true;
       } else {
@@ -109,11 +114,13 @@ export class CategoriesService {
   }
 
   async findOne(id: number): Promise<Category> {
-    return this.categoriesRepository.findOne({where: {id: id}});
+    return this.categoriesRepository.findOne({ where: { id: id } });
   }
 
   async update(id: number, updateCategoryDto: UpdateCategoryDto) {
-    const category = await this.categoriesRepository.findOne({where: {id: id}});
+    const category = await this.categoriesRepository.findOne({
+      where: { id: id },
+    });
     if (!category)
       throw new HttpException('Id not fount', HttpStatus.NOT_FOUND);
     const editCategory = Object.assign(category, updateCategoryDto);
@@ -144,5 +151,83 @@ export class CategoriesService {
       (acu: number, val) => acu + parseFloat(val.amount),
       0,
     );
+  }
+  async findAllSubcategoriesExpensesByMonth(userId: number, query) {
+    const queryDate = query ? query.date : null;
+
+    const data = await this.categoriesRepository
+      .createQueryBuilder('category')
+      .leftJoinAndSelect('category.subcategories', 'subcategory')
+      .leftJoinAndSelect(
+        'subcategory.expenses',
+        'expense',
+        'expense.date BETWEEN :startDate AND :endDate',
+        {
+          startDate: this.datesService.startMonthRawNew(queryDate),
+          endDate: this.datesService.endMonthRawNew(queryDate),
+        },
+      )
+      .select([
+        'category.id as id',
+        'category.name as name',
+        'category.icon as icon',
+        'category.type as type',
+        'category.budget as budget',
+        'category.userId as userId',
+        'subcategory.id as subcategoryId',
+        'subcategory.name as subcategoryName',
+        'SUM(expense.cost) as total',
+      ])
+      .where('category.userId = :userId', { userId })
+      .andWhere('category.type = 0')
+      .groupBy('category.id, subcategory.id')
+      .orderBy('category.name', 'ASC')
+      .addOrderBy('subcategory.name', 'ASC')
+      .getRawMany();
+    let totalGeneraly = 0;
+    const response = data.reduce((acc, category) => {
+      const {
+        id,
+        name,
+        icon,
+        type,
+        budget,
+        userId,
+        subcategoryId,
+        subcategoryName,
+      } = category;
+      const total = category.total ? parseFloat(category.total) : 0;
+      totalGeneraly += total;
+      const categoryIndex = acc.findIndex((c) => c.id === id);
+      if (categoryIndex === -1) {
+        acc.push({
+          id,
+          name,
+          icon,
+          type,
+          budget,
+          userId,
+          total,
+          subcategories: [{ id: subcategoryId, name: subcategoryName, total }],
+        });
+      } else {
+        acc[categoryIndex].total += total;
+        const subcategoryIndex = acc[categoryIndex].subcategories.findIndex(
+          (s) => s.id === subcategoryId,
+        );
+        if (subcategoryIndex === -1) {
+          acc[categoryIndex].subcategories.push({
+            id: subcategoryId,
+            name: subcategoryName,
+            total,
+          });
+        } else {
+          acc[categoryIndex].subcategories[subcategoryIndex].total += total;
+        }
+      }
+      return acc;
+    }, []);
+
+    return { data: response, total: totalGeneraly };
   }
 }

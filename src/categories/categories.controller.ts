@@ -74,6 +74,21 @@ export class CategoriesController {
           .json({ message: 'Error en listar categorias con subcategorias' });
       });
   }
+  @Get('subcategories/expenses/month')
+  findAllSubcategoriesExpensesByMonth(@Res() response, @Request() req, @Query() query) {
+    const userId = req.user.id;
+    this.categoryService
+      .findAllSubcategoriesExpensesByMonth(userId, query)
+      .then((listCategories) => {
+        response.status(HttpStatus.OK).json(listCategories);
+      })
+      .catch((e) => {
+        console.log(e);
+        response
+          .status(HttpStatus.FORBIDDEN)
+          .json({ message: 'Error en listar categorias con subcategorias y gastos' });
+      });
+  }
   @Get('incomes')
   async findAllTypeIncome(@Res() response, @Request() req, @Query() query) {
     try {
