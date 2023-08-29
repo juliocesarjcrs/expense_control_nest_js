@@ -14,6 +14,11 @@ async function bootstrap() {
       whitelist: true,
     }),
   );
+   // Establece la zona horaria en UTC
+   app.use((req, res, next) => {
+    process.env.TZ = 'UTC';
+    next();
+  });
 
   app.useGlobalFilters(new HttpExceptionFilter());
   await app.listen(process.env.PORT || 4000);

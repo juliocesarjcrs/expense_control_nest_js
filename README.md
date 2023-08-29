@@ -76,6 +76,16 @@ http://0.0.0.0:3000/
 
 For open phpMyAdmin
 http://0.0.0.0:3000/
+
+## Running in production
+Note: yoou need defined .env.production file and install pm2 in your server
+```bash
+$ npm install pm2 -g
+```
+- Run in development
+```bash
+$ pm2 start ecosystem.config.js --env production
+```
 ## Support
 
 Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
