@@ -7,13 +7,23 @@ import { UpdateCategoryDto } from './dto/updated-category.dto';
 
 import { HttpException } from '@nestjs/common';
 import { DatesService } from 'src/utils/dates/dates.service';
+interface Expense {
+  id: number;
+  name: string;
+  icon: string;
+  userId: number;
+  total: number;
+  month: number | null;
+  year: number | null;
+}
+
 @Injectable()
 export class CategoriesService {
   constructor(
     @InjectRepository(Category)
     private categoriesRepository: Repository<Category>,
     private datesService: DatesService,
-  ) {}
+  ) { }
   async createCategory(
     createCategoryDto: CreateCategoryDto,
   ): Promise<Category> {
@@ -34,6 +44,13 @@ export class CategoriesService {
   }
   async findAllExpensesByMonth(userId: number, query) {
     const queryDate = query ? query.date : null;
+
+    const startDate = query.startDate;
+    const endDate = query.endDate;
+    if (startDate && endDate) {
+      return this.findAllExpensesByRangeDates(userId, startDate, endDate)
+    }
+    console.log(`::: startDate ::: ${startDate}, ::: endDate ::: ${endDate}`)
     const data = await this.categoriesRepository
       .createQueryBuilder('category')
       .leftJoinAndSelect('category.subcategories', 'subcategory')
@@ -229,5 +246,87 @@ export class CategoriesService {
     }, []);
 
     return { data: response, total: totalGeneraly };
+  }
+
+  async findAllExpensesByRangeDates(userId: number, startDate: string, endDate: string) {
+    const rawData = await this.categoriesRepository
+      .createQueryBuilder('category')
+      .leftJoinAndSelect('category.subcategories', 'subcategory')
+      .leftJoinAndSelect(
+        'subcategory.expenses',
+        'expense',
+        'expense.date BETWEEN :startDate AND :endDate',
+        {
+          startDate,
+          endDate
+        },
+      )
+      .where('category.userId = :userId', { userId: userId })
+      .andWhere('category.type = :type', { type: 0 })
+      .groupBy('category.id')
+      .addGroupBy('MONTH(expense.date)')
+      .addGroupBy('YEAR(expense.date)')
+      .select([
+        'category.id AS id',
+        'category.name AS name',
+        'category.icon AS icon',
+        'category.userId AS userId',
+        'SUM(expense.cost) AS total',
+        'MONTH(expense.date) as month',
+        'YEAR(expense.date) as year'
+      ])
+      .orderBy('YEAR(expense.date)', 'ASC')
+      .addOrderBy('MONTH(expense.date)', 'ASC')
+      .getRawMany();
+
+    const { tableHead, rows } = this.generateTable(rawData);
+    return { tableHead, rows }
+
+  }
+
+  generateTable(data: Expense[]): { tableHead: string[], rows: any[][] } {
+    const tableHead: string[] = ["Categoria"];
+  const rows: (string | number)[][] = [];
+
+  const uniqueMonthsAndYears: string[] = Array.from(new Set(data.map(expense => `${expense.year}-${expense.month}`)))
+    .filter(combined => combined !== "null-null")  // Filtrar null-null
+    .sort();
+
+  uniqueMonthsAndYears.forEach(monthAndYear => {
+    tableHead.push(monthAndYear);
+  });
+  tableHead.push('Promedio')
+
+  data.forEach(expense => {
+    // Omitir filas donde año y mes son null
+    if (expense.year === null || expense.month === null) {
+      return;
+    }
+
+    const rowIndex = rows.findIndex(row => row[0] === expense.name);
+    if (rowIndex === -1) {
+      const newRow: (string | number)[] = [expense.name];
+      let totalSoFar = 0;
+
+      uniqueMonthsAndYears.forEach(monthAndYear => {
+        const [year, month] = monthAndYear.split('-');
+        const expenseOfYear = data.find(e =>
+          e.name === expense.name && e.year === Number(year) && e.month === Number(month)
+        );
+
+        if (expenseOfYear) {
+          newRow.push(Number(expenseOfYear.total));
+          totalSoFar += Number(expenseOfYear.total);
+        } else {
+          newRow.push(0);
+        }
+      });
+
+      newRow.push(totalSoFar / uniqueMonthsAndYears.length); // Agregar la columna de promedio
+      rows.push(newRow);
+    }
+  });
+
+  return { tableHead, rows };
   }
 }
