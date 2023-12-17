@@ -285,47 +285,47 @@ export class CategoriesService {
 
   generateTable(data: Expense[]): { tableHead: string[], rows: any[][] } {
     const tableHead: string[] = ["Categoria"];
-  const rows: (string | number)[][] = [];
+    const rows: (string | number)[][] = [];
 
-  const uniqueMonthsAndYears: string[] = Array.from(new Set(data.map(expense => `${expense.year}-${expense.month}`)))
-    .filter(combined => combined !== "null-null")  // Filtrar null-null
-    .sort();
+    const uniqueMonthsAndYears: string[] = Array.from(new Set(data.map(expense => `${expense.year}-${expense.month}`)))
+      .filter(combined => combined !== "null-null")  // Filtrar null-null
+      .sort();
 
-  uniqueMonthsAndYears.forEach(monthAndYear => {
-    tableHead.push(monthAndYear);
-  });
-  tableHead.push('Promedio')
+    uniqueMonthsAndYears.forEach(monthAndYear => {
+      tableHead.push(monthAndYear);
+    });
+    tableHead.push('Promedio')
 
-  data.forEach(expense => {
-    // Omitir filas donde año y mes son null
-    if (expense.year === null || expense.month === null) {
-      return;
-    }
+    data.forEach(expense => {
+      // Omitir filas donde año y mes son null
+      if (expense.year === null || expense.month === null) {
+        return;
+      }
 
-    const rowIndex = rows.findIndex(row => row[0] === expense.name);
-    if (rowIndex === -1) {
-      const newRow: (string | number)[] = [expense.name];
-      let totalSoFar = 0;
+      const rowIndex = rows.findIndex(row => row[0] === expense.name);
+      if (rowIndex === -1) {
+        const newRow: (string | number)[] = [expense.name];
+        let totalSoFar = 0;
 
-      uniqueMonthsAndYears.forEach(monthAndYear => {
-        const [year, month] = monthAndYear.split('-');
-        const expenseOfYear = data.find(e =>
-          e.name === expense.name && e.year === Number(year) && e.month === Number(month)
-        );
+        uniqueMonthsAndYears.forEach(monthAndYear => {
+          const [year, month] = monthAndYear.split('-');
+          const expenseOfYear = data.find(e =>
+            e.name === expense.name && e.year === Number(year) && e.month === Number(month)
+          );
 
-        if (expenseOfYear) {
-          newRow.push(Number(expenseOfYear.total));
-          totalSoFar += Number(expenseOfYear.total);
-        } else {
-          newRow.push(0);
-        }
-      });
+          if (expenseOfYear) {
+            newRow.push(Number(expenseOfYear.total));
+            totalSoFar += Number(expenseOfYear.total);
+          } else {
+            newRow.push(0);
+          }
+        });
 
-      newRow.push(totalSoFar / uniqueMonthsAndYears.length); // Agregar la columna de promedio
-      rows.push(newRow);
-    }
-  });
+        newRow.push(totalSoFar / uniqueMonthsAndYears.length); // Agregar la columna de promedio
+        rows.push(newRow);
+      }
+    });
 
-  return { tableHead, rows };
+    return { tableHead, rows };
   }
 }
