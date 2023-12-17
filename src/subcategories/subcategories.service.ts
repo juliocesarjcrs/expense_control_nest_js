@@ -28,10 +28,16 @@ export class SubcategoriesService {
     return await this.subcategoriesRepository.findOne({where: {id: id}});
   }
 
-  async findAllByCategory(idCategory: number) {
+  async findAllByCategory(idCategory: number, query) {
+    const queryWithExpenses = query ? query.withExpenses : false;
+    let relations = []
+    if (queryWithExpenses === 'true')  {
+      relations.push('expenses')
+      relations.push('category')
+    }
     return await this.subcategoriesRepository.find({
       where: { categoryId: Equal(idCategory) },
-      relations: ['expenses', 'category'],
+      relations,
     });
   }
 

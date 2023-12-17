@@ -50,7 +50,6 @@ export class CategoriesService {
     if (startDate && endDate) {
       return this.findAllExpensesByRangeDates(userId, startDate, endDate)
     }
-    console.log(`::: startDate ::: ${startDate}, ::: endDate ::: ${endDate}`)
     const data = await this.categoriesRepository
       .createQueryBuilder('category')
       .leftJoinAndSelect('category.subcategories', 'subcategory')

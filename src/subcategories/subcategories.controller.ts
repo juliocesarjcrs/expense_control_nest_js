@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   Request,
+  Query,
 } from '@nestjs/common';
 import { SubcategoriesService } from './subcategories.service';
 import { CreateSubcategoryDto } from './dto/create-subcategory.dto';
@@ -32,8 +33,8 @@ export class SubcategoriesController {
     return this.subcategoriesService.findOne(+id);
   }
   @Get('category/:id')
-  findAllByCategory(@Param('id') id: number){
-    return this.subcategoriesService.findAllByCategory(+id);
+  findAllByCategory(@Param('id') id: number,  @Query() query){
+    return this.subcategoriesService.findAllByCategory(+id, query);
   }
 
   @Put(':id')

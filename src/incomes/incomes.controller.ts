@@ -14,6 +14,7 @@ import {
 import { IncomesService } from './incomes.service';
 import { CreateIncomeDto } from './dto/create-income.dto';
 import { UpdateIncomeDto } from './dto/update-income.dto';
+import { IncomeSearchOptions } from './  income-search-options.interface';
 
 @Controller('incomes')
 export class IncomesController {
@@ -49,6 +50,21 @@ export class IncomesController {
     const incomes = await this.incomesService.findLastMonthsFromOnlyCategory(
       userId,
       +id,
+      query,
+    );
+    response.status(HttpStatus.OK).json(incomes);
+  }
+  @Get('by-category/:categoryId')
+  async findIncomesByCategory(
+    @Param('categoryId') categoryId: number,
+    @Request() req,
+    @Query() query: IncomeSearchOptions,
+    @Res() response,
+  ) {
+    const userId = req.user.id;
+    const incomes = await this.incomesService.findIncomesByCategoryId(
+      userId,
+      categoryId,
       query,
     );
     response.status(HttpStatus.OK).json(incomes);

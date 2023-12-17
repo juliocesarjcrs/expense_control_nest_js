@@ -5,6 +5,7 @@ import { Repository, Brackets } from 'typeorm';
 import { CreateIncomeDto } from './dto/create-income.dto';
 import { UpdateIncomeDto } from './dto/update-income.dto';
 import { Income } from './entities/income.entity';
+import { IncomeSearchOptions } from './  income-search-options.interface';
 
 @Injectable()
 export class IncomesService {
@@ -12,7 +13,7 @@ export class IncomesService {
     @InjectRepository(Income)
     private IncomeRepository: Repository<Income>,
     private datesService: DatesService,
-  ) {}
+  ) { }
 
   create(createIncomeDto: CreateIncomeDto): Promise<Income> {
     const IncomeEntity = new Income();
@@ -63,7 +64,7 @@ export class IncomesService {
   }
 
   async findOne(id: number): Promise<Income> {
-    const income = await this.IncomeRepository.findOne({where: {id: id}});
+    const income = await this.IncomeRepository.findOne({ where: { id: id } });
     if (!income)
       throw new HttpException('Income not found', HttpStatus.BAD_REQUEST);
     return income;
@@ -123,7 +124,7 @@ export class IncomesService {
   }
 
   async update(id: number, updateIncomeDto: UpdateIncomeDto) {
-    const income = await this.IncomeRepository.findOne({where: {id: id}});
+    const income = await this.IncomeRepository.findOne({ where: { id: id } });
     if (!income)
       throw new HttpException('Income not found', HttpStatus.BAD_REQUEST);
     const editIncome = Object.assign(income, updateIncomeDto);
@@ -159,7 +160,7 @@ export class IncomesService {
       .orderBy('YEAR(income.date)', 'ASC')
       .addOrderBy('MONTH(income.date)', 'ASC')
       .getRawMany();
-    const { fullDate , labels} =
+    const { fullDate, labels } =
       this.datesService.getPreviosMonthsLabelsIndex(numMonths);
     const incomes = [];
     fullDate.forEach((element) => {
@@ -191,4 +192,45 @@ export class IncomesService {
       sum,
     };
   }
+
+  async findIncomesByCategoryId(
+    userId: number,
+    categoryId: number,
+    options: IncomeSearchOptions = {},
+  ) {
+
+    const query = this.IncomeRepository.createQueryBuilder('income');
+    query.where('income.categoryId = :categoryId', { categoryId });
+    query.andWhere('income.user_id = :userId', { userId })
+
+    const { startDate, endDate, searchValue, orderBy, order } = options;
+
+    if (startDate) {
+      const startDateFormat = this.datesService.getFormatDate(startDate)
+      query.andWhere('income.date >= :startDateFormat', { startDateFormat });
+    }
+
+    if (endDate) {
+      const endDateFormat = this.datesService.getFormatDate(endDate)
+      query.andWhere('income.date <= :endDateFormat', { endDateFormat });
+    }
+
+    if (searchValue) {
+      query.andWhere('income.amount like :searchValue', {
+        searchValue: `%${searchValue}%`,
+      })
+        .orWhere('income.commentary like :searchValue', {
+          searchValue: `%${searchValue}%`,
+        });
+    }
+
+    if (orderBy && order) {
+      query.orderBy(`income.${orderBy}`, order);
+    }
+    const incomes = await query.getMany();
+    const sumIncomes = incomes.reduce((acu, val) => acu + val.amount, 0)
+
+    return { incomes, sum: sumIncomes };
+  }
+
 }
