@@ -6,13 +6,14 @@ import { CreateExpenseDto } from './dto/create-expense.dto';
 import { UpdateExpenseDto } from './dto/update-expense.dto';
 import { Expense } from './entities/expense.entity';
 import { downloadResourceCsv } from 'src/utils/helpers/file-helper';
+import { ExpenseSearchOptions } from './  expense-search-options.interface';
 @Injectable()
 export class ExpensesService {
   constructor(
     @InjectRepository(Expense)
     private expensesRepository: Repository<Expense>,
     private datesService: DatesService,
-  ) {}
+  ) { }
 
   async create(createExpenseDto: CreateExpenseDto) {
     const ExpenseEntity = new Expense();
@@ -80,7 +81,7 @@ export class ExpensesService {
   }
 
   async update(id: number, updateExpenseDto: UpdateExpenseDto) {
-    const expense = await this.expensesRepository.findOne({where: {id: id}});
+    const expense = await this.expensesRepository.findOne({ where: { id: id } });
     if (!expense) throw new NotFoundException();
     const editExpense = Object.assign(expense, updateExpenseDto);
     return this.expensesRepository.save(editExpense);
@@ -184,7 +185,7 @@ export class ExpensesService {
         let myCost = 0;
         expensesOfSubcategoryGroupByMonth.map((e) => {
           if (e.month === element.month && e.year === element.year) {
-            myCost =parseFloat(e.sum);
+            myCost = parseFloat(e.sum);
           }
         });
         expenses.push(myCost);
@@ -242,7 +243,7 @@ export class ExpensesService {
         let myCost = 0;
         expensesGroupByMonth.map((e) => {
           if (e.month === element.month && e.year === element.year) {
-            myCost =parseFloat(e.sum);
+            myCost = parseFloat(e.sum);
           }
         });
         expenses.push(myCost);
@@ -314,5 +315,53 @@ export class ExpensesService {
     ];
 
     return downloadResourceCsv(res, 'expenses.csv', fields, data);
+  }
+
+  async findExpensesBySubcategories(
+    userId: number,
+    subcategoriesId: number[],
+    options: ExpenseSearchOptions,
+  ) {
+    const query = this.expensesRepository.createQueryBuilder('expense');
+    query.select(['expense.id', 'expense.cost', 'expense.commentary', 'expense.date', 'expense.createdAt']);
+
+
+    query.where('expense.user_id = :userId', { userId });
+
+    if (subcategoriesId.length > 0) {
+      query.andWhere('expense.subcategoryId IN (:...subcategoriesId)', { subcategoriesId });
+    }
+
+    const { startDate, endDate, searchValue, orderBy, order } = options;
+
+    if (startDate) {
+      const startDateFormat = this.datesService.getFormatDate(startDate)
+      query.andWhere('expense.date >= :startDateFormat', { startDateFormat });
+    }
+
+    if (endDate) {
+      const endDateFormat = this.datesService.getFormatDate(endDate)
+      query.andWhere('expense.date <= :endDateFormat', { endDateFormat });
+    }
+
+    if (searchValue) {
+      query.andWhere('expense.cost like :searchValue', {
+        searchValue: `%${searchValue}%`,
+      })
+        .orWhere('expense.commentary like :searchValue', {
+          searchValue: `%${searchValue}%`,
+        });
+    }
+
+    if (orderBy && order) {
+      query.orderBy(`expense.${orderBy}`, order);
+    }
+    query.leftJoinAndSelect('expense.subcategories', 'subcategories');
+    query.addSelect(['subcategories.id', 'subcategories.name']);
+
+    const expenses = await query.getMany();
+    const sumExpenses = expenses.reduce((acu, val) => acu + val.cost, 0)
+
+    return { expenses, sum: sumExpenses };
   }
 }

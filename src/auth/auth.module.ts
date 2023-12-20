@@ -27,7 +27,7 @@ const StorageMethodFactoryProvider = {
     PassportModule,
     JwtModule.register({
       secret: jwtConstants.secret,
-      signOptions: { expiresIn: '180d' },
+      signOptions: { expiresIn: '360d' },
     }),
     TypeOrmModule.forFeature([User, Category]),
     MailModule,

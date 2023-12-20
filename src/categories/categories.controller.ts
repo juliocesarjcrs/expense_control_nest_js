@@ -53,7 +53,6 @@ export class CategoriesController {
         response.status(HttpStatus.OK).json(listCategories);
       })
       .catch((e) => {
-        console.log(e);
         response
           .status(HttpStatus.FORBIDDEN)
           .json({ message: 'Error en listar categorias con subcategorias' });
@@ -83,7 +82,6 @@ export class CategoriesController {
         response.status(HttpStatus.OK).json(listCategories);
       })
       .catch((e) => {
-        console.log(e);
         response
           .status(HttpStatus.FORBIDDEN)
           .json({ message: 'Error en listar categorias con subcategorias y gastos' });

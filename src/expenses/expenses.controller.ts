@@ -14,6 +14,7 @@ import {
 import { ExpensesService } from './expenses.service';
 import { CreateExpenseDto } from './dto/create-expense.dto';
 import { UpdateExpenseDto } from './dto/update-expense.dto';
+import { ExpenseSearchOptions } from './  expense-search-options.interface';
 
 @Controller('expenses')
 export class ExpensesController {
@@ -46,6 +47,26 @@ export class ExpensesController {
     const userId = req.user.id;
     return this.expensesService.findAllFromSubcategory(userId, +id, query);
   }
+  @Get('by-subcategories')
+  async findExpensesBySubcategories(
+    @Request() req,
+    @Query() { subcategoriesId, ...query }: ExpenseSearchOptions,
+    @Res() response,
+  ) {
+    if (!subcategoriesId){
+      return response.status(HttpStatus.BAD_REQUEST).json({
+        error: 'Las subcategories son obligatorias',
+      });
+    }
+    const userId = req.user.id;
+    const incomes = await this.expensesService.findExpensesBySubcategories(
+      userId,
+      subcategoriesId,
+      query,
+    );
+    response.status(HttpStatus.OK).json(incomes);
+  }
+
 
   @Get('subcategory/:id/last')
   async findLastMonthsFromSubcategory(
