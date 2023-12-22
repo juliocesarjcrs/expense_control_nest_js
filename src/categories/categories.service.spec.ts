@@ -1,11 +1,12 @@
 import { Test } from '@nestjs/testing';
-import { CategoriesService } from './categories.service';
+import { CategoriesService, RawExpenseData } from './categories.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Category } from './entities/category.entity';
 import { DatesService } from 'src/utils/dates/dates.service';
 import { CreateCategoryDto } from './dto/create-category-dto';
 import { UpdateCategoryDto } from './dto/updated-category.dto';
+import { Expense } from 'src/expenses/entities/expense.entity';
 
 describe('CategoriesService', () => {
   let categoriesService: CategoriesService;
@@ -145,5 +146,100 @@ describe('CategoriesService', () => {
         total: 100,
       });
     });
+  });
+  describe('generateTable', () => {
+    it('should return table format', async () => {
+      const data: RawExpenseData[] = [
+        {
+          id: 414,
+          name: 'Alimentación',
+          icon: 'shopping-cart',
+          userId: 44,
+          total: null,
+          month: null,
+          year: null
+        },
+        {
+          id: 434,
+          name: 'Transporte',
+          icon: 'automobile',
+          userId: 44,
+          total: '10',
+          month: 8,
+          year: 2023
+        },
+        {
+          id: 414,
+          name: 'Alimentación',
+          icon: 'shopping-cart',
+          userId: 44,
+          total: '20',
+          month: 8,
+          year: 2023
+        },
+        {
+          id: 374,
+          name: 'Vivienda',
+          icon: 'home',
+          userId: 44,
+          total: '30',
+          month: 8,
+          year: 2023
+        },
+        {
+          id: 375,
+          name: 'Vivienda',
+          icon: 'home',
+          userId: 44,
+          total: '50',
+          month: 9,
+          year: 2023
+        }
+      ]
+
+
+      const result = await categoriesService.generateTable(data)
+      expect(result).toEqual({
+        "tableHead": [
+          "Categoria",
+          "2023-8",
+          "2023-9",
+          "Promedio",
+          "Suma"
+        ],
+        "rows": [
+          [
+            "Transporte",
+            10,
+            0,
+            5,
+            10
+          ],
+          [
+            "Alimentación",
+            20,
+            0,
+            10,
+            20
+          ],
+          [
+            "Vivienda",
+            30,
+            50,
+            40,
+            80
+          ],
+          [
+            "Totales",
+            60,
+            50,
+            0,
+            110
+          ]
+        ]
+      });
+
+    });
+
   });
 });

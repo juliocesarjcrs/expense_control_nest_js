@@ -7,12 +7,12 @@ import { UpdateCategoryDto } from './dto/updated-category.dto';
 
 import { HttpException } from '@nestjs/common';
 import { DatesService } from 'src/utils/dates/dates.service';
-interface Expense {
+export interface RawExpenseData {
   id: number;
   name: string;
   icon: string;
   userId: number;
-  total: number;
+  total: string | null;
   month: number | null;
   year: number | null;
 }
@@ -283,7 +283,7 @@ export class CategoriesService {
 
   }
 
-  generateTable(data: Expense[]): { tableHead: string[], rows: any[][] } {
+  generateTable(data: RawExpenseData[]): { tableHead: string[], rows: any[][] } {
     const tableHead: string[] = ["Categoria"];
     const rows: (string | number)[][] = [];
 
@@ -294,7 +294,9 @@ export class CategoriesService {
     uniqueMonthsAndYears.forEach(monthAndYear => {
       tableHead.push(monthAndYear);
     });
-    tableHead.push('Promedio')
+    tableHead.push('Promedio');
+    tableHead.push('Suma');
+    const totals: number[] = Array(tableHead.length).fill(0);
 
     data.forEach(expense => {
       // Omitir filas donde año y mes son null
@@ -307,24 +309,34 @@ export class CategoriesService {
         const newRow: (string | number)[] = [expense.name];
         let totalSoFar = 0;
 
-        uniqueMonthsAndYears.forEach(monthAndYear => {
+        uniqueMonthsAndYears.forEach((monthAndYear, index) => {
           const [year, month] = monthAndYear.split('-');
           const expenseOfYear = data.find(e =>
             e.name === expense.name && e.year === Number(year) && e.month === Number(month)
           );
 
           if (expenseOfYear) {
-            newRow.push(Number(expenseOfYear.total));
-            totalSoFar += Number(expenseOfYear.total);
+
+
+            const expenseValue = Number(expenseOfYear.total);
+            newRow.push(expenseValue);
+            totalSoFar += expenseValue;
+            totals[index + 1] += typeof expenseValue === 'number' ? expenseValue : 0;
           } else {
             newRow.push(0);
           }
         });
 
         newRow.push(totalSoFar / uniqueMonthsAndYears.length); // Agregar la columna de promedio
+        newRow.push(totalSoFar);
+        totals[0] += totalSoFar;
         rows.push(newRow);
       }
     });
+    // Agregar fila de totales
+    const totalsRow: (string | number)[] = ['Totales', ...totals.slice(1, -2), 0, totals[0]];
+
+    rows.push(totalsRow)
 
     return { tableHead, rows };
   }
