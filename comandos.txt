@@ -113,3 +113,16 @@ Ej:
 
   NOTAS:
   -Las rutas las dinámicas Ej:  /products/:id.  Se dejan al final de las que no
+
+  // -------------------- generar Modulo Ej: Budget
+ 1) Crea la carpeta budgets
+ 2) se genera el módulo
+      nest g module budgets
+  3)Genero el controllador
+    nest generate controller budgets
+  4) Se genera el seervicio
+  nest g service budgets 
+
+  5) crear entidad
+nest g class budgets/entities/budget --no-spec
+crear carpeta entities y renombrar el modelo agragando .entity

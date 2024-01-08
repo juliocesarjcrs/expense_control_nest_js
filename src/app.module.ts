@@ -34,6 +34,9 @@ import { SavingModule } from './saving/saving.module';
 import { Saving } from './saving/entities/saving.entity';
 import { SavingController } from './saving/saving.controller';
 import { SavingService } from './saving/saving.service';
+import { BudgetsModule } from './budgets/budgets.module';
+import { BudgetsService } from './budgets/budgets.service';
+import { Budget } from './budgets/entities/budget.entity';
 
 @Module({
   imports: [
@@ -42,7 +45,7 @@ import { SavingService } from './saving/saving.service';
       envFilePath: `.env.${process.env.NODE_ENV}`,
     }),
     TypeOrmModule.forRootAsync(typeOrmConfigAsync),
-    TypeOrmModule.forFeature([User, Category, Subcategory, Expense, Income, Saving]),
+    TypeOrmModule.forFeature([User, Category, Subcategory, Expense, Income, Saving, Budget]),
     AuthModule,
     UsersModule,
     SubcategoriesModule,
@@ -52,6 +55,7 @@ import { SavingService } from './saving/saving.service';
     DatesModule,
     FilesModule,
     SavingModule,
+    BudgetsModule,
   ],
   controllers: [
     AppController,
@@ -70,7 +74,8 @@ import { SavingService } from './saving/saving.service';
     SubcategoriesService,
     ExpensesService,
     IncomesService,
-    SavingService
+    SavingService,
+    BudgetsService
   ],
 })
 export class AppModule {}
