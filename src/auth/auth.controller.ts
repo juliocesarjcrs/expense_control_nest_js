@@ -7,7 +7,6 @@ import {
   Post,
   Put,
   Query,
-  Request,
   Res,
 } from '@nestjs/common';
 import { Public } from 'src/utils/decorators/custumDecorators';

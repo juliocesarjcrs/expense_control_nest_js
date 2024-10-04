@@ -3,7 +3,6 @@ import { User } from 'src/users/entities/user.entity';
 import {
   Column,
   Entity,
-  Index,
   JoinColumn,
   ManyToOne,
   UpdateDateColumn,

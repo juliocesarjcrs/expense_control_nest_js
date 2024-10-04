@@ -7,9 +7,9 @@ export class SavingController {
   constructor(private readonly savingService: SavingService) {}
 
   @Get()
-  findAll(@Request() req, @Query() query) {
+  findAll(@Request() req) {
     const userId = req.user.id;
-    return this.savingService.findAll(userId, query);
+    return this.savingService.findAll(userId);
   }
 
   @Get('update')

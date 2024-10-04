@@ -49,7 +49,7 @@ describe('SavingService', () => {
     })),
   };
   const mockDatesService = {
-    getFormatDate: jest.fn().mockImplementation((date) => {
+    getFormatDate: jest.fn().mockImplementation(() => {
         return 'junio-2021';
     }),
   };
@@ -118,9 +118,7 @@ describe('SavingService', () => {
       },
       data: mockGetMany,
     };
-    const response = await service.findAll(1, {
-      numMonths: 4,
-    });
+    const response = await service.findAll(1);
     expect(response).toEqual(expected);
     expect(response).toEqual(
       expect.objectContaining({

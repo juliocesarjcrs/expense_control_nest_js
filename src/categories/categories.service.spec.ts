@@ -5,8 +5,7 @@ import { Repository } from 'typeorm';
 import { Category } from './entities/category.entity';
 import { DatesService } from 'src/utils/dates/dates.service';
 import { CreateCategoryDto } from './dto/create-category-dto';
-import { UpdateCategoryDto } from './dto/updated-category.dto';
-import { Expense } from 'src/expenses/entities/expense.entity';
+
 
 describe('CategoriesService', () => {
   let categoriesService: CategoriesService;
@@ -32,30 +31,34 @@ describe('CategoriesService', () => {
     datesService = moduleRef.get<DatesService>(DatesService);
   });
 
-  // describe('createCategory', () => {
-  //   it('should create a category', async () => {
-  //     const category: Category = {
-  //       id: 1,
-  //       name: 'category',
-  //       icon: 'icon',
-  //       userId: 1,
-  //       type: 0,
-  //       budget: 100,
-  //     };
-  //     jest
-  //       .spyOn(categoriesRepository, 'save')
-  //       .mockImplementation(async () => category);
-  //     const createCategoryDto: CreateCategoryDto = {
-  //       name: 'category',
-  //       icon: 'icon',
-  //       userId: 1,
-  //       type: 0,
-  //       budget: 100,
-  //     };
-  //     const result = await categoriesService.createCategory(createCategoryDto);
-  //     expect(result).toEqual(category);
-  //   });
-  // });
+  describe('createCategory', () => {
+    it('should create a category', async () => {
+      const category: Category = {
+        id: 1,
+        name: 'category',
+        icon: 'icon',
+        userId: 1,
+        type: 0,
+        budget: 100,
+        user: 1,
+        subcategories: [],
+        incomes: [],
+        createdAt:new Date,
+      };
+      jest
+        .spyOn(categoriesRepository, 'save')
+        .mockImplementation(async () => category);
+      const createCategoryDto: CreateCategoryDto = {
+        name: 'category',
+        icon: 'icon',
+        userId: 1,
+        type: 0,
+        budget: 100,
+      };
+      const result = await categoriesService.createCategory(createCategoryDto);
+      expect(result).toEqual(category);
+    });
+  });
 
   describe('findAllExpensesByMonth', () => {
     it('should return all expenses by month', async () => {

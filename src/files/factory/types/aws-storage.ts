@@ -40,12 +40,10 @@ export class AwsStorage implements IStorageMethod {
       };
       const results = await this.s3Client.send(new PutObjectCommand(params));
       if (results.$metadata.httpStatusCode === 200) {
-        console.log(results);
         return this.fileName;
       }
       throw new HttpException('Image not saved to s3', HttpStatus.BAD_REQUEST);
     } catch (error) {
-      console.log('Error', error);
       throw new HttpException(
         'Cannot  save file inside s3',
         HttpStatus.BAD_REQUEST,
@@ -58,7 +56,6 @@ export class AwsStorage implements IStorageMethod {
       const urlSigned = this.getSignedFileUrl(fileKey, 3600);
       return urlSigned;
     } catch (error) {
-      console.log('Error', error);
       throw new HttpException(
         'Cannot get file inside s3',
         HttpStatus.BAD_REQUEST,
@@ -81,9 +78,8 @@ export class AwsStorage implements IStorageMethod {
         Key: fileName
     });
       const response = await this.s3Client.send(command);
-      console.log('delete-----', response);
       // if (response.$metadata.httpStatusCode === 200) {
-      //   console.log(response);
+      //
       //   return response;
       // }else if (response.$metadata.httpStatusCode === 204) {
       //   throw new HttpException('Image not found into s3', HttpStatus.NO_CONTENT);
@@ -91,7 +87,6 @@ export class AwsStorage implements IStorageMethod {
       // throw new HttpException('Image cannnot deleted to s3', HttpStatus.BAD_REQUEST);
       return response;
     } catch (error) {
-      console.log('Error', error);
       throw new HttpException(
         'Cannot  cannnot delete file inside s3',
         HttpStatus.BAD_REQUEST,

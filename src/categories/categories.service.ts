@@ -84,8 +84,7 @@ export class CategoriesService {
     return { data: dataFormat, total: totalGeneraly };
   }
 
-  async findAllWithSubcategories(userId: number, query) {
-    const queryDate = query ? query.date : null;
+  async findAllWithSubcategories(userId: number) {
     const data = await this.categoriesRepository.find({
       relations: ['subcategories'],
       where: { userId: userId, type: 0 },

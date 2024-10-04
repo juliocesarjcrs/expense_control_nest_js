@@ -3,7 +3,7 @@ import { IStorageMethod } from './interfaces/storage-method.interface';
 import { AwsStorage } from './types/aws-storage';
 
 export class StorageMethodFactory {
-  static createStorageType(type: String): IStorageMethod {
+  static createStorageType(type: string): IStorageMethod {
     if (type === TYPE_STORAGE.AWS) {
       return new AwsStorage();
     }

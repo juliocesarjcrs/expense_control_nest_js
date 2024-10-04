@@ -1,5 +1,5 @@
-import { IsInt, IsOptional, IsString, Validate } from 'class-validator';
-import { User } from 'src/users/entities/user.entity';
+import { IsOptional, IsString } from 'class-validator';
+
 // import { IsUserAlreadyExist } from 'src/utils/validations/validation';
 
 export class CreateCategoryDto {

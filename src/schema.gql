@@ -1,0 +1,45 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+type User {
+  id: ID!
+  createdAt: DateTime!
+  name: String!
+  image: String
+  email: String!
+  password: String!
+  recoveryCode: String
+  role: Int!
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
+type Loan {
+  id: ID!
+  createdAt: DateTime!
+  type: Int!
+  amount: Int!
+  commentary: String
+  userId: Int!
+  user: User!
+}
+
+type Query {
+  loans: [Loan!]!
+}
+
+type Mutation {
+  createLoan(createLoanInput: CreateLoanInput!): Loan!
+  deleteLoan(id: Int!): Boolean!
+}
+
+input CreateLoanInput {
+  type: Int!
+  amount: Int!
+  commentary: String
+  userId: Int
+}

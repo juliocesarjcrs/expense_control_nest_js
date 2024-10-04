@@ -1,5 +1,4 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { TYPE_STORAGE_IMAGE } from 'src/config/global.env';
 // import { StorageMethodFactory } from './factory/storage-method.factory';
 import { FilesService } from './files.service';
 import { IStorageMethod } from './factory/interfaces/storage-method.interface';

@@ -28,8 +28,8 @@ export class SavingService {
     return this.SavingRepository.save(SavingEntity);
   }
 
-  async findAll(userId: number, query: { numMonths: number }) {
-    const numMonths = query.numMonths || 4;
+  async findAll(userId: number) {
+  
     const savingsByuser = await this.SavingRepository.createQueryBuilder(
       'saving',
     )
@@ -62,7 +62,7 @@ export class SavingService {
     const { fullDate } =
       this.datesService.getPreviosMonthsLabelsIndex(numMonths);
     const savingInsert = [];
-    const { data: savingsByUser } = await this.findAll(userId, query);
+    const { data: savingsByUser } = await this.findAll(userId);
     fullDate.forEach((element) => {
       const savingRow = new Saving();
       const idSaving = this.hasId(savingsByUser, element.date);

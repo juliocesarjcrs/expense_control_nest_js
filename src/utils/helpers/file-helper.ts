@@ -1,6 +1,4 @@
-import { Request } from 'express';
 import { diskStorage } from 'multer';
-import path from 'path';
 import { Parser } from 'json2csv';
 
 // export const imageFileFilter = (req: any, file: any, callback: any) => {
@@ -27,7 +25,7 @@ export const saveImageToStorage = {
   storage: diskStorage({
     destination: './uploads/prueba',
     filename: (req, file, cb) => {
-      const fileExtension: string = path.extname(file.originalname);
+      // const fileExtension: string = path.extname(file.originalname);
       const fileName: string = file.originalname;
       // const fileName: string = uuidv4() + fileExtension;
       cb(null, fileName);

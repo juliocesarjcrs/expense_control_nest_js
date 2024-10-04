@@ -18,8 +18,6 @@
 // //     if (!idUser) {
 // //       return false;
 // //     }
-// //     console.log('idUser', idUser);
-// //     console.log('usersService', this.usersService);
 // //     return this.usersService.findOne(idUser).then((user) => {
 // //       if (user) return false;
 // //       return true;
@@ -49,7 +47,7 @@
 //   ) {}
 
 //   async validate(text: string) {
-//     console.log('test', text);
+//
 
 //     const user = await this.userService.findOne(text);
 //     return !user;

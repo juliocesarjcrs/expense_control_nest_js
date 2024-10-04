@@ -17,18 +17,7 @@ let connection: Connection;
 
 const loadFixtures = async (sqlFileName: string) =>
   loadFixturesBase(connection, sqlFileName);
-const passwordUser2 = '123';
 
-const newUser = {
-  name: 'julio',
-  email: 'user3@correo.com',
-  password: passwordUser2,
-};
-const objChangePassword = {
-  currentlyPassword: passwordUser2,
-  password: '1234',
-  passwordComfirm: '1234',
-};
 export const tokenForUser = (user: Partial<User> = userSaved): string => {
   const res = app.get(AuthService).getTokenForUser(user as User);
   return res;

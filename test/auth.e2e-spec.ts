@@ -11,7 +11,6 @@ import {
 let app: INestApplication;
 let mod: TestingModule;
 let connection: Connection;
-let token: string;
 
 const loadFixtures = async (sqlFileName: string) =>
   loadFixturesBase(connection, sqlFileName);
@@ -55,7 +54,6 @@ describe('AuthController (e2e)', () => {
       .expect(200)
       .expect((res) => {
         expect(res.body.access_token).toBeDefined();
-        token = res.body.access_token;
       });
   });
 
@@ -63,7 +61,7 @@ describe('AuthController (e2e)', () => {
     return request(app.getHttpServer())
       .post('/auth/login')
       .set('Accept', 'application/json')
-      .send({ email: 'email@ccorreo.com', password: 'xx'})
+      .send({ email: 'email@ccorreo.com', password: 'xx' })
       .expect(400)
       .expect((res) => {
         expect(res.body.access_token).toBeUndefined();

@@ -24,7 +24,7 @@ describe('IncomesService', () => {
       .mockImplementation((income) =>
         Promise.resolve({ id: Date.now(), ...income }),
       ),
-    findOne: jest.fn().mockImplementation((id) =>
+    findOne: jest.fn().mockImplementation(() =>
       Promise.resolve({
         id: 5,
         createdAt: '2021-06-01T14:49:08.952Z',

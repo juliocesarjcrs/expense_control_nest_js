@@ -209,26 +209,6 @@ describe('ExpensesService', () => {
   });
 
   it('should be return one expense', async () => {
-    const expected = {
-      id: 5,
-      createdAt: '2021-05-24T17:56:13.196Z',
-      cost: 60000,
-      commentary: '',
-      date: '2021-05-24',
-      subcategoryId: {
-        id: 1,
-        createdAt: '2021-05-24T16:19:10.623Z',
-        name: 'Recibo Luz b',
-        icon: null,
-        categoryId: {
-          id: 1,
-          createdAt: '2021-05-24T16:18:13.023Z',
-          name: 'ALIMENTACIÓN2',
-          icon: 'home',
-          type: 0,
-        },
-      },
-    };
     const response = await service.findOne(5);
     expect(response).toEqual(
       expect.objectContaining({

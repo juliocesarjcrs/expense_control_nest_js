@@ -13,7 +13,6 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Request, Response } from 'express';
-import { Public } from 'src/utils/decorators/custumDecorators';
 import { imageFileFilter } from 'src/utils/helpers/file-helper';
 import { FilesService } from './files.service';
 
@@ -24,7 +23,7 @@ export class FilesController {
   // @Public()
   @Get('load')
   async  seeUploadedFile(@Query() query, @Res() res: Response) {
-    const data =  await this.filesService.laodFile(query.file, res);
+    const data =  await this.filesService.laodFile(query.file);
     res.status(HttpStatus.OK).json(data);
     // return res.sendFile(query.file, { root: './' });
   }
@@ -47,8 +46,7 @@ export class FilesController {
   @UseInterceptors(FileInterceptor('file'))
   async uploadFileAWSs3(
     @Res() res,
-    @UploadedFile() file: Express.Multer.File,
-    @Req() req: Request,
+    @UploadedFile() file: Express.Multer.File
   ) {
     console.log(file);
     const data =  await this.filesService.saveFileAwsS3(res, file, null);

@@ -9,12 +9,12 @@ dayjs.locale('es');
 @Injectable()
 export class DatesService {
   startMonth(date: string): Date {
-    let mydate = dayjs(date).startOf('month').format('YYYY-MM-DD');
+    const mydate = dayjs(date).startOf('month').format('YYYY-MM-DD');
     return new Date(mydate);
   }
 
   endMonth(date: string): Date {
-    let mydate = dayjs(date).endOf('month').format('YYYY-MM-DD');
+    const mydate = dayjs(date).endOf('month').format('YYYY-MM-DD');
     return new Date(mydate);
   }
 
@@ -36,7 +36,7 @@ export class DatesService {
   getPreviosMonthsLabelsIndex(take: number) {
     const labels = [];
     const fullDate = [];
-    let dateStartDate = dayjs().subtract(take, 'months').startOf('month');
+    const dateStartDate = dayjs().subtract(take, 'months').startOf('month');
     for (let i = 1; i <= take; i++) {
       const tempDate = dateStartDate.add(i, 'months');
       labels.push(`${tempDate.format('MMM -YYYY')}`);

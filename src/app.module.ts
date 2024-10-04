@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { HttpStatus, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -37,6 +37,12 @@ import { SavingService } from './saving/saving.service';
 import { BudgetsModule } from './budgets/budgets.module';
 import { BudgetsService } from './budgets/budgets.service';
 import { Budget } from './budgets/entities/budget.entity';
+import { LoansModule } from './loans/loans.module';
+import { GraphQLModule } from '@nestjs/graphql';
+import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
+import { ApolloServerPluginLandingPageLocalDefault } from '@apollo/server/plugin/landingPage/default';
+import { join } from 'path';
+import { Loan } from './loans/entities/loan.entity';
 
 @Module({
   imports: [
@@ -44,8 +50,35 @@ import { Budget } from './budgets/entities/budget.entity';
       isGlobal: true,
       envFilePath: `.env.${process.env.NODE_ENV}`,
     }),
+    GraphQLModule.forRoot<ApolloDriverConfig>({
+      autoSchemaFile: join(process.cwd(), 'src/schema.gql'), driver: ApolloDriver,
+      playground: false,
+      plugins: [ApolloServerPluginLandingPageLocalDefault()],
+      context: ({ req, res }) => ({ req, res }),
+      formatError: (error) => {
+        const originalError = error.extensions?.originalError as any;
+        if (error.extensions?.code === 'BAD_USER_INPUT') {
+          return {
+            message: error.message,
+            code: error.extensions.code
+          };
+        }
+        if (originalError) {
+          return {
+            statusCode: originalError.statusCode || HttpStatus.INTERNAL_SERVER_ERROR,
+            message: originalError.message || error.message,
+            timestamp: originalError.timestamp || new Date().toISOString(),
+            path: originalError.path || error.path,
+          };
+        }
+        return {
+          message: error.message,
+          code: error.extensions?.code,
+        };
+      }
+    }),
     TypeOrmModule.forRootAsync(typeOrmConfigAsync),
-    TypeOrmModule.forFeature([User, Category, Subcategory, Expense, Income, Saving, Budget]),
+    TypeOrmModule.forFeature([User, Category, Subcategory, Expense, Income, Saving, Budget, Loan]),
     AuthModule,
     UsersModule,
     SubcategoriesModule,
@@ -56,6 +89,7 @@ import { Budget } from './budgets/entities/budget.entity';
     FilesModule,
     SavingModule,
     BudgetsModule,
+    LoansModule,
   ],
   controllers: [
     AppController,
@@ -78,4 +112,4 @@ import { Budget } from './budgets/entities/budget.entity';
     BudgetsService
   ],
 })
-export class AppModule {}
+export class AppModule { }

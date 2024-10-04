@@ -30,7 +30,7 @@ export class SubcategoriesService {
 
   async findAllByCategory(idCategory: number, query) {
     const queryWithExpenses = query ? query.withExpenses : false;
-    let relations = []
+    const relations = []
     if (queryWithExpenses === 'true')  {
       relations.push('expenses')
       relations.push('category')

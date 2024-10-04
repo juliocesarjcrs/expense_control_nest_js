@@ -45,14 +45,14 @@ export class CategoriesController {
   }
 
   @Get('subcategories')
-  findAllWithSubategories(@Res() response, @Request() req, @Query() query) {
+  findAllWithSubategories(@Res() response, @Request() req) {
     const userId = req.user.id;
     this.categoryService
-      .findAllWithSubcategories(userId, query)
+      .findAllWithSubcategories(userId)
       .then((listCategories) => {
         response.status(HttpStatus.OK).json(listCategories);
       })
-      .catch((e) => {
+      .catch(() => {
         response
           .status(HttpStatus.FORBIDDEN)
           .json({ message: 'Error en listar categorias con subcategorias' });
@@ -66,8 +66,7 @@ export class CategoriesController {
       .then((listCategories) => {
         response.status(HttpStatus.OK).json(listCategories);
       })
-      .catch((e) => {
-        console.log(e);
+      .catch(() => {
         response
           .status(HttpStatus.FORBIDDEN)
           .json({ message: 'Error en listar categorias con subcategorias' });
@@ -81,7 +80,7 @@ export class CategoriesController {
       .then((listCategories) => {
         response.status(HttpStatus.OK).json(listCategories);
       })
-      .catch((e) => {
+      .catch(() => {
         response
           .status(HttpStatus.FORBIDDEN)
           .json({ message: 'Error en listar categorias con subcategorias y gastos' });
