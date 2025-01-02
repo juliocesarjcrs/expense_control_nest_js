@@ -297,8 +297,13 @@ export class CategoriesService {
     const rows: (string | number)[][] = [];
 
     const uniqueMonthsAndYears: string[] = Array.from(new Set(data.map(expense => `${expense.year}-${expense.month}`)))
-      .filter(combined => combined !== "null-null")  // Filtrar null-null
-      .sort();
+      .filter(combined => combined !== "null-null") // Filtrar null-null
+      .sort((a, b) => {
+        const [yearA, monthA] = a.split('-').map(Number);
+        const [yearB, monthB] = b.split('-').map(Number);
+        return yearA - yearB || monthA - monthB; // Ordenar por año, luego por mes
+      });
+
 
     uniqueMonthsAndYears.forEach(monthAndYear => {
       tableHead.push(monthAndYear);
@@ -343,7 +348,10 @@ export class CategoriesService {
       }
     });
     // Agregar fila de totales
-    const totalsRow: (string | number)[] = ['Totales', ...totals.slice(1, -2), 0, totals[0]];
+    const monthCount = uniqueMonthsAndYears.length; // Número de columnas de meses
+    const averageTotal = monthCount > 0 ? totals[0] / monthCount : 0; // Promedio general
+    const totalsRow: (string | number)[] = ['Totales', ...totals.slice(1, -2), averageTotal, totals[0]];
+
 
     rows.push(totalsRow)
 

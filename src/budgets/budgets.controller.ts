@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Query, Request } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Query, Request } from '@nestjs/common';
 import { CreateBudgetDto } from './dto/create-budget.dto';
 import { BudgetsService } from './budgets.service';
 
@@ -24,4 +24,9 @@ export class BudgetsController {
     const userId = req.user.id;
     return this.budgetsService.findAll(userId, query);
   }
+
+    @Delete(':id')
+    remove(@Param('id') id: string) {
+      return this.budgetsService.remove(+id);
+    }
 }

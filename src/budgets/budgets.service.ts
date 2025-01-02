@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Budget } from './entities/budget.entity';
 import { Repository } from 'typeorm';
@@ -9,7 +9,7 @@ export class BudgetsService {
   constructor(
     @InjectRepository(Budget)
     private readonly budgetRepository: Repository<Budget>,
-  ) {}
+  ) { }
 
   async createBudgets(budgets: CreateBudgetDto[]): Promise<Budget[]> {
     const createdBudgets = await this.budgetRepository.save(budgets);
@@ -32,5 +32,12 @@ export class BudgetsService {
     return {
       data: budgetByuser,
     };
+  }
+
+  async remove(id: number) {
+    const response = await this.budgetRepository.delete(id);
+    if (response.affected <= 0)
+      throw new HttpException('Budget not found', HttpStatus.BAD_REQUEST);
+    return response;
   }
 }
