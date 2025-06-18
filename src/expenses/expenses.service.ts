@@ -287,6 +287,7 @@ export class ExpensesService {
       )
       .orderBy('expense.id', 'DESC')
       .getRawMany();
+
     const fields = [
       {
         label: 'id',
@@ -303,6 +304,10 @@ export class ExpensesService {
       {
         label: 'subcategory',
         value: 'subcategory_name',
+      },
+      {
+        label: 'commentary',
+        value: 'expense_commentary',
       },
       {
         label: 'created at',
