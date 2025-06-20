@@ -350,12 +350,10 @@ export class ExpensesService {
     }
 
     if (searchValue) {
-      query.andWhere('expense.cost like :searchValue', {
-        searchValue: `%${searchValue}%`,
-      })
-        .orWhere('expense.commentary like :searchValue', {
-          searchValue: `%${searchValue}%`,
-        });
+      query.andWhere(
+        '(expense.cost LIKE :searchValue OR expense.commentary LIKE :searchValue)',
+        { searchValue: `%${searchValue}%` }
+      );
     }
 
     if (orderBy && order) {

@@ -3,6 +3,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { DatesService } from 'src/utils/dates/dates.service';
 import { Expense } from './entities/expense.entity';
 import { ExpensesService } from './expenses.service';
+import { ExpenseSearchOptions } from './  expense-search-options.interface';
 
 describe('ExpensesService', () => {
   let service: ExpensesService;
@@ -312,5 +313,212 @@ describe('ExpensesService', () => {
     };
     const response = await service.remove(5);
     expect(response).toEqual(expected);
+  });
+
+  describe('findExpensesBySubcategories filtering', () => {
+    const mockExpenses = [
+      {
+        id: 1,
+        userId: 1,
+        subcategoryId: 1424,
+        date: new Date('2022-06-01'),
+        cost: 100,
+        commentary: 'Lunch',
+      },
+      {
+        id: 2,
+        userId: 1,
+        subcategoryId: 1424,
+        date: new Date('2022-06-02'),
+        cost: 200,
+        commentary: 'Dinner',
+      },
+      {
+        id: 3,
+        userId: 1,
+        subcategoryId: 1425,
+        date: new Date('2022-06-03'),
+        cost: 150,
+        commentary: 'Taxi',
+      },
+      {
+        id: 4,
+        userId: 1,
+        subcategoryId: 1424,
+        date: new Date('2022-06-04'),
+        cost: 300,
+        commentary: 'Groceries',
+      },
+    ];
+
+    let service: ExpensesService;
+
+    beforeEach(async () => {
+      const module: TestingModule = await Test.createTestingModule({
+        providers: [
+          ExpensesService,
+          {
+            provide: getRepositoryToken(Expense),
+            useValue: {
+              createQueryBuilder: jest.fn(() => {
+                const query: any = {
+                  _userId: null,
+                  _subcategoriesIds: [],
+                  _startDate: undefined,
+                  _endDate: undefined,
+                  _search: '',
+                  _orderBy: undefined,
+                  _order: undefined,
+                  select() { return this; },
+                  where(sql: any, params: any) {
+                    if (params?.userId) this._userId = params.userId;
+                    if (params?.subcategoriesId) this._subcategoriesIds = params.subcategoriesId;
+                    return this;
+                  },
+                  andWhere(sql: any, params: any) {
+                    if (sql.includes('date >= ')) {
+                      this._startDate = params.startDateFormat;
+                    }
+                    if (sql.includes('date <= ')) {
+                      this._endDate = params.endDateFormat;
+                    }
+                    if (sql.includes('cost LIKE') || sql.includes('commentary LIKE')) {
+                      this._search = params.searchValue;
+                    }
+                    if (sql.includes('subcategoryId IN')) {
+                      this._subcategoriesIds = params.subcategoriesId;
+                    }
+                    return this;
+                  },
+                  orderBy(field?: string, order?: 'ASC' | 'DESC') {
+                    this._orderBy = field;
+                    this._order = order;
+                    return this;
+                  },
+                  leftJoinAndSelect() {
+                    return this;
+                  },
+                  addSelect() {
+                    return this;
+                  },
+                  getMany() {
+                    let result = mockExpenses;
+                    if (this._userId !== null) {
+                      result = result.filter(e => e.userId === this._userId);
+                    }
+                    if (this._subcategoriesIds && this._subcategoriesIds.length > 0) {
+                      result = result.filter(e => this._subcategoriesIds.includes(e.subcategoryId));
+                    }
+                    if (this._startDate) {
+                      result = result.filter(e =>
+                        mockDatesService.getFormatDate(e.date) >= this._startDate
+                      );
+                    }
+                    if (this._endDate) {
+                      result = result.filter(e =>
+                        mockDatesService.getFormatDate(e.date) <= this._endDate
+                      );
+                    }
+                    if (this._search) {
+                      const search = this._search.replace(/%/g, '');
+                      result = result.filter(
+                        e =>
+                          e.cost.toString().includes(search) ||
+                          e.commentary.includes(search)
+                      );
+                    }
+                    if (this._orderBy) {
+                      result = result.sort((a, b) => {
+                        if (this._orderBy === 'expense.date') {
+                          return this._order === 'DESC'
+                            ? b.date.getTime() - a.date.getTime()
+                            : a.date.getTime() - b.date.getTime();
+                        }
+                        if (this._orderBy === 'expense.amount') {
+                          return this._order === 'DESC'
+                            ? b.cost - a.cost
+                            : a.cost - b.cost;
+                        }
+                        return 0;
+                      });
+                    }
+                    return Promise.resolve(result);
+                  },
+                  setParameter() {
+                    return this;
+                  },
+                };
+                return query;
+              }),
+            },
+          },
+          {
+            provide: 'DatesService',
+            useValue: mockDatesService,
+          },
+          {
+            provide: mockDatesService.constructor,
+            useValue: mockDatesService,
+          },
+          {
+            provide: DatesService,
+            useValue: mockDatesService,
+          },
+        ],
+      }).compile();
+
+      service = module.get<ExpensesService>(ExpensesService);
+    });
+
+    it('should filter by subcategories and date when searchValue is empty', async () => {
+      const userId = 1;
+      const options: ExpenseSearchOptions = {
+        subcategoriesId: [1424],
+        startDate: new Date('2022-06-01'),
+        endDate: new Date('2022-06-30'),
+        searchValue: '',
+      };
+      const result = await service.findExpensesBySubcategories(userId, options.subcategoriesId!, options);
+      expect(result.expenses).toHaveLength(3);
+      expect(result.expenses.every(e => e.subcategoryId === 1424)).toBe(true);
+    });
+
+    it('should filter by subcategories, date, and searchValue (matching commentary)', async () => {
+      const userId = 1;
+      const options: ExpenseSearchOptions = {
+        subcategoriesId: [1424],
+        startDate: new Date('2022-06-01'),
+        endDate: new Date('2022-06-30'),
+        searchValue: 'Lunch',
+      };
+      const result = await service.findExpensesBySubcategories(userId, options.subcategoriesId!, options);
+      expect(result.expenses).toHaveLength(1);
+      expect(result.expenses[0].commentary).toBe('Lunch');
+    });
+
+    it('should filter by subcategories, date, and searchValue (matching cost)', async () => {
+      const userId = 1;
+      const options: ExpenseSearchOptions = {
+        subcategoriesId: [1424],
+        startDate: new Date('2022-06-01'),
+        endDate: new Date('2022-06-30'),
+        searchValue: '300',
+      };
+      const result = await service.findExpensesBySubcategories(userId, options.subcategoriesId!, options);
+      expect(result.expenses).toHaveLength(1);
+      expect(result.expenses[0].cost).toBe(300);
+    });
+
+    it('should return empty array if no expense matches all filters', async () => {
+      const userId = 1;
+      const options: ExpenseSearchOptions = {
+        subcategoriesId: [1424],
+        startDate: new Date('2022-06-01'),
+        endDate: new Date('2022-06-30'),
+        searchValue: 'Nonexistent',
+      };
+      const result = await service.findExpensesBySubcategories(userId, options.subcategoriesId!, options);
+      expect(result.expenses).toHaveLength(0);
+    });
   });
 });

@@ -236,7 +236,7 @@ describe('CategoriesService', () => {
             "Totales",
             60,
             50,
-            0,
+            55,
             110
           ]
         ]
