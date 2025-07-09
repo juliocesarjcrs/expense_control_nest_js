@@ -78,6 +78,9 @@ describe('ExpensesService', () => {
       addGroupBy: addGroupBySpy,
       getRawMany: getRawManySpy,
     })),
+    manager: {
+      transaction: jest.fn()
+    },
   };
   const mockDatesService = {
     monthAgo: jest.fn().mockImplementation(() => '12-05-2021'),
@@ -519,6 +522,99 @@ describe('ExpensesService', () => {
       };
       const result = await service.findExpensesBySubcategories(userId, options.subcategoriesId!, options);
       expect(result.expenses).toHaveLength(0);
+    });
+  });
+
+  describe('createMany', () => {
+    it('should create multiple expenses successfully', async () => {
+      const mockExpenses = [
+        {
+          userId: 1,
+          subcategoryId: 1,
+          cost: 100,
+          commentary: 'Gasto 1',
+          date: new Date('2023-01-01')
+        },
+        {
+          userId: 1,
+          subcategoryId: 2,
+          cost: 200,
+          commentary: 'Gasto 2',
+          date: new Date('2023-01-02')
+        }
+      ];
+
+      // Mock de la transacción
+      const mockSave = jest.fn()
+        .mockResolvedValueOnce({ id: 1, ...mockExpenses[0] })
+        .mockResolvedValueOnce({ id: 2, ...mockExpenses[1] });
+
+      mockExpenseRepository.manager = {
+        transaction: jest.fn().mockImplementation(async (cb) => {
+          return cb({
+            save: mockSave
+          });
+        })
+      };
+
+      const result = await service.createMany(mockExpenses);
+
+      expect(result).toHaveLength(2);
+      expect(result[0]).toEqual(expect.objectContaining({
+        ...mockExpenses[0],
+        id: 1
+      }));
+      expect(result[1]).toEqual(expect.objectContaining({
+        ...mockExpenses[1],
+        id: 2
+      }));
+      expect(mockExpenseRepository.manager.transaction).toHaveBeenCalled();
+      expect(mockSave).toHaveBeenCalledTimes(2);
+    });
+
+    it('should handle empty array input by returning empty array', async () => {
+      const result = await service.createMany([]);
+      expect(result).toEqual([]);
+    });
+
+    it('should maintain data integrity when one save fails', async () => {
+      const mockExpenses = [
+        {
+          userId: 1,
+          subcategoryId: 1,
+          cost: 100,
+          commentary: 'Gasto 1',
+          date: new Date('2023-01-01')
+        },
+        {
+          userId: 1,
+          subcategoryId: 2,
+          cost: 200,
+          commentary: 'Gasto 2',
+          date: new Date('2023-01-02')
+        }
+      ];
+
+      // Mock que falla en el segundo save
+      const mockSave = jest.fn()
+        .mockResolvedValueOnce({ id: 1, ...mockExpenses[0] })
+        .mockRejectedValueOnce(new Error('Save failed'));
+
+      mockExpenseRepository.manager = {
+        transaction: jest.fn().mockImplementation(async (cb) => {
+          try {
+            return await cb({
+              save: mockSave
+            });
+          } catch (error) {
+            throw error;
+          }
+        })
+      };
+
+      await expect(service.createMany(mockExpenses)).rejects.toThrow('Save failed');
+      expect(mockExpenseRepository.manager.transaction).toHaveBeenCalled();
+      expect(mockSave).toHaveBeenCalledTimes(2);
     });
   });
 });

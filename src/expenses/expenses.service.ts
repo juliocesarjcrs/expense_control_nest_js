@@ -26,6 +26,29 @@ export class ExpensesService {
     return this.expensesRepository.save(ExpenseEntity);
   }
 
+  async createMany(expenses: CreateExpenseDto[]) {
+    // Usamos un transaction para asegurar la atomicidad
+    return this.expensesRepository.manager.transaction(
+      async (transactionalEntityManager) => {
+        const createdExpenses = [];
+
+        for (const expense of expenses) {
+          const expenseEntity = new Expense();
+          expenseEntity.userId = expense.userId;
+          expenseEntity.subcategoryId = expense.subcategoryId;
+          expenseEntity.cost = expense.cost;
+          expenseEntity.commentary = expense.commentary;
+          expenseEntity.date = expense.date;
+
+          const savedExpense = await transactionalEntityManager.save(expenseEntity);
+          createdExpenses.push(savedExpense);
+        }
+
+        return createdExpenses;
+      }
+    );
+  }
+
   async findAll(userId: number, query: { numMonths: number }) {
     const numMonths = query.numMonths || 4;
     const expensesGroupByMonth = await this.expensesRepository

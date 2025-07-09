@@ -15,15 +15,30 @@ import { ExpensesService } from './expenses.service';
 import { CreateExpenseDto } from './dto/create-expense.dto';
 import { UpdateExpenseDto } from './dto/update-expense.dto';
 import { ExpenseSearchOptions } from './  expense-search-options.interface';
+import { CreateManyExpensesDto } from './dto/create-many-expenses.dto';
 
 @Controller('expenses')
 export class ExpensesController {
-  constructor(private readonly expensesService: ExpensesService) {}
+  constructor(private readonly expensesService: ExpensesService) { }
 
   @Post()
   async create(@Body() createExpenseDto: CreateExpenseDto, @Request() req) {
     createExpenseDto = { ...createExpenseDto, userId: req.user.id };
     return this.expensesService.create(createExpenseDto);
+  }
+
+  @Post('bulk')
+  async createMany(
+    @Body() createManyExpensesDto: CreateManyExpensesDto,
+    @Request() req
+  ) {
+    // Agregar userId a cada gasto
+    const expensesWithUser = createManyExpensesDto.expenses.map(expense => ({
+      ...expense,
+      userId: req.user.id
+    }));
+
+    return this.expensesService.createMany(expensesWithUser);
   }
 
   @Get()
@@ -53,7 +68,7 @@ export class ExpensesController {
     @Query() { subcategoriesId, ...query }: ExpenseSearchOptions,
     @Res() response,
   ) {
-    if (!subcategoriesId){
+    if (!subcategoriesId) {
       return response.status(HttpStatus.BAD_REQUEST).json({
         error: 'Las subcategories son obligatorias',
       });
