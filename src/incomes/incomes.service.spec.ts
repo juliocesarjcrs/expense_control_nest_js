@@ -60,6 +60,7 @@ describe('IncomesService', () => {
       addOrderBy: addOrderBySpy,
       addGroupBy: addGroupBySpy,
       getRawMany: getRawManySpy,
+      getMany: jest.fn(), // Add getMany to the returned object
     })),
   };
   const mockDatesService = {
@@ -177,5 +178,33 @@ describe('IncomesService', () => {
     };
     const response = await service.remove(5);
     expect(response).toEqual(expected);
+  });
+  it('should return incomes by categoryId and userId with sum', async () => {
+    // Mock para getMany
+    const mockIncomes = [
+      { amount: 1000 },
+      { amount: 2000 },
+      { amount: 3000 },
+    ];
+    const getManySpy = jest.fn().mockResolvedValue(mockIncomes);
+
+    // Mock del query builder
+    mockIncomeRepository.createQueryBuilder.mockReturnValue({
+      select: jest.fn().mockReturnThis(),
+      addSelect: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      groupBy: jest.fn().mockReturnThis(),
+      orderBy: jest.fn().mockReturnThis(),
+      addOrderBy: jest.fn().mockReturnThis(),
+      addGroupBy: jest.fn().mockReturnThis(),
+      getRawMany: jest.fn().mockReturnThis(),
+      getMany: getManySpy,
+    });
+
+    const result = await service.findIncomesByCategoryId(1, 10, {});
+    expect(result.incomes).toEqual(mockIncomes);
+    expect(result.sum).toBe(6000);
+    expect(getManySpy).toHaveBeenCalled();
   });
 });

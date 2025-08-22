@@ -216,12 +216,10 @@ export class IncomesService {
     }
 
     if (searchValue) {
-      query.andWhere('income.amount like :searchValue', {
-        searchValue: `%${searchValue}%`,
-      })
-        .orWhere('income.commentary like :searchValue', {
-          searchValue: `%${searchValue}%`,
-        });
+      query.andWhere(
+        '(income.amount LIKE :searchValue OR income.commentary LIKE :searchValue)',
+        { searchValue: `%${searchValue}%` }
+      );
     }
 
     if (orderBy && order) {
