@@ -1,3 +1,6 @@
+import * as crypto from 'crypto';
+(global as any).crypto = crypto;
+
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { useContainer } from 'class-validator';
@@ -14,8 +17,8 @@ async function bootstrap() {
       whitelist: true,
     }),
   );
-   // Establece la zona horaria en UTC
-   app.use((req, res, next) => {
+  // Establece la zona horaria en UTC
+  app.use((req, res, next) => {
     process.env.TZ = 'UTC';
     next();
   });
