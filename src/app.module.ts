@@ -43,6 +43,7 @@ import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { ApolloServerPluginLandingPageLocalDefault } from '@apollo/server/plugin/landingPage/default';
 import { join } from 'path';
 import { Loan } from './loans/entities/loan.entity';
+import { ChatbotModule } from './chatbot/chatbot.module';
 
 @Module({
   imports: [
@@ -51,7 +52,8 @@ import { Loan } from './loans/entities/loan.entity';
       envFilePath: `.env.${process.env.NODE_ENV}`,
     }),
     GraphQLModule.forRoot<ApolloDriverConfig>({
-      autoSchemaFile: join(process.cwd(), 'src/schema.gql'), driver: ApolloDriver,
+      autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
+      driver: ApolloDriver,
       playground: false,
       plugins: [ApolloServerPluginLandingPageLocalDefault()],
       context: ({ req, res }) => ({ req, res }),
@@ -60,12 +62,13 @@ import { Loan } from './loans/entities/loan.entity';
         if (error.extensions?.code === 'BAD_USER_INPUT') {
           return {
             message: error.message,
-            code: error.extensions.code
+            code: error.extensions.code,
           };
         }
         if (originalError) {
           return {
-            statusCode: originalError.statusCode || HttpStatus.INTERNAL_SERVER_ERROR,
+            statusCode:
+              originalError.statusCode || HttpStatus.INTERNAL_SERVER_ERROR,
             message: originalError.message || error.message,
             timestamp: originalError.timestamp || new Date().toISOString(),
             path: originalError.path || error.path,
@@ -75,10 +78,19 @@ import { Loan } from './loans/entities/loan.entity';
           message: error.message,
           code: error.extensions?.code,
         };
-      }
+      },
     }),
     TypeOrmModule.forRootAsync(typeOrmConfigAsync),
-    TypeOrmModule.forFeature([User, Category, Subcategory, Expense, Income, Saving, Budget, Loan]),
+    TypeOrmModule.forFeature([
+      User,
+      Category,
+      Subcategory,
+      Expense,
+      Income,
+      Saving,
+      Budget,
+      Loan,
+    ]),
     AuthModule,
     UsersModule,
     SubcategoriesModule,
@@ -90,6 +102,7 @@ import { Loan } from './loans/entities/loan.entity';
     SavingModule,
     BudgetsModule,
     LoansModule,
+    ChatbotModule.register(),
   ],
   controllers: [
     AppController,
@@ -98,7 +111,7 @@ import { Loan } from './loans/entities/loan.entity';
     SubcategoriesController,
     ExpensesController,
     IncomesController,
-    SavingController
+    SavingController,
   ],
   providers: [
     AppService,
@@ -109,7 +122,7 @@ import { Loan } from './loans/entities/loan.entity';
     ExpensesService,
     IncomesService,
     SavingService,
-    BudgetsService
+    BudgetsService,
   ],
 })
-export class AppModule { }
+export class AppModule {}
