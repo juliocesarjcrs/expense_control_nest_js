@@ -12,8 +12,8 @@ export class Subcategory extends Content {
   @Column({ nullable: true })
   icon: string;
 
-  @Column({ name: 'category_id' , nullable: false })
-  categoryId: number
+  @Column({ name: 'category_id', nullable: false })
+  categoryId: number;
 
   @ManyToOne(() => Category, (category) => category.subcategories, {
     nullable: false,
@@ -22,8 +22,8 @@ export class Subcategory extends Content {
   @JoinColumn({ name: 'category_id' })
   category: Category;
 
-  @Column({ name: 'user_id' , nullable: false })
-  userId: number
+  @Column({ name: 'user_id', nullable: false })
+  userId: number;
 
   @ManyToOne(() => User, { nullable: false })
   @JoinColumn({ name: 'user_id' })

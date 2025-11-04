@@ -8,11 +8,11 @@ describe('SavingController', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [SavingController],
-      providers: [SavingService]
+      providers: [SavingService],
     })
-    .overrideProvider(SavingService)
-    .useValue(mockSavingServiceService)
-    .compile();
+      .overrideProvider(SavingService)
+      .useValue(mockSavingServiceService)
+      .compile();
 
     controller = module.get<SavingController>(SavingController);
   });

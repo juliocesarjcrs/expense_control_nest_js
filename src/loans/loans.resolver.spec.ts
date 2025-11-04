@@ -13,7 +13,7 @@ describe('LoansResolver', () => {
     userId: 1,
     commentary: 'Test loan',
     createdAt: '2023-01-03T12:11:06.792Z',
-    user: 1
+    user: 1,
   };
 
   const mockUser = {
@@ -62,7 +62,7 @@ describe('LoansResolver', () => {
         type: 0,
         amount: 1000,
         commentary: 'Test loan',
-        userId: 1
+        userId: 1,
       };
 
       const savedLoan = { ...mockLoan, id: 1 };

@@ -45,9 +45,7 @@ describe('FilesController (e2e)', () => {
       .set('Authorization', `Bearer ${tokenForUser()}`)
       .expect(200)
       .then((response) => {
-        expect(response.body).toEqual(
-          expect.any(String)
-        );
+        expect(response.body).toEqual(expect.any(String));
       });
   });
 });

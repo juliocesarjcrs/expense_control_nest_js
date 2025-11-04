@@ -33,7 +33,7 @@ export class SubcategoriesController {
     return this.subcategoriesService.findOne(+id);
   }
   @Get('category/:id')
-  findAllByCategory(@Param('id') id: number,  @Query() query){
+  findAllByCategory(@Param('id') id: number, @Query() query) {
     return this.subcategoriesService.findAllByCategory(+id, query);
   }
 

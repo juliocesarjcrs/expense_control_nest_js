@@ -16,6 +16,7 @@ export default class TypeOrmConfig {
       entities: [__dirname + '/../**/*.entity{.ts,.js}'],
       synchronize: true,
       dropSchema: Boolean(parseInt(configService.get('DB_DROP_SCHEMA'))),
+      charset: 'utf8mb4',
     };
   }
   static getOrmConfigProd(configService: ConfigService): TypeOrmModuleOptions {
@@ -29,6 +30,7 @@ export default class TypeOrmConfig {
       entities: [__dirname + '/../**/*.entity{.ts,.js}'],
       synchronize: true,
       dropSchema: false,
+      charset: 'utf8mb4',
     };
   }
   static getOrmConfigTest(configService: ConfigService): TypeOrmModuleOptions {

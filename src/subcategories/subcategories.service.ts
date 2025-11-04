@@ -25,15 +25,15 @@ export class SubcategoriesService {
   }
 
   async findOne(id: number) {
-    return await this.subcategoriesRepository.findOne({where: {id: id}});
+    return await this.subcategoriesRepository.findOne({ where: { id: id } });
   }
 
   async findAllByCategory(idCategory: number, query) {
     const queryWithExpenses = query ? query.withExpenses : false;
-    const relations = []
-    if (queryWithExpenses === 'true')  {
-      relations.push('expenses')
-      relations.push('category')
+    const relations = [];
+    if (queryWithExpenses === 'true') {
+      relations.push('expenses');
+      relations.push('category');
     }
     return await this.subcategoriesRepository.find({
       where: { categoryId: Equal(idCategory) },
@@ -42,7 +42,9 @@ export class SubcategoriesService {
   }
 
   async update(id: number, updateSubcategoryDto: UpdateSubcategoryDto) {
-    const subcategory = await this.subcategoriesRepository.findOne({where: {id: id}});
+    const subcategory = await this.subcategoriesRepository.findOne({
+      where: { id: id },
+    });
     if (!subcategory)
       throw new HttpException('Id not found', HttpStatus.NOT_FOUND);
     const editSubcategory = Object.assign(subcategory, updateSubcategoryDto);

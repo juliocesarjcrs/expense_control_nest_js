@@ -22,8 +22,8 @@ export class FilesController {
 
   // @Public()
   @Get('load')
-  async  seeUploadedFile(@Query() query, @Res() res: Response) {
-    const data =  await this.filesService.laodFile(query.file);
+  async seeUploadedFile(@Query() query, @Res() res: Response) {
+    const data = await this.filesService.laodFile(query.file);
     res.status(HttpStatus.OK).json(data);
     // return res.sendFile(query.file, { root: './' });
   }
@@ -44,12 +44,9 @@ export class FilesController {
 
   @Post('upload/s3')
   @UseInterceptors(FileInterceptor('file'))
-  async uploadFileAWSs3(
-    @Res() res,
-    @UploadedFile() file: Express.Multer.File
-  ) {
+  async uploadFileAWSs3(@Res() res, @UploadedFile() file: Express.Multer.File) {
     console.log(file);
-    const data =  await this.filesService.saveFileAwsS3(res, file, null);
+    const data = await this.filesService.saveFileAwsS3(res, file, null);
     res.status(HttpStatus.OK).json(data);
   }
 

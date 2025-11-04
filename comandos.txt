@@ -126,3 +126,12 @@ Ej:
   5) crear entidad
 nest g class budgets/entities/budget --no-spec
 crear carpeta entities y renombrar el modelo agragando .entity
+
+//------------------------------  generar Modulo Ej: chatbot
+ 1) Crea la carpeta 'chatbot'
+2) se genera el módulo
+  nest generate module chatbot
+  3)Genero el controllador
+    nest g controller chatbot
+    4) Se genera el seervicio
+  nest g service chatbot 

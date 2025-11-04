@@ -23,7 +23,7 @@ const newUser = {
   name: 'julio',
   email: 'user3@correo.com',
   password: passwordUser2,
-  role: '1'
+  role: '1',
 };
 const objChangePassword = {
   currentlyPassword: passwordUser2,

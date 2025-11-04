@@ -3,7 +3,7 @@ import {
   HttpStatus,
   Inject,
   Injectable,
-  Req
+  Req,
 } from '@nestjs/common';
 import { Request } from 'express';
 import * as fs from 'fs';
@@ -12,9 +12,7 @@ import multer from 'multer';
 import { diskStorage } from 'multer';
 
 import path from 'path';
-import {
-  imageFileFilter,
-} from 'src/utils/helpers/file-helper';
+import { imageFileFilter } from 'src/utils/helpers/file-helper';
 import { uuid } from 'uuidv4';
 import { IStorageMethod } from './factory/interfaces/storage-method.interface';
 
@@ -23,7 +21,7 @@ export class FilesService {
   constructor(
     @Inject('IStorageMethod')
     private readonly storageMethod: IStorageMethod,
-  ) { }
+  ) {}
   fileExists(path: string): boolean {
     if (fs.existsSync(path)) {
       return true;
@@ -107,7 +105,7 @@ export class FilesService {
   async saveFileAwsS3(
     res: any,
     file: Express.Multer.File,
-    fileNameOld: string | null
+    fileNameOld: string | null,
   ) {
     if (!file || res.fileValidationError) {
       throw new HttpException('File not found', HttpStatus.BAD_REQUEST);
@@ -120,7 +118,6 @@ export class FilesService {
     this.storageMethod.setFilename(nameFile);
     const result = await this.storageMethod.uploadFile(file);
     return result;
-
   }
 
   async deleteFile(path: string) {

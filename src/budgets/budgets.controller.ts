@@ -1,4 +1,13 @@
-import { Body, Controller, Delete, Get, Param, Post, Query, Request } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Query,
+  Request,
+} from '@nestjs/common';
 import { CreateBudgetDto } from './dto/create-budget.dto';
 import { BudgetsService } from './budgets.service';
 
@@ -9,10 +18,14 @@ export class BudgetsController {
   @Post()
   async create(@Body() createBudgetDto: CreateBudgetDto[], @Request() req) {
     // Asigna el userId basado en la información del usuario autenticado
-    const budgetsWithUserId = createBudgetDto.map(budget => ({ ...budget, userId: req.user.id }));
+    const budgetsWithUserId = createBudgetDto.map((budget) => ({
+      ...budget,
+      userId: req.user.id,
+    }));
 
     try {
-      const createdBudgets = await this.budgetsService.createBudgets(budgetsWithUserId);
+      const createdBudgets =
+        await this.budgetsService.createBudgets(budgetsWithUserId);
       return { success: true, data: createdBudgets };
     } catch (error) {
       return { success: false, error: error.message };
@@ -25,8 +38,8 @@ export class BudgetsController {
     return this.budgetsService.findAll(userId, query);
   }
 
-    @Delete(':id')
-    remove(@Param('id') id: string) {
-      return this.budgetsService.remove(+id);
-    }
+  @Delete(':id')
+  remove(@Param('id') id: string) {
+    return this.budgetsService.remove(+id);
+  }
 }

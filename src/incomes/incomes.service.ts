@@ -13,7 +13,7 @@ export class IncomesService {
     @InjectRepository(Income)
     private IncomeRepository: Repository<Income>,
     private datesService: DatesService,
-  ) { }
+  ) {}
 
   create(createIncomeDto: CreateIncomeDto): Promise<Income> {
     const IncomeEntity = new Income();
@@ -164,7 +164,9 @@ export class IncomesService {
       this.datesService.getPreviosMonthsLabelsIndex(numMonths);
     const incomes = [];
     fullDate.forEach((element) => {
-      const found = incomesGroupByMonth.some((a) => a.month == element.month && a.year == element.year);
+      const found = incomesGroupByMonth.some(
+        (a) => a.month == element.month && a.year == element.year,
+      );
       if (found) {
         let myCost = 0;
         incomesGroupByMonth.forEach((e) => {
@@ -198,27 +200,26 @@ export class IncomesService {
     categoryId: number,
     options: IncomeSearchOptions = {},
   ) {
-
     const query = this.IncomeRepository.createQueryBuilder('income');
     query.where('income.categoryId = :categoryId', { categoryId });
-    query.andWhere('income.user_id = :userId', { userId })
+    query.andWhere('income.user_id = :userId', { userId });
 
     const { startDate, endDate, searchValue, orderBy, order } = options;
 
     if (startDate) {
-      const startDateFormat = this.datesService.getFormatDate(startDate)
+      const startDateFormat = this.datesService.getFormatDate(startDate);
       query.andWhere('income.date >= :startDateFormat', { startDateFormat });
     }
 
     if (endDate) {
-      const endDateFormat = this.datesService.getFormatDate(endDate)
+      const endDateFormat = this.datesService.getFormatDate(endDate);
       query.andWhere('income.date <= :endDateFormat', { endDateFormat });
     }
 
     if (searchValue) {
       query.andWhere(
         '(income.amount LIKE :searchValue OR income.commentary LIKE :searchValue)',
-        { searchValue: `%${searchValue}%` }
+        { searchValue: `%${searchValue}%` },
       );
     }
 
@@ -226,9 +227,8 @@ export class IncomesService {
       query.orderBy(`income.${orderBy}`, order);
     }
     const incomes = await query.getMany();
-    const sumIncomes = incomes.reduce((acu, val) => acu + val.amount, 0)
+    const sumIncomes = incomes.reduce((acu, val) => acu + val.amount, 0);
 
     return { incomes, sum: sumIncomes };
   }
-
 }

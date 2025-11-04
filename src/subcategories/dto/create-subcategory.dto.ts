@@ -14,6 +14,4 @@ export class CreateSubcategoryDto {
   readonly categoryId: number;
   readonly category: Category;
   readonly user: User;
-
 }
-

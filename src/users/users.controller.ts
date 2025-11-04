@@ -8,7 +8,7 @@ import {
   Put,
   Res,
   UploadedFile,
-  UseInterceptors
+  UseInterceptors,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user-dto';
@@ -17,12 +17,9 @@ import { ChangePasswordDto } from './dto/change-password-dto';
 import { UpdatedUserDto } from './dto/updated-user-dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 
-
-
 @Controller('users')
 export class UsersController {
-  constructor(private userService: UsersService
-  ) { }
+  constructor(private userService: UsersService) {}
 
   @Public()
   @Post()
@@ -58,7 +55,12 @@ export class UsersController {
     @Param('id') id: number,
     @Body() updatedUserDto: UpdatedUserDto,
   ) {
-    const data = await this.userService.updateProfile(+id, updatedUserDto, res, image);
+    const data = await this.userService.updateProfile(
+      +id,
+      updatedUserDto,
+      res,
+      image,
+    );
     res.status(HttpStatus.OK).json(data);
   }
 
@@ -66,5 +68,4 @@ export class UsersController {
   update(@Param('id') id: string, @Body() data: ChangePasswordDto) {
     return this.userService.changePassword(id, data);
   }
-
 }

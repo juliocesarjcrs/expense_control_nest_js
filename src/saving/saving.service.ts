@@ -29,7 +29,6 @@ export class SavingService {
   }
 
   async findAll(userId: number) {
-  
     const savingsByuser = await this.SavingRepository.createQueryBuilder(
       'saving',
     )
@@ -40,8 +39,8 @@ export class SavingService {
     const expenses = savingsByuser.map((e) => e.expense);
     const incomes = savingsByuser.map((e) => e.income);
     const savings = savingsByuser.map((e) => e.saving);
-    const labels = savingsByuser.map(
-      (e) => this.datesService.getFormatDate(e.date, 'MMMM-YYYY')
+    const labels = savingsByuser.map((e) =>
+      this.datesService.getFormatDate(e.date, 'MMMM-YYYY'),
     );
     return {
       data: savingsByuser,
@@ -82,7 +81,7 @@ export class SavingService {
         .insert()
         .into('saving')
         .values(savingInsert)
-        .orUpdate(['saving', 'income','expense'], ['user_id'], {
+        .orUpdate(['saving', 'income', 'expense'], ['user_id'], {
           skipUpdateIfNoValuesChanged: true,
         })
         .execute();

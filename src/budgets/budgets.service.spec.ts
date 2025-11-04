@@ -6,15 +6,16 @@ import { Budget } from './entities/budget.entity';
 describe('BudgetsService', () => {
   let service: BudgetsService;
 
-  const mockBudgetsRepository = {}
+  const mockBudgetsRepository = {};
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [BudgetsService,
+      providers: [
+        BudgetsService,
         {
           provide: getRepositoryToken(Budget),
           useValue: mockBudgetsRepository,
-        }
+        },
       ],
     }).compile();
 

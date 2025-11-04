@@ -13,6 +13,6 @@ const StorageMethodFactoryProvider = {
 @Module({
   controllers: [FilesController],
   providers: [FilesService, StorageMethodFactoryProvider],
-  exports:[FilesService]
+  exports: [FilesService],
 })
 export class FilesModule {}

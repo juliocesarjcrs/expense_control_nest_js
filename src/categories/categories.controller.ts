@@ -73,7 +73,11 @@ export class CategoriesController {
       });
   }
   @Get('subcategories/expenses/month')
-  findAllSubcategoriesExpensesByMonth(@Res() response, @Request() req, @Query() query) {
+  findAllSubcategoriesExpensesByMonth(
+    @Res() response,
+    @Request() req,
+    @Query() query,
+  ) {
     const userId = req.user.id;
     this.categoryService
       .findAllSubcategoriesExpensesByMonth(userId, query)
@@ -83,7 +87,9 @@ export class CategoriesController {
       .catch(() => {
         response
           .status(HttpStatus.FORBIDDEN)
-          .json({ message: 'Error en listar categorias con subcategorias y gastos' });
+          .json({
+            message: 'Error en listar categorias con subcategorias y gastos',
+          });
       });
   }
   @Get('incomes')

@@ -1,15 +1,14 @@
-import { Field, InputType, Int } from "@nestjs/graphql";
-import { IsInt, IsNotEmpty, IsString, MaxLength } from "class-validator";
+import { Field, InputType, Int } from '@nestjs/graphql';
+import { IsInt, IsNotEmpty, IsString, MaxLength } from 'class-validator';
 
 @InputType()
 export class CreateLoanInput {
-
   @IsNotEmpty()
   @IsInt()
   @Field(() => Int)
   readonly type: number;
 
-  @IsNotEmpty({ message: 'El monto es obligatorio'})
+  @IsNotEmpty({ message: 'El monto es obligatorio' })
   @IsInt()
   @Field(() => Int)
   readonly amount: number;
@@ -20,7 +19,6 @@ export class CreateLoanInput {
   @IsString()
   @Field(() => String, { nullable: true })
   readonly commentary?: string;
-
 
   @Field(() => Int, { nullable: true })
   readonly userId: number;

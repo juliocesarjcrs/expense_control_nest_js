@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import * as dayjs  from 'dayjs';
+import * as dayjs from 'dayjs';
 import * as isLeapYear from 'dayjs/plugin/isLeapYear'; // import plugin
 import 'dayjs/locale/es'; // import locale
 
@@ -41,23 +41,23 @@ export class DatesService {
       const tempDate = dateStartDate.add(i, 'months');
       labels.push(`${tempDate.format('MMM -YYYY')}`);
       fullDate.push({
-        month: tempDate.month() +1,
+        month: tempDate.month() + 1,
         year: tempDate.year(),
-        date: tempDate.format('YYYY-MM-DD')
-      })
+        date: tempDate.format('YYYY-MM-DD'),
+      });
     }
     return { labels, fullDate };
   }
 
   startMonthRaw(date: string): dayjs.Dayjs {
-    return  dayjs(date).startOf('month');
+    return dayjs(date).startOf('month');
   }
 
-  endMonthRaw(date: string):  dayjs.Dayjs {
-    return  dayjs(date).endOf('month');
+  endMonthRaw(date: string): dayjs.Dayjs {
+    return dayjs(date).endOf('month');
   }
 
-  getDate(date: Date):  dayjs.Dayjs {
+  getDate(date: Date): dayjs.Dayjs {
     return dayjs(date);
   }
 
@@ -74,5 +74,4 @@ export class DatesService {
     const endMonth = selectedMonth.endOf('month');
     return endMonth.format('YYYY-MM-DD HH:mm:ss.SSS');
   }
-
 }

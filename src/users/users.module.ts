@@ -23,7 +23,7 @@ const StorageMethodFactoryProvider = {
       useClass: JwtAuthGuard,
     },
     FilesService,
-    StorageMethodFactoryProvider
+    StorageMethodFactoryProvider,
   ],
   exports: [UsersService],
 })

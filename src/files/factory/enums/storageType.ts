@@ -1,4 +1,4 @@
 export enum StorageType {
   LOCAL,
-  AWS
+  AWS,
 }

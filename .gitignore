@@ -45,3 +45,6 @@ uploads/*
 # Docker
 /database
 
+*.sql
+logs.txt
+

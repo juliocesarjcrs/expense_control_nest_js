@@ -10,6 +10,5 @@ import { Budget } from './entities/budget.entity';
   controllers: [BudgetsController],
   providers: [BudgetsService],
   exports: [BudgetsService],
-
 })
 export class BudgetsModule {}

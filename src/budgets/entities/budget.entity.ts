@@ -20,11 +20,11 @@ export class Budget extends Content {
   @Column('varchar', { length: 200, nullable: false })
   city: string;
 
-  @Column({ name: 'category_id' , nullable: false })
-  categoryId: number
+  @Column({ name: 'category_id', nullable: false })
+  categoryId: number;
 
-  @Column({ name: 'subcategory_id' , nullable: false })
-  subcategoryId: number
+  @Column({ name: 'subcategory_id', nullable: false })
+  subcategoryId: number;
 
   @Column({ name: 'user_id', nullable: false })
   userId: number;
@@ -36,4 +36,3 @@ export class Budget extends Content {
   @JoinColumn({ name: 'user_id' })
   user: number;
 }
-

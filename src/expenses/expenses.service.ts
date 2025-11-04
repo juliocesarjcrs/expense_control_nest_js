@@ -13,7 +13,7 @@ export class ExpensesService {
     @InjectRepository(Expense)
     private expensesRepository: Repository<Expense>,
     private datesService: DatesService,
-  ) { }
+  ) {}
 
   async create(createExpenseDto: CreateExpenseDto) {
     const ExpenseEntity = new Expense();
@@ -40,12 +40,13 @@ export class ExpensesService {
           expenseEntity.commentary = expense.commentary;
           expenseEntity.date = expense.date;
 
-          const savedExpense = await transactionalEntityManager.save(expenseEntity);
+          const savedExpense =
+            await transactionalEntityManager.save(expenseEntity);
           createdExpenses.push(savedExpense);
         }
 
         return createdExpenses;
-      }
+      },
     );
   }
 
@@ -104,7 +105,9 @@ export class ExpensesService {
   }
 
   async update(id: number, updateExpenseDto: UpdateExpenseDto) {
-    const expense = await this.expensesRepository.findOne({ where: { id: id } });
+    const expense = await this.expensesRepository.findOne({
+      where: { id: id },
+    });
     if (!expense) throw new NotFoundException();
     const editExpense = Object.assign(expense, updateExpenseDto);
     return this.expensesRepository.save(editExpense);
@@ -120,7 +123,6 @@ export class ExpensesService {
     const searchValue = query.query || '';
     const skip = (page - 1) * take;
     const orderBy = query.orderBy || 'id';
-
 
     const result = await this.expensesRepository
       .createQueryBuilder('expense')
@@ -351,31 +353,38 @@ export class ExpensesService {
     options: ExpenseSearchOptions,
   ) {
     const query = this.expensesRepository.createQueryBuilder('expense');
-    query.select(['expense.id', 'expense.cost', 'expense.commentary', 'expense.date', 'expense.createdAt']);
-
+    query.select([
+      'expense.id',
+      'expense.cost',
+      'expense.commentary',
+      'expense.date',
+      'expense.createdAt',
+    ]);
 
     query.where('expense.user_id = :userId', { userId });
 
     if (subcategoriesId.length > 0) {
-      query.andWhere('expense.subcategoryId IN (:...subcategoriesId)', { subcategoriesId });
+      query.andWhere('expense.subcategoryId IN (:...subcategoriesId)', {
+        subcategoriesId,
+      });
     }
 
     const { startDate, endDate, searchValue, orderBy, order } = options;
 
     if (startDate) {
-      const startDateFormat = this.datesService.getFormatDate(startDate)
+      const startDateFormat = this.datesService.getFormatDate(startDate);
       query.andWhere('expense.date >= :startDateFormat', { startDateFormat });
     }
 
     if (endDate) {
-      const endDateFormat = this.datesService.getFormatDate(endDate)
+      const endDateFormat = this.datesService.getFormatDate(endDate);
       query.andWhere('expense.date <= :endDateFormat', { endDateFormat });
     }
 
     if (searchValue) {
       query.andWhere(
         '(expense.cost LIKE :searchValue OR expense.commentary LIKE :searchValue)',
-        { searchValue: `%${searchValue}%` }
+        { searchValue: `%${searchValue}%` },
       );
     }
 
@@ -386,7 +395,7 @@ export class ExpensesService {
     query.addSelect(['subcategories.id', 'subcategories.name']);
 
     const expenses = await query.getMany();
-    const sumExpenses = expenses.reduce((acu, val) => acu + val.cost, 0)
+    const sumExpenses = expenses.reduce((acu, val) => acu + val.cost, 0);
 
     return { expenses, sum: sumExpenses };
   }

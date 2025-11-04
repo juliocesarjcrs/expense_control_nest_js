@@ -79,7 +79,7 @@ describe('ExpensesService', () => {
       getRawMany: getRawManySpy,
     })),
     manager: {
-      transaction: jest.fn()
+      transaction: jest.fn(),
     },
   };
   const mockDatesService = {
@@ -92,7 +92,6 @@ describe('ExpensesService', () => {
       }
     }),
     getMonthString: jest.fn().mockImplementation((month) => {
-
       switch (month) {
         case 1:
           return 'ene';
@@ -121,7 +120,6 @@ describe('ExpensesService', () => {
         default:
           break;
       }
-
     }),
   };
 
@@ -372,10 +370,13 @@ describe('ExpensesService', () => {
                   _search: '',
                   _orderBy: undefined,
                   _order: undefined,
-                  select() { return this; },
+                  select() {
+                    return this;
+                  },
                   where(sql: any, params: any) {
                     if (params?.userId) this._userId = params.userId;
-                    if (params?.subcategoriesId) this._subcategoriesIds = params.subcategoriesId;
+                    if (params?.subcategoriesId)
+                      this._subcategoriesIds = params.subcategoriesId;
                     return this;
                   },
                   andWhere(sql: any, params: any) {
@@ -385,7 +386,10 @@ describe('ExpensesService', () => {
                     if (sql.includes('date <= ')) {
                       this._endDate = params.endDateFormat;
                     }
-                    if (sql.includes('cost LIKE') || sql.includes('commentary LIKE')) {
+                    if (
+                      sql.includes('cost LIKE') ||
+                      sql.includes('commentary LIKE')
+                    ) {
                       this._search = params.searchValue;
                     }
                     if (sql.includes('subcategoryId IN')) {
@@ -407,27 +411,36 @@ describe('ExpensesService', () => {
                   getMany() {
                     let result = mockExpenses;
                     if (this._userId !== null) {
-                      result = result.filter(e => e.userId === this._userId);
+                      result = result.filter((e) => e.userId === this._userId);
                     }
-                    if (this._subcategoriesIds && this._subcategoriesIds.length > 0) {
-                      result = result.filter(e => this._subcategoriesIds.includes(e.subcategoryId));
+                    if (
+                      this._subcategoriesIds &&
+                      this._subcategoriesIds.length > 0
+                    ) {
+                      result = result.filter((e) =>
+                        this._subcategoriesIds.includes(e.subcategoryId),
+                      );
                     }
                     if (this._startDate) {
-                      result = result.filter(e =>
-                        mockDatesService.getFormatDate(e.date) >= this._startDate
+                      result = result.filter(
+                        (e) =>
+                          mockDatesService.getFormatDate(e.date) >=
+                          this._startDate,
                       );
                     }
                     if (this._endDate) {
-                      result = result.filter(e =>
-                        mockDatesService.getFormatDate(e.date) <= this._endDate
+                      result = result.filter(
+                        (e) =>
+                          mockDatesService.getFormatDate(e.date) <=
+                          this._endDate,
                       );
                     }
                     if (this._search) {
                       const search = this._search.replace(/%/g, '');
                       result = result.filter(
-                        e =>
+                        (e) =>
                           e.cost.toString().includes(search) ||
-                          e.commentary.includes(search)
+                          e.commentary.includes(search),
                       );
                     }
                     if (this._orderBy) {
@@ -481,9 +494,13 @@ describe('ExpensesService', () => {
         endDate: new Date('2022-06-30'),
         searchValue: '',
       };
-      const result = await service.findExpensesBySubcategories(userId, options.subcategoriesId!, options);
+      const result = await service.findExpensesBySubcategories(
+        userId,
+        options.subcategoriesId!,
+        options,
+      );
       expect(result.expenses).toHaveLength(3);
-      expect(result.expenses.every(e => e.subcategoryId === 1424)).toBe(true);
+      expect(result.expenses.every((e) => e.subcategoryId === 1424)).toBe(true);
     });
 
     it('should filter by subcategories, date, and searchValue (matching commentary)', async () => {
@@ -494,7 +511,11 @@ describe('ExpensesService', () => {
         endDate: new Date('2022-06-30'),
         searchValue: 'Lunch',
       };
-      const result = await service.findExpensesBySubcategories(userId, options.subcategoriesId!, options);
+      const result = await service.findExpensesBySubcategories(
+        userId,
+        options.subcategoriesId!,
+        options,
+      );
       expect(result.expenses).toHaveLength(1);
       expect(result.expenses[0].commentary).toBe('Lunch');
     });
@@ -507,7 +528,11 @@ describe('ExpensesService', () => {
         endDate: new Date('2022-06-30'),
         searchValue: '300',
       };
-      const result = await service.findExpensesBySubcategories(userId, options.subcategoriesId!, options);
+      const result = await service.findExpensesBySubcategories(
+        userId,
+        options.subcategoriesId!,
+        options,
+      );
       expect(result.expenses).toHaveLength(1);
       expect(result.expenses[0].cost).toBe(300);
     });
@@ -520,7 +545,11 @@ describe('ExpensesService', () => {
         endDate: new Date('2022-06-30'),
         searchValue: 'Nonexistent',
       };
-      const result = await service.findExpensesBySubcategories(userId, options.subcategoriesId!, options);
+      const result = await service.findExpensesBySubcategories(
+        userId,
+        options.subcategoriesId!,
+        options,
+      );
       expect(result.expenses).toHaveLength(0);
     });
   });
@@ -533,41 +562,46 @@ describe('ExpensesService', () => {
           subcategoryId: 1,
           cost: 100,
           commentary: 'Gasto 1',
-          date: new Date('2023-01-01')
+          date: new Date('2023-01-01'),
         },
         {
           userId: 1,
           subcategoryId: 2,
           cost: 200,
           commentary: 'Gasto 2',
-          date: new Date('2023-01-02')
-        }
+          date: new Date('2023-01-02'),
+        },
       ];
 
       // Mock de la transacción
-      const mockSave = jest.fn()
+      const mockSave = jest
+        .fn()
         .mockResolvedValueOnce({ id: 1, ...mockExpenses[0] })
         .mockResolvedValueOnce({ id: 2, ...mockExpenses[1] });
 
       mockExpenseRepository.manager = {
         transaction: jest.fn().mockImplementation(async (cb) => {
           return cb({
-            save: mockSave
+            save: mockSave,
           });
-        })
+        }),
       };
 
       const result = await service.createMany(mockExpenses);
 
       expect(result).toHaveLength(2);
-      expect(result[0]).toEqual(expect.objectContaining({
-        ...mockExpenses[0],
-        id: 1
-      }));
-      expect(result[1]).toEqual(expect.objectContaining({
-        ...mockExpenses[1],
-        id: 2
-      }));
+      expect(result[0]).toEqual(
+        expect.objectContaining({
+          ...mockExpenses[0],
+          id: 1,
+        }),
+      );
+      expect(result[1]).toEqual(
+        expect.objectContaining({
+          ...mockExpenses[1],
+          id: 2,
+        }),
+      );
       expect(mockExpenseRepository.manager.transaction).toHaveBeenCalled();
       expect(mockSave).toHaveBeenCalledTimes(2);
     });
@@ -584,19 +618,20 @@ describe('ExpensesService', () => {
           subcategoryId: 1,
           cost: 100,
           commentary: 'Gasto 1',
-          date: new Date('2023-01-01')
+          date: new Date('2023-01-01'),
         },
         {
           userId: 1,
           subcategoryId: 2,
           cost: 200,
           commentary: 'Gasto 2',
-          date: new Date('2023-01-02')
-        }
+          date: new Date('2023-01-02'),
+        },
       ];
 
       // Mock que falla en el segundo save
-      const mockSave = jest.fn()
+      const mockSave = jest
+        .fn()
         .mockResolvedValueOnce({ id: 1, ...mockExpenses[0] })
         .mockRejectedValueOnce(new Error('Save failed'));
 
@@ -604,15 +639,17 @@ describe('ExpensesService', () => {
         transaction: jest.fn().mockImplementation(async (cb) => {
           try {
             return await cb({
-              save: mockSave
+              save: mockSave,
             });
           } catch (error) {
             throw error;
           }
-        })
+        }),
       };
 
-      await expect(service.createMany(mockExpenses)).rejects.toThrow('Save failed');
+      await expect(service.createMany(mockExpenses)).rejects.toThrow(
+        'Save failed',
+      );
       expect(mockExpenseRepository.manager.transaction).toHaveBeenCalled();
       expect(mockSave).toHaveBeenCalledTimes(2);
     });

@@ -19,7 +19,7 @@ import { CreateManyExpensesDto } from './dto/create-many-expenses.dto';
 
 @Controller('expenses')
 export class ExpensesController {
-  constructor(private readonly expensesService: ExpensesService) { }
+  constructor(private readonly expensesService: ExpensesService) {}
 
   @Post()
   async create(@Body() createExpenseDto: CreateExpenseDto, @Request() req) {
@@ -30,12 +30,12 @@ export class ExpensesController {
   @Post('bulk')
   async createMany(
     @Body() createManyExpensesDto: CreateManyExpensesDto,
-    @Request() req
+    @Request() req,
   ) {
     // Agregar userId a cada gasto
-    const expensesWithUser = createManyExpensesDto.expenses.map(expense => ({
+    const expensesWithUser = createManyExpensesDto.expenses.map((expense) => ({
       ...expense,
-      userId: req.user.id
+      userId: req.user.id,
     }));
 
     return this.expensesService.createMany(expensesWithUser);
@@ -81,7 +81,6 @@ export class ExpensesController {
     );
     response.status(HttpStatus.OK).json(incomes);
   }
-
 
   @Get('subcategory/:id/last')
   async findLastMonthsFromSubcategory(

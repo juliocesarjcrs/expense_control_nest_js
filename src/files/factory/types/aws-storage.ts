@@ -71,12 +71,12 @@ export class AwsStorage implements IStorageMethod {
     return await getSignedUrl(this.s3Client, command, { expiresIn });
   }
 
-  async deleteFile(fileName: string){
+  async deleteFile(fileName: string) {
     try {
       const command = new DeleteObjectCommand({
         Bucket: AWS_STORAGE.AWS_BUCKET_NAME,
-        Key: fileName
-    });
+        Key: fileName,
+      });
       const response = await this.s3Client.send(command);
       // if (response.$metadata.httpStatusCode === 200) {
       //

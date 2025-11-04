@@ -12,14 +12,14 @@ export class UsersService {
   constructor(
     @InjectRepository(User)
     private usersRepository: Repository<User>,
-    private filesService: FilesService
+    private filesService: FilesService,
   ) {}
   async findAll(): Promise<User[]> {
     return await this.usersRepository.find();
   }
 
   async findOne(id: number): Promise<User> {
-    const userFound = await this.usersRepository.findOne({where: {id: id}});
+    const userFound = await this.usersRepository.findOne({ where: { id: id } });
     if (!userFound) {
       throw new HttpException('Id not found', HttpStatus.BAD_REQUEST);
     }
@@ -58,7 +58,7 @@ export class UsersService {
   }
 
   async update(id: number, UpdatedUserDto: UpdatedUserDto): Promise<User> {
-    const UserFound = await this.usersRepository.findOne({where: {id: id}});
+    const UserFound = await this.usersRepository.findOne({ where: { id: id } });
     if (!UserFound)
       throw new HttpException('Id not found', HttpStatus.NOT_FOUND);
 
@@ -104,8 +104,13 @@ export class UsersService {
     return hash;
   }
 
-  async updateProfile(id: number, UpdatedUserDto: UpdatedUserDto, res, image: Express.Multer.File): Promise<User> {
-    const UserFound = await this.usersRepository.findOne({where: {id: id}});
+  async updateProfile(
+    id: number,
+    UpdatedUserDto: UpdatedUserDto,
+    res,
+    image: Express.Multer.File,
+  ): Promise<User> {
+    const UserFound = await this.usersRepository.findOne({ where: { id: id } });
     if (!UserFound)
       throw new HttpException('Id not found', HttpStatus.NOT_FOUND);
 
@@ -119,8 +124,12 @@ export class UsersService {
       }
     }
     if (image) {
-      const keyImg = await this.filesService.saveFileAwsS3(res, image, UserFound.image);
-      UpdatedUserDto.image =  String(keyImg);
+      const keyImg = await this.filesService.saveFileAwsS3(
+        res,
+        image,
+        UserFound.image,
+      );
+      UpdatedUserDto.image = String(keyImg);
     }
     const editUser = Object.assign(UserFound, UpdatedUserDto);
     return this.usersRepository.save(editUser);

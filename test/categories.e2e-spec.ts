@@ -68,27 +68,27 @@ describe('CategoriesController (e2e)', () => {
         .set('Authorization', `Bearer ${tokenForUser()}`)
         .expect(200);
 
-        expect(response.body).toEqual({
-          data: expect.arrayContaining([
-            expect.objectContaining({
-              id: expect.any(Number),
-              name: expect.any(String),
-              icon: expect.any(String),
-              type: expect.any(Number),
-              budget: expect.any(Number),
-              userId: expect.any(Number),
-              total: expect.any(Number),
-              subcategories: expect.arrayContaining([
-                expect.objectContaining({
-                  id: expect.any(Number),
-                  name: expect.any(String),
-                  total: expect.any(Number),
-                }),
-              ]),
-            }),
-          ]),
-          total: expect.any(Number),
-        });
+      expect(response.body).toEqual({
+        data: expect.arrayContaining([
+          expect.objectContaining({
+            id: expect.any(Number),
+            name: expect.any(String),
+            icon: expect.any(String),
+            type: expect.any(Number),
+            budget: expect.any(Number),
+            userId: expect.any(Number),
+            total: expect.any(Number),
+            subcategories: expect.arrayContaining([
+              expect.objectContaining({
+                id: expect.any(Number),
+                name: expect.any(String),
+                total: expect.any(Number),
+              }),
+            ]),
+          }),
+        ]),
+        total: expect.any(Number),
+      });
     });
 
     it('should return a 401 status code if not authorized', async () => {

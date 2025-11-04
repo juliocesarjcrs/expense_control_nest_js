@@ -6,16 +6,16 @@ import { CreateLoanInput } from './dto/inputs/create-loan.input';
 
 @Injectable()
 export class LoansService {
-
-  constructor(@InjectRepository(Loan)
-  private loanRepository: Repository<Loan>) { }
+  constructor(
+    @InjectRepository(Loan)
+    private loanRepository: Repository<Loan>,
+  ) {}
 
   async findAll(userId: number): Promise<Loan[]> {
-
     return await this.loanRepository.find({
       relations: ['user'],
-      where: { userId }
-    })
+      where: { userId },
+    });
   }
 
   async create(createLoanInput: CreateLoanInput): Promise<Loan> {

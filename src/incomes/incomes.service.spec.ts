@@ -32,7 +32,7 @@ describe('IncomesService', () => {
         commentary: null,
         date: '2021-05-31',
         userId: 1,
-        categoryId: 23
+        categoryId: 23,
       }),
     ),
     delete: jest.fn().mockImplementation(() =>
@@ -114,7 +114,6 @@ describe('IncomesService', () => {
       data: [{ month: 6, sum: '200000' }],
       previosAverage: 0,
       average: 200000,
-
     };
     const response = await service.findAll(1, {
       numMonths: 4,
@@ -136,7 +135,7 @@ describe('IncomesService', () => {
       commentary: null,
       date: '2021-05-31',
       userId: 1,
-      categoryId: 23
+      categoryId: 23,
     };
     const response = await service.findOne(5);
     expect(response).toEqual(expected);
@@ -181,11 +180,7 @@ describe('IncomesService', () => {
   });
   it('should return incomes by categoryId and userId with sum', async () => {
     // Mock para getMany
-    const mockIncomes = [
-      { amount: 1000 },
-      { amount: 2000 },
-      { amount: 3000 },
-    ];
+    const mockIncomes = [{ amount: 1000 }, { amount: 2000 }, { amount: 3000 }];
     const getManySpy = jest.fn().mockResolvedValue(mockIncomes);
 
     // Mock del query builder

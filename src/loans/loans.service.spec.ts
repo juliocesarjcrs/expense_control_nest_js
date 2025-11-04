@@ -15,7 +15,7 @@ describe('LoansService', () => {
     userId: 1,
     commentary: 'Test loan',
     createdAt: '2023-01-03T12:11:06.792Z',
-    user: 1
+    user: 1,
   };
 
   const mockLoanRepository = {

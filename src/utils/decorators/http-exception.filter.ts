@@ -11,7 +11,6 @@ import { Request, Response } from 'express';
 @Catch(HttpException)
 export class HttpExceptionFilter implements ExceptionFilter {
   catch(exception: HttpException, host: ArgumentsHost) {
-
     const ctxType = host.getType();
     if (ctxType === 'http') {
       const ctx = host.switchToHttp();
@@ -31,9 +30,11 @@ export class HttpExceptionFilter implements ExceptionFilter {
         });
       }
     } else if (host.getType<GqlContextType>() === 'graphql') {
-      const status = exception.getStatus ? exception.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;
-      const formattedError = this.handleGraphQlResponse(exception, host)
-      throw new HttpException(formattedError, status)
+      const status = exception.getStatus
+        ? exception.getStatus()
+        : HttpStatus.INTERNAL_SERVER_ERROR;
+      const formattedError = this.handleGraphQlResponse(exception, host);
+      throw new HttpException(formattedError, status);
     }
   }
   // Fuente: https://www.iteramos.com/pregunta/7262/comprobar-si-una-variable-es-un-objeto-en-javascript
@@ -46,8 +47,12 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
   handleGraphQlResponse(exception: HttpException, host: ArgumentsHost) {
     const gqlHost = GqlArgumentsHost.create(host);
-    const response = exception.getResponse ? exception.getResponse() : exception.message;
-    const status = exception.getStatus ? exception.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;
+    const response = exception.getResponse
+      ? exception.getResponse()
+      : exception.message;
+    const status = exception.getStatus
+      ? exception.getStatus()
+      : HttpStatus.INTERNAL_SERVER_ERROR;
     return {
       statusCode: status,
       message: response,

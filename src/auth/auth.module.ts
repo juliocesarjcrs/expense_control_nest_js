@@ -32,7 +32,14 @@ const StorageMethodFactoryProvider = {
     TypeOrmModule.forFeature([User, Category]),
     MailModule,
   ],
-  providers: [AuthService, LocalStrategy, UsersService, JwtStrategy, FilesService, StorageMethodFactoryProvider],
+  providers: [
+    AuthService,
+    LocalStrategy,
+    UsersService,
+    JwtStrategy,
+    FilesService,
+    StorageMethodFactoryProvider,
+  ],
   exports: [AuthService, JwtModule, UsersService],
   controllers: [AuthController],
 })

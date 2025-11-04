@@ -23,7 +23,7 @@ export class CategoriesService {
     @InjectRepository(Category)
     private categoriesRepository: Repository<Category>,
     private datesService: DatesService,
-  ) { }
+  ) {}
   async createCategory(
     createCategoryDto: CreateCategoryDto,
   ): Promise<Category> {
@@ -48,7 +48,7 @@ export class CategoriesService {
     const startDate = query.startDate;
     const endDate = query.endDate;
     if (startDate && endDate) {
-      return this.findAllExpensesByRangeDates(userId, startDate, endDate)
+      return this.findAllExpensesByRangeDates(userId, startDate, endDate);
     }
     const data = await this.categoriesRepository
       .createQueryBuilder('category')
@@ -256,7 +256,11 @@ export class CategoriesService {
     return { data: response, total: totalGeneraly };
   }
 
-  async findAllExpensesByRangeDates(userId: number, startDate: string, endDate: string) {
+  async findAllExpensesByRangeDates(
+    userId: number,
+    startDate: string,
+    endDate: string,
+  ) {
     const rawData = await this.categoriesRepository
       .createQueryBuilder('category')
       .leftJoinAndSelect('category.subcategories', 'subcategory')
@@ -266,7 +270,7 @@ export class CategoriesService {
         'expense.date BETWEEN :startDate AND :endDate',
         {
           startDate,
-          endDate
+          endDate,
         },
       )
       .where('category.userId = :userId', { userId: userId })
@@ -281,61 +285,66 @@ export class CategoriesService {
         'category.userId AS userId',
         'SUM(expense.cost) AS total',
         'MONTH(expense.date) as month',
-        'YEAR(expense.date) as year'
+        'YEAR(expense.date) as year',
       ])
       .orderBy('YEAR(expense.date)', 'ASC')
       .addOrderBy('MONTH(expense.date)', 'ASC')
       .getRawMany();
 
     const { tableHead, rows } = this.generateTable(rawData);
-    return { tableHead, rows }
-
+    return { tableHead, rows };
   }
 
-  generateTable(data: RawExpenseData[]): { tableHead: string[], rows: any[][] } {
-    const tableHead: string[] = ["Categoria"];
+  generateTable(data: RawExpenseData[]): {
+    tableHead: string[];
+    rows: any[][];
+  } {
+    const tableHead: string[] = ['Categoria'];
     const rows: (string | number)[][] = [];
 
-    const uniqueMonthsAndYears: string[] = Array.from(new Set(data.map(expense => `${expense.year}-${expense.month}`)))
-      .filter(combined => combined !== "null-null") // Filtrar null-null
+    const uniqueMonthsAndYears: string[] = Array.from(
+      new Set(data.map((expense) => `${expense.year}-${expense.month}`)),
+    )
+      .filter((combined) => combined !== 'null-null') // Filtrar null-null
       .sort((a, b) => {
         const [yearA, monthA] = a.split('-').map(Number);
         const [yearB, monthB] = b.split('-').map(Number);
         return yearA - yearB || monthA - monthB; // Ordenar por año, luego por mes
       });
 
-
-    uniqueMonthsAndYears.forEach(monthAndYear => {
+    uniqueMonthsAndYears.forEach((monthAndYear) => {
       tableHead.push(monthAndYear);
     });
     tableHead.push('Promedio');
     tableHead.push('Suma');
     const totals: number[] = Array(tableHead.length).fill(0);
 
-    data.forEach(expense => {
+    data.forEach((expense) => {
       // Omitir filas donde año y mes son null
       if (expense.year === null || expense.month === null) {
         return;
       }
 
-      const rowIndex = rows.findIndex(row => row[0] === expense.name);
+      const rowIndex = rows.findIndex((row) => row[0] === expense.name);
       if (rowIndex === -1) {
         const newRow: (string | number)[] = [expense.name];
         let totalSoFar = 0;
 
         uniqueMonthsAndYears.forEach((monthAndYear, index) => {
           const [year, month] = monthAndYear.split('-');
-          const expenseOfYear = data.find(e =>
-            e.name === expense.name && e.year === Number(year) && e.month === Number(month)
+          const expenseOfYear = data.find(
+            (e) =>
+              e.name === expense.name &&
+              e.year === Number(year) &&
+              e.month === Number(month),
           );
 
           if (expenseOfYear) {
-
-
             const expenseValue = Number(expenseOfYear.total);
             newRow.push(expenseValue);
             totalSoFar += expenseValue;
-            totals[index + 1] += typeof expenseValue === 'number' ? expenseValue : 0;
+            totals[index + 1] +=
+              typeof expenseValue === 'number' ? expenseValue : 0;
           } else {
             newRow.push(0);
           }
@@ -350,10 +359,14 @@ export class CategoriesService {
     // Agregar fila de totales
     const monthCount = uniqueMonthsAndYears.length; // Número de columnas de meses
     const averageTotal = monthCount > 0 ? totals[0] / monthCount : 0; // Promedio general
-    const totalsRow: (string | number)[] = ['Totales', ...totals.slice(1, -2), averageTotal, totals[0]];
+    const totalsRow: (string | number)[] = [
+      'Totales',
+      ...totals.slice(1, -2),
+      averageTotal,
+      totals[0],
+    ];
 
-
-    rows.push(totalsRow)
+    rows.push(totalsRow);
 
     return { tableHead, rows };
   }

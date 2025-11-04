@@ -9,22 +9,24 @@ export class BudgetsService {
   constructor(
     @InjectRepository(Budget)
     private readonly budgetRepository: Repository<Budget>,
-  ) { }
+  ) {}
 
   async createBudgets(budgets: CreateBudgetDto[]): Promise<Budget[]> {
     const createdBudgets = await this.budgetRepository.save(budgets);
     return createdBudgets;
   }
 
-  async findAll(userId: number, query: {
-    year: number,
-    city: string
-  }) {
+  async findAll(
+    userId: number,
+    query: {
+      year: number;
+      city: string;
+    },
+  ) {
     const year = query.year;
     const city = query.city;
-    const budgetByuser = await this.budgetRepository.createQueryBuilder(
-      'budget',
-    )
+    const budgetByuser = await this.budgetRepository
+      .createQueryBuilder('budget')
       .where('budget.user_id = :userId', { userId })
       .andWhere('budget.year = :year', { year })
       .andWhere('budget.city = :city', { city })

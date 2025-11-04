@@ -6,9 +6,7 @@ import { Connection } from 'typeorm';
 import { AuthService } from 'src/auth/auth.service';
 import { userSaved } from './utils/data';
 import { User } from 'src/users/entities/user.entity';
-import {
-  loadFixtures as loadFixturesBase,
-} from './utils/utils';
+import { loadFixtures as loadFixturesBase } from './utils/utils';
 
 let app: INestApplication;
 let mod: TestingModule;
@@ -46,18 +44,17 @@ describe('IncomesController (e2e)', () => {
 
   it('/saving (GET) should return all savings by user', () => {
     return request(app.getHttpServer())
-    .get('/saving')
-    .set('Authorization', `Bearer ${tokenForUser()}`)
-    .expect(200)
-    .then((response) => {
-      expect(response.body.data.length).toBe(0);
-      expect(response.body).toEqual(
-        expect.objectContaining({
-          graph: expect.any(Object),
-          data: expect.any(Array),
-        }),
-      );
-    });
+      .get('/saving')
+      .set('Authorization', `Bearer ${tokenForUser()}`)
+      .expect(200)
+      .then((response) => {
+        expect(response.body.data.length).toBe(0);
+        expect(response.body).toEqual(
+          expect.objectContaining({
+            graph: expect.any(Object),
+            data: expect.any(Array),
+          }),
+        );
+      });
   });
-
 });
