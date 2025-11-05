@@ -44,6 +44,7 @@ import { ApolloServerPluginLandingPageLocalDefault } from '@apollo/server/plugin
 import { join } from 'path';
 import { Loan } from './loans/entities/loan.entity';
 import { ChatbotModule } from './chatbot/chatbot.module';
+import { FeatureFlagsModule } from './feature-flags/feature-flags.module';
 
 @Module({
   imports: [
@@ -103,6 +104,7 @@ import { ChatbotModule } from './chatbot/chatbot.module';
     BudgetsModule,
     LoansModule,
     ChatbotModule.register(),
+    FeatureFlagsModule,
   ],
   controllers: [
     AppController,
