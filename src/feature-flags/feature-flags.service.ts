@@ -1,8 +1,16 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { FeatureFlag } from './entities/feature-flag.entity';
-import { CreateFeatureFlagDto, ToggleFeatureDto, UpdateFeatureFlagDto } from './dto/feature-flag.dto';
+import {
+  CreateFeatureFlagDto,
+  ToggleFeatureDto,
+  UpdateFeatureFlagDto,
+} from './dto/feature-flag.dto';
 
 @Injectable()
 export class FeatureFlagsService {
@@ -61,14 +69,19 @@ export class FeatureFlagsService {
   /**
    * Crear una nueva feature flag
    */
-  async create(createDto: CreateFeatureFlagDto, userId: number): Promise<FeatureFlag> {
+  async create(
+    createDto: CreateFeatureFlagDto,
+    userId: number,
+  ): Promise<FeatureFlag> {
     // Verificar si ya existe
     const exists = await this.featureFlagRepository.findOne({
       where: { featureKey: createDto.featureKey },
     });
 
     if (exists) {
-      throw new BadRequestException(`Feature flag "${createDto.featureKey}" ya existe`);
+      throw new BadRequestException(
+        `Feature flag "${createDto.featureKey}" ya existe`,
+      );
     }
 
     const feature = this.featureFlagRepository.create({
@@ -92,9 +105,12 @@ export class FeatureFlagsService {
 
     Object.assign(feature, {
       ...updateDto,
-      isEnabled: updateDto.isEnabled !== undefined 
-        ? (updateDto.isEnabled ? 1 : 0) 
-        : feature.isEnabled,
+      isEnabled:
+        updateDto.isEnabled !== undefined
+          ? updateDto.isEnabled
+            ? 1
+            : 0
+          : feature.isEnabled,
       updatedBy: userId,
     });
 
@@ -104,7 +120,11 @@ export class FeatureFlagsService {
   /**
    * Toggle (activar/desactivar) una feature flag
    */
-  async toggle(featureKey: string, toggleDto: ToggleFeatureDto, userId: number): Promise<FeatureFlag> {
+  async toggle(
+    featureKey: string,
+    toggleDto: ToggleFeatureDto,
+    userId: number,
+  ): Promise<FeatureFlag> {
     const feature = await this.findByKey(featureKey);
 
     feature.isEnabled = toggleDto.isEnabled ? 1 : 0;

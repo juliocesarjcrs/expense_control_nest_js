@@ -16,6 +16,7 @@ import { ChatMessage } from '../interfaces/chat-message.interface';
 import { ConversationHistoryParams } from '../interfaces/conversation-history-query.interface';
 import { AIModelManagerService } from './ai-model-manager.service';
 import { ConversationLog } from '../entities/conversation-log.entity';
+import { ChatbotConfigService } from 'src/chatbot-config/chatbot-config.service';
 
 @Injectable()
 export class ChatbotService {
@@ -33,6 +34,7 @@ export class ChatbotService {
     private readonly aiModelManager: AIModelManagerService,
     @InjectRepository(ConversationLog)
     private conversationLogRepo: Repository<ConversationLog>,
+    private readonly chatbotConfigService: ChatbotConfigService,
   ) {}
 
   async getRecentConversations(params: ConversationQueryParams) {
@@ -74,7 +76,7 @@ export class ChatbotService {
     const savedConversation = await this.conversationRepo.save(conversation);
 
     // Guardar el mensaje del sistema
-    const systemPrompt = this.getSystemPrompt();
+    const systemPrompt = await this.getSystemPrompt();
     const systemMessage = this.messageRepo.create({
       content: systemPrompt.content,
       role: 'system',
@@ -154,7 +156,7 @@ export class ChatbotService {
     const systemMessage = messages.find((msg) => msg.role === 'system');
     if (!systemMessage) {
       return [
-        this.getSystemPrompt(),
+        await this.getSystemPrompt(),
         ...messages.map((msg) => ({
           role: msg.role as 'user' | 'assistant' | 'system',
           content: msg.content,
@@ -370,8 +372,37 @@ export class ChatbotService {
         'He procesado tu consulta pero necesito más interacciones. ¿Podrías ser más específico?',
     };
   }
+  private async getSystemPrompt(): Promise<ChatMessage> {
+    // Obtener desde cache (sin query a DB)
+    const promptConfig =
+      await this.chatbotConfigService.getConfig('system_prompt');
 
-  private getSystemPrompt(): ChatMessage {
+    const currentDate = new Date().toLocaleDateString('es-ES', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+
+    // Procesar template con variables
+    let content = promptConfig.template || promptConfig.sections;
+
+    if (typeof content === 'object') {
+      // Combinar secciones activas
+      content = promptConfig.active_sections
+        .map((section) => promptConfig.sections[section])
+        .join('\n\n');
+    }
+
+    // Reemplazar variables
+    content = content.replace('{{currentDate}}', currentDate);
+
+    return {
+      role: 'system',
+      content,
+    };
+  }
+  private getSystemPromptLocal(): ChatMessage {
     const currentDate = new Date().toLocaleDateString('es-ES', {
       weekday: 'long',
       year: 'numeric',

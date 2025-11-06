@@ -10,13 +10,17 @@ import {
   Request,
 } from '@nestjs/common';
 import { FeatureFlagsService } from './feature-flags.service';
-import { CreateFeatureFlagDto, ToggleFeatureDto, UpdateFeatureFlagDto } from './dto/feature-flag.dto';
+import {
+  CreateFeatureFlagDto,
+  ToggleFeatureDto,
+  UpdateFeatureFlagDto,
+} from './dto/feature-flag.dto';
 import { Public } from 'src/utils/decorators/custumDecorators';
 import { AdminGuard } from 'src/auth/guards/admin.guard';
 
 @Controller('feature-flags')
 export class FeatureFlagsController {
-  constructor(private readonly featureFlagsService: FeatureFlagsService) { }
+  constructor(private readonly featureFlagsService: FeatureFlagsService) {}
 
   /**
    * GET /feature-flags

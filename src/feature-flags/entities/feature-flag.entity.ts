@@ -1,6 +1,12 @@
 import { Content } from 'src/entity/entityBase';
 import { User } from 'src/users/entities/user.entity';
-import { Column, Entity, JoinColumn, ManyToOne, UpdateDateColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  UpdateDateColumn,
+} from 'typeorm';
 
 @Entity({ name: 'feature_flags' })
 export class FeatureFlag extends Content {
