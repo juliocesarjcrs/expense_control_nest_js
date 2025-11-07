@@ -45,6 +45,7 @@ import { join } from 'path';
 import { Loan } from './loans/entities/loan.entity';
 import { ChatbotModule } from './chatbot/chatbot.module';
 import { FeatureFlagsModule } from './feature-flags/feature-flags.module';
+import { ThemeConfigModule } from './theme-config/theme-config.module';
 
 @Module({
   imports: [
@@ -105,6 +106,7 @@ import { FeatureFlagsModule } from './feature-flags/feature-flags.module';
     LoansModule,
     ChatbotModule.register(),
     FeatureFlagsModule,
+    ThemeConfigModule,
   ],
   controllers: [
     AppController,
