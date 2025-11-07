@@ -6,7 +6,7 @@ import { CreateExpenseDto } from './dto/create-expense.dto';
 import { UpdateExpenseDto } from './dto/update-expense.dto';
 import { Expense } from './entities/expense.entity';
 import { downloadResourceCsv } from 'src/utils/helpers/file-helper';
-import { ExpenseSearchOptions } from './  expense-search-options.interface';
+import { ExpenseSearchOptionsDto } from './dto/expense-search-options.dto';
 @Injectable()
 export class ExpensesService {
   constructor(
@@ -350,7 +350,7 @@ export class ExpensesService {
   async findExpensesBySubcategories(
     userId: number,
     subcategoriesId: number[],
-    options: ExpenseSearchOptions,
+    options: ExpenseSearchOptionsDto,
   ) {
     const query = this.expensesRepository.createQueryBuilder('expense');
     query.select([

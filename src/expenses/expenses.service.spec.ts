@@ -3,7 +3,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { DatesService } from 'src/utils/dates/dates.service';
 import { Expense } from './entities/expense.entity';
 import { ExpensesService } from './expenses.service';
-import { ExpenseSearchOptions } from './  expense-search-options.interface';
+import { ExpenseSearchOptionsDto } from './dto/expense-search-options.dto';
 
 describe('ExpensesService', () => {
   let service: ExpensesService;
@@ -488,7 +488,7 @@ describe('ExpensesService', () => {
 
     it('should filter by subcategories and date when searchValue is empty', async () => {
       const userId = 1;
-      const options: ExpenseSearchOptions = {
+      const options: ExpenseSearchOptionsDto = {
         subcategoriesId: [1424],
         startDate: new Date('2022-06-01'),
         endDate: new Date('2022-06-30'),
@@ -505,7 +505,7 @@ describe('ExpensesService', () => {
 
     it('should filter by subcategories, date, and searchValue (matching commentary)', async () => {
       const userId = 1;
-      const options: ExpenseSearchOptions = {
+      const options: ExpenseSearchOptionsDto = {
         subcategoriesId: [1424],
         startDate: new Date('2022-06-01'),
         endDate: new Date('2022-06-30'),
@@ -522,7 +522,7 @@ describe('ExpensesService', () => {
 
     it('should filter by subcategories, date, and searchValue (matching cost)', async () => {
       const userId = 1;
-      const options: ExpenseSearchOptions = {
+      const options: ExpenseSearchOptionsDto = {
         subcategoriesId: [1424],
         startDate: new Date('2022-06-01'),
         endDate: new Date('2022-06-30'),
@@ -539,7 +539,7 @@ describe('ExpensesService', () => {
 
     it('should return empty array if no expense matches all filters', async () => {
       const userId = 1;
-      const options: ExpenseSearchOptions = {
+      const options: ExpenseSearchOptionsDto = {
         subcategoriesId: [1424],
         startDate: new Date('2022-06-01'),
         endDate: new Date('2022-06-30'),

@@ -14,8 +14,8 @@ import {
 import { ExpensesService } from './expenses.service';
 import { CreateExpenseDto } from './dto/create-expense.dto';
 import { UpdateExpenseDto } from './dto/update-expense.dto';
-import { ExpenseSearchOptions } from './  expense-search-options.interface';
 import { CreateManyExpensesDto } from './dto/create-many-expenses.dto';
+import { ExpenseSearchOptionsDto } from './dto/expense-search-options.dto';
 
 @Controller('expenses')
 export class ExpensesController {
@@ -62,24 +62,26 @@ export class ExpensesController {
     const userId = req.user.id;
     return this.expensesService.findAllFromSubcategory(userId, +id, query);
   }
+
   @Get('by-subcategories')
   async findExpensesBySubcategories(
     @Request() req,
-    @Query() { subcategoriesId, ...query }: ExpenseSearchOptions,
+    @Query() query: ExpenseSearchOptionsDto,
     @Res() response,
   ) {
-    if (!subcategoriesId) {
+    if (!query.subcategoriesId || query.subcategoriesId.length === 0) {
       return response.status(HttpStatus.BAD_REQUEST).json({
         error: 'Las subcategories son obligatorias',
       });
     }
+
     const userId = req.user.id;
-    const incomes = await this.expensesService.findExpensesBySubcategories(
+    const expenses = await this.expensesService.findExpensesBySubcategories(
       userId,
-      subcategoriesId,
+      query.subcategoriesId,
       query,
     );
-    response.status(HttpStatus.OK).json(incomes);
+    response.status(HttpStatus.OK).json(expenses);
   }
 
   @Get('subcategory/:id/last')
