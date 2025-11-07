@@ -15,6 +15,18 @@ export class AIModelHealthLog extends Content {
   @Column({ type: 'int' })
   response_time: number; // en ms
 
+  @Column({ type: 'int', default: 1 })
+  iteration: number;
+
+  @Column({ type: 'boolean', default: false })
+  supports_tools: boolean;
+
+  @Column({ type: 'int', nullable: true })
+  token_count: number;
+
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  finish_reason: string; // 'stop', 'length', 'tool_calls', 'content_filter'
+
   @CreateDateColumn({ name: 'created_at', type: 'datetime' })
   createdAt: Date;
 }

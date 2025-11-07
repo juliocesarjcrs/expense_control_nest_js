@@ -349,6 +349,10 @@ export class AIModelManagerService implements OnModuleInit, OnModuleDestroy {
       error: log.error_message,
       responseTime: log.response_time,
       timestamp: log.createdAt,
+      iteration: log.iteration,
+      supportsTools: log.supports_tools,
+      tokenCount: log.token_count,
+      finishReason: log.finish_reason,
     }));
   }
 }

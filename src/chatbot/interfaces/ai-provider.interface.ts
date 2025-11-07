@@ -15,6 +15,7 @@ export interface AIProvider {
       | 'auto'
       | 'none'
       | { type: 'function'; function: { name: string } },
+    iteration?: number,
   ): Promise<ChatMessageResponse>;
   validateModel(): Promise<boolean>;
   getHealthStatus(): Promise<ProviderHealth>;

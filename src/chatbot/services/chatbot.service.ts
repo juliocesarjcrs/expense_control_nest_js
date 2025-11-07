@@ -67,8 +67,6 @@ export class ChatbotService {
     };
   }
   async createConversation(userId: number) {
-    console.log('[createConversation]', userId);
-
     const conversation = this.conversationRepo.create({
       provider: process.env.AI_PROVIDER || 'openai',
       userId,
@@ -259,10 +257,18 @@ export class ChatbotService {
       // Llamar a OpenAI
       let response;
       try {
+        // ✅ NO enviar tools si ya hay resultados de herramientas en el contexto
+        const hasToolResults = currentMessages.some(
+          (msg) => msg.role === 'tool',
+        );
+        const toolsToSend = hasToolResults ? undefined : tools;
+        const toolChoiceToSend = hasToolResults ? undefined : 'auto';
+
         response = await provider.generateResponse(
           currentMessages,
-          tools,
-          'auto',
+          toolsToSend,
+          toolChoiceToSend,
+          iterations,
         );
       } catch (error) {
         // Si el modelo actual falla, intentar con el siguiente
@@ -274,6 +280,7 @@ export class ChatbotService {
           currentMessages,
           tools,
           'auto',
+          iterations,
         );
       }
       // Si no hay tool calls, retornamos la respuesta
@@ -318,7 +325,7 @@ export class ChatbotService {
               user_query: messages[messages.length - 1]?.content || '',
               detected_intent: toolCall.function.name,
               extracted_parameters: parameters,
-              tool_result: result,
+              tool_result: this.sanitizeToolResult(result),
               response_time: Date.now() - startTime,
               createdAt: new Date(),
             });
@@ -372,6 +379,20 @@ export class ChatbotService {
         'He procesado tu consulta pero necesito más interacciones. ¿Podrías ser más específico?',
     };
   }
+
+  private sanitizeToolResult = (result: any) => {
+    if (!result) return null;
+
+    return {
+      success: result.success ?? null,
+      data: {
+        count: result?.data?.count ?? null,
+        total: result?.data?.total ?? null,
+        answer: result?.data?.answer ?? null,
+      },
+    };
+  };
+
   private async getSystemPrompt(): Promise<ChatMessage> {
     // Obtener desde cache (sin query a DB)
     const promptConfig =

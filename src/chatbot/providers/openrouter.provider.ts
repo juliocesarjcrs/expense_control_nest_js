@@ -39,6 +39,7 @@ export class OpenRouterProvider implements AIProvider {
       | 'auto'
       | 'none'
       | { type: 'function'; function: { name: string } } = 'auto',
+    iteration: number = 1,
   ): Promise<ChatMessageResponse> {
     const startTime = Date.now();
     try {
@@ -55,9 +56,18 @@ export class OpenRouterProvider implements AIProvider {
       });
 
       const choice = completion.choices[0];
-      this.errorCount = 0; // Reset error count on success
+      this.errorCount = 0;
 
-      await this.logHealthEvent('success', Date.now() - startTime);
+      // ✅ Log con información detallada
+      await this.logHealthEvent(
+        'success',
+        Date.now() - startTime,
+        undefined,
+        iteration,
+        this.config.supports_tools,
+        completion.usage?.total_tokens,
+        choice.finish_reason,
+      );
 
       return {
         outputText: choice.message.content,
@@ -67,7 +77,16 @@ export class OpenRouterProvider implements AIProvider {
       };
     } catch (error) {
       this.errorCount++;
-      await this.logHealthEvent('error', Date.now() - startTime, error.message);
+
+      // ✅ Log de error con contexto
+      await this.logHealthEvent(
+        'error',
+        Date.now() - startTime,
+        error.message,
+        iteration,
+        this.config.supports_tools,
+      );
+
       this.logger.error('Error calling OpenRouter API:', error.message);
       throw error;
     }
@@ -123,22 +142,34 @@ export class OpenRouterProvider implements AIProvider {
 
   private formatMessagesForOpenAI(messages: ChatMessage[]): any[] {
     return messages.map((msg) => {
-      if (
-        msg.role === 'system' ||
-        msg.role === 'user' ||
-        msg.role === 'assistant'
-      ) {
+      if (msg.role === 'system' || msg.role === 'user') {
         return {
           role: msg.role,
           content: msg.content,
         };
       }
 
+      if (msg.role === 'assistant') {
+        const formattedMsg: any = {
+          role: 'assistant',
+        };
+
+        // ✅ Si hay tool_calls, content debe ser null
+        if (msg.tool_calls && msg.tool_calls.length > 0) {
+          formattedMsg.content = null;
+          formattedMsg.tool_calls = msg.tool_calls;
+        } else {
+          formattedMsg.content = msg.content || null;
+        }
+
+        return formattedMsg;
+      }
+
       if (msg.role === 'tool') {
+        // ✅ Convertir tool results a mensajes user
         return {
-          role: 'tool',
-          content: msg.content,
-          tool_call_id: msg.tool_call_id,
+          role: 'user',
+          content: `Tool result from ${msg.name}:\n${msg.content}`,
         };
       }
 
@@ -170,6 +201,10 @@ export class OpenRouterProvider implements AIProvider {
     status: 'success' | 'error' | 'timeout' | 'rate_limit',
     responseTime: number,
     errorMessage?: string,
+    iteration?: number,
+    supportsTools?: boolean,
+    tokenCount?: number,
+    finishReason?: string,
   ): Promise<void> {
     try {
       await this.healthLogRepository.save({
@@ -177,6 +212,10 @@ export class OpenRouterProvider implements AIProvider {
         status,
         response_time: responseTime,
         error_message: errorMessage,
+        iteration: iteration || 1,
+        supports_tools: supportsTools || false,
+        token_count: tokenCount,
+        finish_reason: finishReason,
         createdAt: new Date(),
       });
     } catch (error) {

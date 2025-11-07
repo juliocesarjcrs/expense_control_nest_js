@@ -148,36 +148,10 @@ export class ExpensesExecutor implements ToolExecutor {
           total: 0,
           count: 0,
           percentage: 0,
-          subcategories: {},
-          items: [],
         };
       }
       acc[categoryName].total += exp.cost || 0;
       acc[categoryName].count += 1;
-
-      // Agrupar por subcategoría dentro de cada categoría
-      const subcategoryName = exp.subcategories?.name || 'Sin subcategoría';
-      if (!acc[categoryName].subcategories[subcategoryName]) {
-        acc[categoryName].subcategories[subcategoryName] = {
-          total: 0,
-          count: 0,
-          items: [],
-        };
-      }
-      acc[categoryName].subcategories[subcategoryName].total += exp.cost || 0;
-      acc[categoryName].subcategories[subcategoryName].count += 1;
-
-      const item = {
-        id: exp.id,
-        description: exp.commentary || 'Sin descripción',
-        amount: exp.cost,
-        date: exp.date,
-        subcategory: subcategoryName,
-        category: categoryName,
-      };
-
-      acc[categoryName].items.push(item);
-      acc[categoryName].subcategories[subcategoryName].items.push(item);
 
       return acc;
     }, {});
@@ -190,46 +164,34 @@ export class ExpensesExecutor implements ToolExecutor {
       ).toFixed(1);
     });
 
-    // Lista detallada de gastos con toda la información
-    const detailedExpenses = expenses.map((exp) => ({
-      id: exp.id,
-      description: exp.commentary || 'Sin descripción',
-      amount: exp.cost,
-      date: exp.date,
-      subcategory: exp.subcategories?.name || 'Sin subcategoría',
-      category: exp.subcategories?.category?.name || 'Sin categoría',
-      icon: exp.subcategories?.icon || null,
-    }));
-
-    // Top gastos
-    const topExpenses = [...detailedExpenses]
-      .sort((a, b) => b.amount - a.amount)
-      .slice(0, 5);
+    // ✅ SOLO enviar TOP 10 gastos más grandes (no todos)
+    const topExpenses = [...expenses]
+      .sort((a, b) => b.cost - a.cost)
+      .slice(0, 10)
+      .map((exp) => ({
+        amount: exp.cost,
+        date: exp.date,
+        description: exp.commentary || 'Sin descripción',
+        category: exp.subcategories?.category?.name || 'Sin categoría',
+      }));
 
     // Estadísticas
     const amounts = expenses.map((e) => e.cost);
     const average = total / expenses.length;
     const median = this.calculateMedian(amounts);
 
-    // Análisis temporal (gastos por día)
-    const byDate = expenses.reduce((acc, exp) => {
+    // ✅ Análisis temporal AGREGADO por mes (no por día)
+    const byMonth = expenses.reduce((acc, exp) => {
       const date = exp.date instanceof Date ? exp.date : new Date(exp.date);
-      const dateKey = date.toISOString().split('T')[0];
-      if (!acc[dateKey]) {
-        acc[dateKey] = {
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      if (!acc[monthKey]) {
+        acc[monthKey] = {
           total: 0,
           count: 0,
-          items: [],
         };
       }
-      acc[dateKey].total += exp.cost || 0;
-      acc[dateKey].count += 1;
-      acc[dateKey].items.push({
-        description: exp.commentary,
-        amount: exp.cost,
-        category: exp.subcategories?.category?.name,
-        subcategory: exp.subcategories?.name,
-      });
+      acc[monthKey].total += exp.cost || 0;
+      acc[monthKey].count += 1;
       return acc;
     }, {});
 
@@ -238,7 +200,6 @@ export class ExpensesExecutor implements ToolExecutor {
       expenses.length,
       total,
       byCategory,
-      detailedExpenses,
       parameters,
     );
 
@@ -250,17 +211,17 @@ export class ExpensesExecutor implements ToolExecutor {
       average: parseFloat(average.toFixed(2)),
       median: parseFloat(median.toFixed(2)),
       byCategory,
-      byDate,
-      detailedExpenses,
-      topExpenses,
+      byMonth, // ✅ Agregado por mes en lugar de por día
+      topExpenses, // ✅ Solo top 10
       dateRange: {
         oldest: expenses[expenses.length - 1]?.date,
         newest: expenses[0]?.date,
       },
       isEmpty: false,
+      // ✅ Indicar si hay más datos
+      hasMore: expenses.length > 10,
     };
   }
-
   /**
    * Genera una respuesta contextual basada en la consulta
    */
@@ -268,38 +229,27 @@ export class ExpensesExecutor implements ToolExecutor {
     count: number,
     total: number,
     byCategory: any,
-    detailedExpenses: any[],
     parameters: any,
   ): string {
     const parts = [];
 
     if (parameters.category) {
-      const categoryExpenses = detailedExpenses.filter(
-        (e) =>
-          e.category
-            .toLowerCase()
-            .includes(parameters.category.toLowerCase()) ||
-          e.subcategory
-            .toLowerCase()
-            .includes(parameters.category.toLowerCase()),
+      // Buscar la categoría solicitada
+      const matchingCategory = Object.entries(byCategory).find(([name]) =>
+        name.toLowerCase().includes(parameters.category.toLowerCase()),
       );
 
-      if (categoryExpenses.length > 0) {
+      if (matchingCategory) {
+        const [categoryName, categoryData]: [string, any] = matchingCategory;
         parts.push(
-          `Encontré ${categoryExpenses.length} gasto(s) relacionado(s) con "${parameters.category}"`,
+          `Encontré ${categoryData.count} gasto(s) en "${categoryName}"`,
         );
+        parts.push(`Total gastado: $${categoryData.total.toFixed(2)}`);
+        parts.push(`Representa el ${categoryData.percentage}% del total`);
+      } else {
         parts.push(
-          `Total gastado: $${categoryExpenses.reduce((sum, e) => sum + e.amount, 0).toFixed(2)}`,
+          `No se encontraron gastos específicamente en la categoría "${parameters.category}"`,
         );
-
-        // Mostrar fechas de los gastos
-        const dates = categoryExpenses
-          .map((e) => {
-            const date = new Date(e.date);
-            return `${date.getDate()}/${date.getMonth() + 1}`;
-          })
-          .join(', ');
-        parts.push(`Fechas: ${dates}`);
       }
     } else {
       parts.push(
@@ -314,7 +264,7 @@ export class ExpensesExecutor implements ToolExecutor {
       if (topCategory) {
         const [categoryName, categoryData] = topCategory;
         parts.push(
-          `La categoría con más gastos es "${categoryName}" con $${categoryData.total.toFixed(2)} (${categoryData.percentage}%)`,
+          `La categoría principal es "${categoryName}" con $${categoryData.total.toFixed(2)} (${categoryData.percentage}%)`,
         );
       }
     }
