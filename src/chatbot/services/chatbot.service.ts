@@ -609,19 +609,19 @@ export class ChatbotService {
         - Sugiere las categorías más cercanas disponibles
         - No inventes categorías que no existen en la lista anterior
       `;
-        }
+  }
 
   // ✅ CONTEXTO POR DEFECTO si falla la carga
   private getDefaultCategoriesContext(): string {
     return `
-📋 CATEGORÍAS DISPONIBLES:
-El usuario tiene categorías personalizadas en su sistema.
-Usa búsqueda parcial en los parámetros 'category' y 'subcategory' para encontrar coincidencias.
+      📋 CATEGORÍAS DISPONIBLES:
+      El usuario tiene categorías personalizadas en su sistema.
+      Usa búsqueda parcial en los parámetros 'category' y 'subcategory' para encontrar coincidencias.
 
-IMPORTANTE: 
-- Siempre consulta la herramienta get_expenses para obtener datos reales
-- No asumas nombres de categorías, usa búsqueda flexible
-`;
+      IMPORTANTE: 
+      - Siempre consulta la herramienta get_expenses para obtener datos reales
+      - No asumas nombres de categorías, usa búsqueda flexible
+      `;
   }
 
   // ✅ MÉTODO PARA LIMPIAR CACHÉ MANUALMENTE (útil cuando se crean/modifican categorías)

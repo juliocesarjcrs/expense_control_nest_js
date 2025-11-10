@@ -19,6 +19,7 @@ import { ChatbotService } from './services/chatbot.service';
 import { AIModelManagerService } from './services/ai-model-manager.service';
 import { CreateAIModelDto } from './dto/create-ai-model.dto';
 import { UpdateAIModelDto } from './dto/update-ai-model.dto';
+import { ToolsRegistry } from './tools/tools.registry';
 
 @Controller('chatbot')
 @UseGuards(JwtAuthGuard)
@@ -26,6 +27,7 @@ export class ChatbotController {
   constructor(
     private readonly chatbotService: ChatbotService,
     private readonly aiModelManager: AIModelManagerService,
+    private readonly toolsRegistry: ToolsRegistry,
   ) {}
 
   @Get('conversations')
@@ -174,5 +176,61 @@ export class ChatbotController {
   @Get('analytics/tool-stats')
   async getToolStats() {
     return this.chatbotService.getToolUsageStats();
+  }
+
+  /**
+   * 🔄 Recarga SOLO la configuración de tools
+   * Más específico que invalidar todo el cache
+   */
+  @Post('tools/reload')
+  @HttpCode(200)
+  async reloadToolsConfig(@Request() req) {
+    await this.toolsRegistry.reloadToolsConfig();
+
+    const activeTools = this.toolsRegistry.getAllToolDefinitions();
+
+    return {
+      success: true,
+      message: 'Tools configuration reloaded successfully',
+      timestamp: new Date().toISOString(),
+      totalActive: activeTools.length,
+      tools: activeTools.map((t) => ({
+        name: t.function.name,
+        priority: this.toolsRegistry.getToolConfig(t.function.name)?.priority,
+      })),
+    };
+  }
+
+  /**
+   * 📋 Obtiene configuración actual de tools activas
+   */
+  @Get('tools/config')
+  async getToolsConfig() {
+    const allTools = this.toolsRegistry.getAllToolDefinitions();
+
+    return {
+      total: allTools.length,
+      tools: allTools.map((tool) => ({
+        name: tool.function.name,
+        description: tool.function.description.trim().substring(0, 100) + '...',
+        config: this.toolsRegistry.getToolConfig(tool.function.name),
+      })),
+    };
+  }
+
+  /**
+   * 🔍 Verifica estado de una tool específica
+   */
+  @Get('tools/:toolName/status')
+  async getToolStatus(@Param('toolName') toolName: string) {
+    const config = this.toolsRegistry.getToolConfig(toolName);
+    const isActive = this.toolsRegistry.hasTool(toolName);
+
+    return {
+      toolName,
+      exists: config !== undefined,
+      isActive,
+      config,
+    };
   }
 }

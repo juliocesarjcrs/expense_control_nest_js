@@ -75,13 +75,14 @@ export class ChatbotModule {
         {
           provide: ToolsRegistry,
           useFactory: (
+            chatbotConfigService: ChatbotConfigService,
             expensesExecutor: ExpensesExecutor,
             incomesExecutor: IncomesExecutor,
             savingsExecutor: SavingsExecutor,
             budgetsExecutor: BudgetsExecutor,
             loansExecutor: LoansExecutor,
           ) => {
-            const registry = new ToolsRegistry();
+            const registry = new ToolsRegistry(chatbotConfigService);
 
             // Inicializar con TODOS los executores
             registry.initializeAllTools({
@@ -95,6 +96,7 @@ export class ChatbotModule {
             return registry;
           },
           inject: [
+            ChatbotConfigService,
             ExpensesExecutor,
             IncomesExecutor,
             SavingsExecutor,
