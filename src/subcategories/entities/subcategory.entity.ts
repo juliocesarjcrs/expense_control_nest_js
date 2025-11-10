@@ -29,7 +29,7 @@ export class Subcategory extends Content {
   @JoinColumn({ name: 'user_id' })
   user: User;
 
-  @OneToMany(() => Expense, (expense) => expense.subcategories, {
+  @OneToMany(() => Expense, (expense) => expense.subcategory, {
     cascade: true,
   })
   expenses: Expense[];

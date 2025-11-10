@@ -30,7 +30,7 @@ export class ExpensesExecutor implements ToolExecutor {
       // Construir query dinámica con joins optimizados
       const queryBuilder = this.expenseRepo
         .createQueryBuilder('expense')
-        .leftJoinAndSelect('expense.subcategories', 'subcategory')
+        .leftJoinAndSelect('expense.subcategory', 'subcategory')
         .leftJoinAndSelect('subcategory.category', 'category')
         .where('expense.userId = :userId', { userId });
 

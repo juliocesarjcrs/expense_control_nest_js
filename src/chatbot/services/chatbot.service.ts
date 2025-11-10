@@ -17,12 +17,17 @@ import { ConversationHistoryParams } from '../interfaces/conversation-history-qu
 import { AIModelManagerService } from './ai-model-manager.service';
 import { ConversationLog } from '../entities/conversation-log.entity';
 import { ChatbotConfigService } from 'src/chatbot-config/chatbot-config.service';
+import { CategoriesService } from 'src/categories/categories.service';
 
 @Injectable()
 export class ChatbotService {
   private readonly logger = new Logger(ChatbotService.name);
   private readonly MAX_TOOL_ITERATIONS = 5; // Prevenir loops infinitos
   private readonly CONVERSATION_TIMEOUT = 60 * 60 * 1000; // 1 hora
+
+  private categoriesCache: string | null = null;
+  private cacheExpiry: Date | null = null;
+  private readonly CACHE_TTL = 1000 * 60 * 60; // 1 hora
 
   constructor(
     @InjectRepository(Conversation)
@@ -35,6 +40,7 @@ export class ChatbotService {
     @InjectRepository(ConversationLog)
     private conversationLogRepo: Repository<ConversationLog>,
     private readonly chatbotConfigService: ChatbotConfigService,
+    private readonly categoriesService: CategoriesService,
   ) {}
 
   async getRecentConversations(params: ConversationQueryParams) {
@@ -74,7 +80,7 @@ export class ChatbotService {
     const savedConversation = await this.conversationRepo.save(conversation);
 
     // Guardar el mensaje del sistema
-    const systemPrompt = await this.getSystemPrompt();
+    const systemPrompt = await this.getSystemPrompt(userId);
     const systemMessage = this.messageRepo.create({
       content: systemPrompt.content,
       role: 'system',
@@ -115,7 +121,7 @@ export class ChatbotService {
     await this.messageRepo.save(userMessage);
 
     // Obtener historial de mensajes
-    const messageHistory = await this.getRecentMessages(conversationId);
+    const messageHistory = await this.getRecentMessages(conversationId, userId);
 
     // Obtener todas las tools disponibles
     const availableTools = this.toolsRegistry.getAllToolDefinitions();
@@ -145,6 +151,7 @@ export class ChatbotService {
 
   private async getRecentMessages(
     conversationId: number,
+    userId: number,
   ): Promise<ChatMessage[]> {
     const messages = await this.messageRepo.find({
       where: { conversation: { id: conversationId } },
@@ -154,7 +161,7 @@ export class ChatbotService {
     const systemMessage = messages.find((msg) => msg.role === 'system');
     if (!systemMessage) {
       return [
-        await this.getSystemPrompt(),
+        await this.getSystemPrompt(userId),
         ...messages.map((msg) => ({
           role: msg.role as 'user' | 'assistant' | 'system',
           content: msg.content,
@@ -393,7 +400,7 @@ export class ChatbotService {
     };
   };
 
-  private async getSystemPrompt(): Promise<ChatMessage> {
+  private async getSystemPrompt(userId: number): Promise<ChatMessage> {
     // Obtener desde cache (sin query a DB)
     const promptConfig =
       await this.chatbotConfigService.getConfig('system_prompt');
@@ -407,6 +414,7 @@ export class ChatbotService {
 
     // Procesar template con variables
     let content = promptConfig.template || promptConfig.sections;
+    const categoriesContext = await this.getCategoriesContext(userId);
 
     if (typeof content === 'object') {
       // Combinar secciones activas
@@ -417,7 +425,7 @@ export class ChatbotService {
 
     // Reemplazar variables
     content = content.replace('{{currentDate}}', currentDate);
-
+    content = content.replace('{{categories}}', categoriesContext);
     return {
       role: 'system',
       content,
@@ -526,5 +534,100 @@ export class ChatbotService {
       .getRawMany();
 
     return stats;
+  }
+
+  private async getCategoriesContext(userId: number): Promise<string> {
+    const now = new Date();
+
+    // Verificar si el caché es válido
+    if (this.categoriesCache && this.cacheExpiry && this.cacheExpiry > now) {
+      this.logger.debug('Using cached categories context');
+      return this.categoriesCache;
+    }
+
+    this.logger.debug('Fetching fresh categories from database');
+
+    try {
+      const { data: categories } =
+        await this.categoriesService.findAllWithSubcategories(userId);
+
+      // ✅ Formatear para el prompt
+      this.categoriesCache = this.formatCategoriesForPrompt(categories);
+      this.cacheExpiry = new Date(now.getTime() + this.CACHE_TTL);
+
+      return this.categoriesCache;
+    } catch (error) {
+      this.logger.error('Error fetching categories:', error);
+      return this.getDefaultCategoriesContext();
+    }
+  }
+
+  // ✅ FORMATEAR CATEGORÍAS PARA EL PROMPT
+  private formatCategoriesForPrompt(categories: any[]): string {
+    if (!categories || categories.length === 0) {
+      return this.getDefaultCategoriesContext();
+    }
+
+    const categoriesText = categories
+      .map((cat) => {
+        const subcats =
+          cat.subcategories?.map((sub) => `    - ${sub.name}`).join('\n') || '';
+
+        return `  • ${cat.name}${subcats ? '\n' + subcats : ''}`;
+      })
+      .join('\n');
+
+    return `
+      📋 CATEGORÍAS Y SUBCATEGORÍAS DISPONIBLES:
+      Las siguientes son las ÚNICAS categorías y subcategorías válidas en el sistema.
+      Usa estos nombres EXACTOS al filtrar o interpretar consultas del usuario:
+
+      ${categoriesText}
+
+      🎯 REGLAS IMPORTANTES PARA BÚSQUEDA DE CATEGORÍAS:
+
+      1. INTERPRETACIÓN DE CONSULTAS:
+        - "transporte al trabajo" → category: "Transporte", subcategory: "Trabajo"
+        - "comida rápida" → category: "Alimentación", subcategory: "Comida Rápida"
+        - "uber" o "taxi" → category: "Transporte", subcategory: "Taxi/Uber"
+        - "salidas" o "cenas" → category: "Alimentación", subcategory: "Restaurantes"
+        - Si solo mencionan la categoría general (ej: "transporte"), NO uses subcategory
+
+      2. PRIORIDAD EN PARÁMETROS:
+        - Si el usuario menciona una subcategoría específica → usa el parámetro 'subcategory'
+        - Si es algo general → usa solo 'category'
+        - La búsqueda es parcial: "transp" encontrará "Transporte"
+
+      3. EJEMPLOS DE USO:
+        ❌ MAL: category: "transporte al trabajo" (muy específico)
+        ✅ BIEN: category: "Transporte", subcategory: "Trabajo"
+
+        ❌ MAL: category: "comidas" (impreciso)
+        ✅ BIEN: category: "Alimentación" (usa el nombre exacto)
+
+      4. CUANDO NO ENCUENTRES COINCIDENCIAS:
+        - Sugiere las categorías más cercanas disponibles
+        - No inventes categorías que no existen en la lista anterior
+      `;
+        }
+
+  // ✅ CONTEXTO POR DEFECTO si falla la carga
+  private getDefaultCategoriesContext(): string {
+    return `
+📋 CATEGORÍAS DISPONIBLES:
+El usuario tiene categorías personalizadas en su sistema.
+Usa búsqueda parcial en los parámetros 'category' y 'subcategory' para encontrar coincidencias.
+
+IMPORTANTE: 
+- Siempre consulta la herramienta get_expenses para obtener datos reales
+- No asumas nombres de categorías, usa búsqueda flexible
+`;
+  }
+
+  // ✅ MÉTODO PARA LIMPIAR CACHÉ MANUALMENTE (útil cuando se crean/modifican categorías)
+  async invalidateCategoriesCache(): Promise<void> {
+    this.logger.log('Categories cache invalidated');
+    this.categoriesCache = null;
+    this.cacheExpiry = null;
   }
 }

@@ -28,6 +28,7 @@ import { AIModelHealthLog } from './entities/ai-model-health-log.entity';
 import { ConversationLog } from './entities/conversation-log.entity';
 import { ChatbotConfigService } from '../chatbot-config/chatbot-config.service';
 import { ChatbotConfigModule } from 'src/chatbot-config/chatbot-config.module';
+import { CategoriesModule } from 'src/categories/categories.module';
 
 @Module({})
 export class ChatbotModule {
@@ -54,6 +55,7 @@ export class ChatbotModule {
         BudgetsModule,
         SavingModule,
         ChatbotConfigModule,
+        CategoriesModule,
       ],
       controllers: [ChatbotController],
       providers: [

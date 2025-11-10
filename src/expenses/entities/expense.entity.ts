@@ -18,7 +18,7 @@ export class Expense extends Content {
 
   @ManyToOne(() => User, { nullable: false })
   @JoinColumn({ name: 'user_id' })
-  user: number;
+  user: User;
 
   @Column({ name: 'subcategory_id', nullable: false })
   subcategoryId: number;
@@ -28,5 +28,5 @@ export class Expense extends Content {
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'subcategory_id' })
-  subcategories: number;
+  subcategory: Subcategory;
 }

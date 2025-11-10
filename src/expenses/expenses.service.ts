@@ -245,7 +245,7 @@ export class ExpensesService {
     const expensesGroupByMonth = await this.expensesRepository
       .createQueryBuilder('expense')
       .select(['MONTH(expense.date) as month', 'YEAR(expense.date) as year'])
-      .leftJoin('expense.subcategories', 'subcategory')
+      .leftJoin('expense.subcategory', 'subcategory')
       .addSelect('SUM(expense.cost)', 'sum')
       .where('expense.date >= :mydate', {
         mydate: this.datesService.monthAgo(numMonths),
@@ -391,7 +391,7 @@ export class ExpensesService {
     if (orderBy && order) {
       query.orderBy(`expense.${orderBy}`, order);
     }
-    query.leftJoinAndSelect('expense.subcategories', 'subcategories');
+    query.leftJoinAndSelect('expense.subcategory', 'subcategories');
     query.addSelect(['subcategories.id', 'subcategories.name']);
 
     const expenses = await query.getMany();

@@ -2,7 +2,7 @@ import { Entity, Column, OneToMany } from 'typeorm';
 import { Message } from './message.entity';
 import { Content } from 'src/entity/entityBase';
 
-@Entity()
+@Entity({ name: 'conversations' })
 export class Conversation extends Content {
   @Column()
   provider: string;

@@ -8,7 +8,7 @@ import {
 import { Conversation } from './conversation.entity';
 import { Content } from 'src/entity/entityBase';
 
-@Entity()
+@Entity({ name: 'messages' })
 export class Message extends Content {
   @Column('text')
   content: string;
