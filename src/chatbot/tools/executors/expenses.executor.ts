@@ -49,14 +49,16 @@ export class ExpensesExecutor implements ToolExecutor {
           endDate: parameters.endDate,
         });
       } else {
-        // Por defecto, mes actual
-        const now = new Date();
-        const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-        const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-        queryBuilder.andWhere('expense.date BETWEEN :firstDay AND :lastDay', {
-          firstDay,
-          lastDay,
-        });
+        if (!parameters.commentary) {
+          // Por defecto, mes actual
+          const now = new Date();
+          const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+          const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+          queryBuilder.andWhere('expense.date BETWEEN :firstDay AND :lastDay', {
+            firstDay,
+            lastDay,
+          });
+        }
       }
 
       // Filtro por categoría (nombre de categoría o subcategoría)
@@ -69,10 +71,32 @@ export class ExpensesExecutor implements ToolExecutor {
 
       // Filtro por subcategoría específica
       if (parameters.subcategory) {
+        const subList = parameters.subcategory
+          .split(',')
+          .map((s: string) => s.trim().toLowerCase());
+
+        if (parameters.excludeSubcategories) {
+          // ❌ Excluir estas subcategorías
+          queryBuilder.andWhere(
+            `LOWER(subcategory.name) NOT IN (:...subList)`,
+            {
+              subList,
+            },
+          );
+        } else {
+          // ✅ Incluir estas subcategorías
+          queryBuilder.andWhere(`LOWER(subcategory.name) IN (:...subList)`, {
+            subList,
+          });
+        }
+      }
+
+      // Filtro por texto en el comentario (viajes, eventos, lugares, descripciones)
+      if (parameters.commentary) {
         queryBuilder.andWhere(
-          'LOWER(subcategory.name) LIKE LOWER(:subcategory)',
+          'LOWER(expense.commentary) LIKE LOWER(:commentary)',
           {
-            subcategory: `%${parameters.subcategory}%`,
+            commentary: `%${parameters.commentary}%`,
           },
         );
       }

@@ -334,6 +334,7 @@ export class ChatbotService {
               extracted_parameters: parameters,
               tool_result: this.sanitizeToolResult(result),
               response_time: Date.now() - startTime,
+              iteration: iterations,
               createdAt: new Date(),
             });
 
@@ -359,6 +360,7 @@ export class ChatbotService {
               extracted_parameters: JSON.parse(toolCall.function.arguments),
               tool_result: { error: error.message },
               response_time: Date.now() - startTime,
+              iteration: iterations,
               createdAt: new Date(),
             });
             return {
@@ -583,31 +585,6 @@ export class ChatbotService {
       Usa estos nombres EXACTOS al filtrar o interpretar consultas del usuario:
 
       ${categoriesText}
-
-      🎯 REGLAS IMPORTANTES PARA BÚSQUEDA DE CATEGORÍAS:
-
-      1. INTERPRETACIÓN DE CONSULTAS:
-        - "transporte al trabajo" → category: "Transporte", subcategory: "Trabajo"
-        - "comida rápida" → category: "Alimentación", subcategory: "Comida Rápida"
-        - "uber" o "taxi" → category: "Transporte", subcategory: "Taxi/Uber"
-        - "salidas" o "cenas" → category: "Alimentación", subcategory: "Restaurantes"
-        - Si solo mencionan la categoría general (ej: "transporte"), NO uses subcategory
-
-      2. PRIORIDAD EN PARÁMETROS:
-        - Si el usuario menciona una subcategoría específica → usa el parámetro 'subcategory'
-        - Si es algo general → usa solo 'category'
-        - La búsqueda es parcial: "transp" encontrará "Transporte"
-
-      3. EJEMPLOS DE USO:
-        ❌ MAL: category: "transporte al trabajo" (muy específico)
-        ✅ BIEN: category: "Transporte", subcategory: "Trabajo"
-
-        ❌ MAL: category: "comidas" (impreciso)
-        ✅ BIEN: category: "Alimentación" (usa el nombre exacto)
-
-      4. CUANDO NO ENCUENTRES COINCIDENCIAS:
-        - Sugiere las categorías más cercanas disponibles
-        - No inventes categorías que no existen en la lista anterior
       `;
   }
 
@@ -618,7 +595,7 @@ export class ChatbotService {
       El usuario tiene categorías personalizadas en su sistema.
       Usa búsqueda parcial en los parámetros 'category' y 'subcategory' para encontrar coincidencias.
 
-      IMPORTANTE: 
+      IMPORTANTE:
       - Siempre consulta la herramienta get_expenses para obtener datos reales
       - No asumas nombres de categorías, usa búsqueda flexible
       `;

@@ -30,6 +30,9 @@ export class ConversationLog extends Content {
   @Column({ type: 'int' })
   response_time: number;
 
+  @Column({ type: 'int', default: 1 })
+  iteration: number;
+
   @CreateDateColumn({ name: 'created_at', type: 'datetime' })
   createdAt: Date;
 }
