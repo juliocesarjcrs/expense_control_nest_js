@@ -399,4 +399,207 @@ export class ExpensesService {
 
     return { expenses, sum: sumExpenses };
   }
+
+  async comparePeriods(
+    userId: number,
+    categories: { categoryId: number; subcategoriesId: number[] }[],
+    periodA: { start: Date; end: Date },
+    periodB: { start: Date; end: Date },
+  ) {
+    const allSubcategories = categories.flatMap((c) => c.subcategoriesId);
+
+    const queryBase = this.expensesRepository.createQueryBuilder('expense');
+
+    const buildQuery = (period: { start: Date; end: Date }) => {
+      const query = queryBase.clone();
+
+      query.select([
+        'expense.id',
+        'expense.cost',
+        'expense.commentary',
+        'expense.date',
+        'expense.createdAt',
+      ]);
+
+      query.where('expense.user_id = :userId', { userId });
+
+      if (allSubcategories.length > 0) {
+        query.andWhere('expense.subcategoryId IN (:...subcategoriesId)', {
+          subcategoriesId: allSubcategories,
+        });
+      }
+
+      if (period.start) {
+        const startDateFormat = this.datesService.getFormatDate(period.start);
+        query.andWhere('expense.date >= :startDateFormat', { startDateFormat });
+      }
+
+      if (period.end) {
+        const endDateFormat = this.datesService.getFormatDate(period.end);
+        query.andWhere('expense.date <= :endDateFormat', { endDateFormat });
+      }
+
+      query.leftJoinAndSelect('expense.subcategory', 'subcategory');
+      query.addSelect(['subcategory.id', 'subcategory.name']);
+
+      return query;
+    };
+
+    const [expensesA, expensesB] = await Promise.all([
+      buildQuery(periodA).getMany(),
+      buildQuery(periodB).getMany(),
+    ]);
+
+    const sumA = expensesA.reduce((acu, val) => acu + val.cost, 0);
+    const sumB = expensesB.reduce((acu, val) => acu + val.cost, 0);
+
+    // Calcular número de meses en cada periodo
+    const monthsA = this.calculateMonthsDifference(periodA.start, periodA.end);
+    const monthsB = this.calculateMonthsDifference(periodB.start, periodB.end);
+
+    // Promedios mensuales
+    const avgMonthlyA = monthsA > 0 ? sumA / monthsA : 0;
+    const avgMonthlyB = monthsB > 0 ? sumB / monthsB : 0;
+
+    // Comparación total acumulado
+    const totalDifference = sumB - sumA;
+    const totalPercentageChange =
+      sumA === 0 ? null : ((totalDifference / sumA) * 100).toFixed(2);
+
+    // Comparación promedio mensual
+    const avgDifference = avgMonthlyB - avgMonthlyA;
+    const avgPercentageChange =
+      avgMonthlyA === 0
+        ? null
+        : ((avgDifference / avgMonthlyA) * 100).toFixed(2);
+
+    // Generar explicación
+    const explanation = this.generateExplanation(
+      totalDifference,
+      totalPercentageChange,
+      avgDifference,
+      avgPercentageChange,
+    );
+
+    return {
+      periodA: {
+        range: { start: periodA.start, end: periodA.end },
+        total: sumA,
+        months: monthsA,
+        averageMonthly: avgMonthlyA,
+      },
+      periodB: {
+        range: { start: periodB.start, end: periodB.end },
+        total: sumB,
+        months: monthsB,
+        averageMonthly: avgMonthlyB,
+      },
+      comparison: {
+        total: {
+          difference: totalDifference,
+          percentageChange: totalPercentageChange,
+          trend:
+            totalDifference === 0
+              ? 'equal'
+              : totalDifference > 0
+                ? 'increase'
+                : 'decrease',
+        },
+        monthlyAverage: {
+          difference: avgDifference,
+          percentageChange: avgPercentageChange,
+          trend:
+            avgDifference === 0
+              ? 'equal'
+              : avgDifference > 0
+                ? 'increase'
+                : 'decrease',
+        },
+        explanation,
+      },
+      chartData: this.buildChartData(expensesA, expensesB),
+    };
+  }
+
+  private calculateMonthsDifference(start: Date, end: Date): number {
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+
+    const yearDiff = endDate.getFullYear() - startDate.getFullYear();
+    const monthDiff = endDate.getMonth() - startDate.getMonth();
+
+    return yearDiff * 12 + monthDiff + 1; // +1 para incluir ambos meses
+  }
+
+  private generateExplanation(
+    totalDifference: number,
+    totalPercentage: string | null,
+    avgDifference: number,
+    avgPercentage: string | null,
+  ): string {
+    const formatCurrency = (amount: number) =>
+      new Intl.NumberFormat('es-CO', {
+        style: 'currency',
+        currency: 'COP',
+        minimumFractionDigits: 0,
+      }).format(Math.abs(amount));
+
+    let explanation = '';
+
+    // Análisis de promedio mensual
+    if (avgPercentage !== null) {
+      const avgTrend = avgDifference > 0 ? 'aumentó' : 'disminuyó';
+      explanation += `En promedio mensual, durante el Periodo B el gasto ${avgTrend} un ${Math.abs(
+        parseFloat(avgPercentage),
+      ).toFixed(1)}% (${formatCurrency(avgDifference)})`;
+    }
+
+    // Análisis de total acumulado
+    if (totalPercentage !== null) {
+      const totalTrend = totalDifference > 0 ? 'mayor' : 'menor';
+      if (explanation) explanation += ', mientras que ';
+      explanation += `el total acumulado del periodo fue ${Math.abs(
+        parseFloat(totalPercentage),
+      ).toFixed(1)}% ${totalTrend} (${formatCurrency(totalDifference)})`;
+    }
+
+    if (explanation) {
+      explanation +=
+        '. Ambos enfoques son válidos: el primero refleja la intensidad del gasto mensual y el segundo el gasto total de todos los meses analizados.';
+    }
+
+    return (
+      explanation ||
+      'No hay suficiente información para generar una comparación.'
+    );
+  }
+
+  private buildChartData(expensesA: Expense[], expensesB: Expense[]) {
+    // Agrupar por nombre de subcategoría
+    const sumBySubcategory = (expenses: Expense[]) => {
+      return expenses.reduce<Record<string, number>>((acc, exp) => {
+        const name = exp.subcategory?.name ?? 'Sin subcategoría';
+        acc[name] = (acc[name] || 0) + exp.cost;
+        return acc;
+      }, {});
+    };
+
+    const sumsA = sumBySubcategory(expensesA);
+    const sumsB = sumBySubcategory(expensesB);
+
+    const labels = Array.from(
+      new Set([...Object.keys(sumsA), ...Object.keys(sumsB)]),
+    );
+
+    const dataA = labels.map((label) => sumsA[label] || 0);
+    const dataB = labels.map((label) => sumsB[label] || 0);
+
+    return {
+      labels,
+      datasets: [
+        { data: dataA, color: '#4CAF50', label: 'Periodo A' }, // String en vez de función
+        { data: dataB, color: '#2196F3', label: 'Periodo B' }, // String en vez de función
+      ],
+    };
+  }
 }

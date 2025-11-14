@@ -16,6 +16,7 @@ import { CreateExpenseDto } from './dto/create-expense.dto';
 import { UpdateExpenseDto } from './dto/update-expense.dto';
 import { CreateManyExpensesDto } from './dto/create-many-expenses.dto';
 import { ExpenseSearchOptionsDto } from './dto/expense-search-options.dto';
+import { ComparePeriodsDto } from './dto/compare-periods.dto';
 
 @Controller('expenses')
 export class ExpensesController {
@@ -136,5 +137,18 @@ export class ExpensesController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.expensesService.remove(+id);
+  }
+
+  @Post('analysis/compare-periods')
+  async comparePeriods(@Request() req, @Body() body: ComparePeriodsDto) {
+    const userId = req.user.id;
+    const { categories, periodA, periodB } = body;
+
+    return this.expensesService.comparePeriods(
+      userId,
+      categories,
+      periodA,
+      periodB,
+    );
   }
 }
