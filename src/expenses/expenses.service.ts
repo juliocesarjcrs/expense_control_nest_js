@@ -100,7 +100,7 @@ export class ExpensesService {
   async findOne(id: number) {
     return this.expensesRepository.findOne({
       where: { id },
-      relations: ['subcategories', 'subcategories.category'],
+      relations: ['subcategory', 'subcategory.category'],
     });
   }
 
