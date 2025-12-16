@@ -46,6 +46,7 @@ import { Loan } from './loans/entities/loan.entity';
 import { ChatbotModule } from './chatbot/chatbot.module';
 import { FeatureFlagsModule } from './feature-flags/feature-flags.module';
 import { ThemeConfigModule } from './theme-config/theme-config.module';
+import { UserThemePreferenceModule } from './user-theme-preference/user-theme-preference.module';
 
 @Module({
   imports: [
@@ -107,6 +108,7 @@ import { ThemeConfigModule } from './theme-config/theme-config.module';
     ChatbotModule.register(),
     FeatureFlagsModule,
     ThemeConfigModule,
+    UserThemePreferenceModule,
   ],
   controllers: [
     AppController,
