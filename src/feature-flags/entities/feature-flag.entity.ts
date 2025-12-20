@@ -25,6 +25,9 @@ export class FeatureFlag extends Content {
   @Column('tinyint', { name: 'requires_role', nullable: true })
   requiresRole: number | null;
 
+  @Column('tinyint', { name: 'default_for_users', default: 1 })
+  defaultForUsers: number;
+
   @Column('json', { nullable: true })
   metadata: Record<string, any> | null;
 

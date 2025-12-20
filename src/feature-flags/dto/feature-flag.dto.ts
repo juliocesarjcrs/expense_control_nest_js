@@ -1,5 +1,6 @@
 import {
   IsBoolean,
+  IsDateString,
   IsNotEmpty,
   IsNumber,
   IsOptional,
@@ -28,6 +29,10 @@ export class CreateFeatureFlagDto {
   @IsOptional()
   requiresRole?: number;
 
+  @IsBoolean()
+  @IsOptional()
+  defaultForUsers?: boolean;
+
   @IsOptional()
   metadata?: Record<string, any>;
 }
@@ -49,6 +54,10 @@ export class UpdateFeatureFlagDto {
   @IsNumber()
   @IsOptional()
   requiresRole?: number;
+
+  @IsBoolean()
+  @IsOptional()
+  defaultForUsers?: boolean;
 
   @IsOptional()
   metadata?: Record<string, any>;
@@ -73,4 +82,58 @@ export interface FeatureFlagResponseDto {
   updatedBy: number | null;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export class GrantUserPermissionDto {
+  @IsNumber()
+  @IsNotEmpty()
+  userId: number;
+
+  @IsString()
+  @IsNotEmpty()
+  featureKey: string;
+
+  @IsBoolean()
+  @IsNotEmpty()
+  isAllowed: boolean;
+
+  @IsString()
+  @IsOptional()
+  reason?: string;
+
+  @IsDateString()
+  @IsOptional()
+  expiresAt?: string;
+}
+
+export class UpdateUserPermissionDto {
+  @IsBoolean()
+  @IsOptional()
+  isAllowed?: boolean;
+
+  @IsString()
+  @IsOptional()
+  reason?: string;
+
+  @IsDateString()
+  @IsOptional()
+  expiresAt?: string;
+}
+
+export class BulkGrantPermissionsDto {
+  @IsNumber({}, { each: true })
+  @IsNotEmpty()
+  userIds: number[];
+
+  @IsString()
+  @IsNotEmpty()
+  featureKey: string;
+
+  @IsBoolean()
+  @IsNotEmpty()
+  isAllowed: boolean;
+
+  @IsString()
+  @IsOptional()
+  reason?: string;
 }

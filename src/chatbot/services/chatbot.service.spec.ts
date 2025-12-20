@@ -9,15 +9,38 @@ import { ToolsRegistry } from '../tools/tools.registry';
 import { ToolExecutorService } from './tool-executor.service';
 import { AIModelManagerService } from './ai-model-manager.service';
 import { ChatbotConfigService } from 'src/chatbot-config/chatbot-config.service';
+import { CategoriesService } from 'src/categories/categories.service';
 
 describe('ChatbotService - getSystemPrompt', () => {
   let service: ChatbotService;
   let chatbotConfigService: jest.Mocked<ChatbotConfigService>;
+  let categoriesService: jest.Mocked<CategoriesService>;
 
   beforeEach(async () => {
     // Mock del ChatbotConfigService
     const mockChatbotConfigService = {
       getConfig: jest.fn(),
+    };
+
+    // Mock del CategoriesService
+    const mockCategoriesService = {
+      findAllWithSubcategories: jest.fn().mockResolvedValue({
+        data: [
+          {
+            id: 1,
+            name: 'Alimentación',
+            subcategories: [
+              { id: 1, name: 'Supermercado' },
+              { id: 2, name: 'Restaurantes' },
+            ],
+          },
+          {
+            id: 2,
+            name: 'Transporte',
+            subcategories: [{ id: 3, name: 'Gasolina' }],
+          },
+        ],
+      }),
     };
 
     // Mocks básicos de repositorios
@@ -70,14 +93,21 @@ describe('ChatbotService - getSystemPrompt', () => {
           provide: ChatbotConfigService,
           useValue: mockChatbotConfigService,
         },
+        {
+          provide: CategoriesService,
+          useValue: mockCategoriesService,
+        },
       ],
     }).compile();
 
     service = module.get<ChatbotService>(ChatbotService);
     chatbotConfigService = module.get(ChatbotConfigService);
+    categoriesService = module.get(CategoriesService);
   });
 
   describe('getSystemPrompt', () => {
+    const testUserId = 1;
+
     it('should process template string with currentDate variable', async () => {
       // Arrange
       const mockTemplate = 'Hoy es {{currentDate}}. Eres un asistente.';
@@ -88,7 +118,7 @@ describe('ChatbotService - getSystemPrompt', () => {
       });
 
       // Act
-      const result = await service['getSystemPrompt']();
+      const result = await service['getSystemPrompt'](testUserId);
 
       // Assert
       expect(result.role).toBe('system');
@@ -114,7 +144,7 @@ describe('ChatbotService - getSystemPrompt', () => {
       });
 
       // Act
-      const result = await service['getSystemPrompt']();
+      const result = await service['getSystemPrompt'](testUserId);
 
       // Assert
       expect(result.role).toBe('system');
@@ -137,7 +167,7 @@ describe('ChatbotService - getSystemPrompt', () => {
       });
 
       // Act
-      const result = await service['getSystemPrompt']();
+      const result = await service['getSystemPrompt'](testUserId);
 
       // Assert
       expect(result.role).toBe('system');
@@ -159,7 +189,7 @@ describe('ChatbotService - getSystemPrompt', () => {
       });
 
       // Act
-      const result = await service['getSystemPrompt']();
+      const result = await service['getSystemPrompt'](testUserId);
 
       // Assert
       expect(result.role).toBe('system');
@@ -177,7 +207,7 @@ describe('ChatbotService - getSystemPrompt', () => {
       });
 
       // Act
-      const result = await service['getSystemPrompt']();
+      const result = await service['getSystemPrompt'](testUserId);
 
       // Assert
       expect(result.content).toBe('Template directo');
@@ -195,7 +225,7 @@ describe('ChatbotService - getSystemPrompt', () => {
       });
 
       // Act
-      const result = await service['getSystemPrompt']();
+      const result = await service['getSystemPrompt'](testUserId);
 
       // Assert
       expect(result.role).toBe('system');
@@ -212,7 +242,7 @@ describe('ChatbotService - getSystemPrompt', () => {
       });
 
       // Act
-      const result = await service['getSystemPrompt']();
+      const result = await service['getSystemPrompt'](testUserId);
 
       // Assert
       // Verificar que la fecha está en español (días y meses)
@@ -243,9 +273,95 @@ describe('ChatbotService - getSystemPrompt', () => {
       );
 
       // Act & Assert
-      await expect(service['getSystemPrompt']()).rejects.toThrow(
+      await expect(service['getSystemPrompt'](testUserId)).rejects.toThrow(
         'Database connection failed',
       );
+    });
+
+    it('should include categories context in the prompt', async () => {
+      // Arrange
+      const mockTemplate = 'Prompt base {{categories}}';
+      chatbotConfigService.getConfig.mockResolvedValue({
+        template: mockTemplate,
+        sections: null,
+        active_sections: [],
+      });
+
+      // Act
+      const result = await service['getSystemPrompt'](testUserId);
+
+      // Assert
+      expect(result.role).toBe('system');
+      expect(result.content).toContain(
+        'CATEGORÍAS Y SUBCATEGORÍAS DISPONIBLES',
+      );
+      expect(result.content).toContain('Alimentación');
+      expect(result.content).toContain('Transporte');
+      expect(categoriesService.findAllWithSubcategories).toHaveBeenCalledWith(
+        testUserId,
+      );
+    });
+
+    it('should use default categories context when service fails', async () => {
+      // Arrange
+      const mockTemplate = 'Prompt base {{categories}}';
+      chatbotConfigService.getConfig.mockResolvedValue({
+        template: mockTemplate,
+        sections: null,
+        active_sections: [],
+      });
+
+      categoriesService.findAllWithSubcategories.mockRejectedValue(
+        new Error('DB Error'),
+      );
+
+      // Act
+      const result = await service['getSystemPrompt'](testUserId);
+
+      // Assert
+      expect(result.role).toBe('system');
+      expect(result.content).toContain('CATEGORÍAS DISPONIBLES');
+      expect(result.content).toContain('categorías personalizadas');
+    });
+
+    it('should cache categories context between calls', async () => {
+      // Arrange
+      const mockTemplate = 'Prompt {{categories}}';
+      chatbotConfigService.getConfig.mockResolvedValue({
+        template: mockTemplate,
+        sections: null,
+        active_sections: [],
+      });
+
+      // Act - Primera llamada
+      await service['getSystemPrompt'](testUserId);
+      // Act - Segunda llamada
+      await service['getSystemPrompt'](testUserId);
+
+      // Assert - Solo debe llamar al servicio una vez debido al caché
+      expect(categoriesService.findAllWithSubcategories).toHaveBeenCalledTimes(
+        1,
+      );
+    });
+
+    it('should replace both currentDate and categories placeholders', async () => {
+      // Arrange
+      const mockTemplate = 'Hoy es {{currentDate}}. Categorías: {{categories}}';
+      chatbotConfigService.getConfig.mockResolvedValue({
+        template: mockTemplate,
+        sections: null,
+        active_sections: [],
+      });
+
+      // Act
+      const result = await service['getSystemPrompt'](testUserId);
+
+      // Assert
+      expect(result.role).toBe('system');
+      expect(result.content).not.toContain('{{currentDate}}');
+      expect(result.content).not.toContain('{{categories}}');
+      expect(result.content).toContain('Hoy es');
+      expect(result.content).toContain('CATEGORÍAS');
     });
   });
 });
