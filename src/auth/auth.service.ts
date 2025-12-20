@@ -41,15 +41,19 @@ export class AuthService {
         HttpStatus.BAD_REQUEST,
       );
     }
+    const { password, recoveryCode, ...safeUser } = userFound;
     return {
       access_token: this.getTokenForUser(userFound),
-      user: userFound,
+      user: safeUser,
     };
   }
   public getTokenForUser(user: User): string {
     return this.jwtService.sign({
-      user,
       sub: user.id,
+      email: user.email,
+      role: user.role,
+      name: user.name,
+      // NO incluir: password, recoveryCode, ni datos sensibles
     });
   }
 
@@ -64,9 +68,8 @@ export class AuthService {
     const editUser = Object.assign(userFound, { recoveryCode: randomNumber });
     const user = await this.usersService.update(editUser.id, editUser);
     const email = await this.mailService.sendUserCode(userFound, randomNumber);
-    delete user.password;
-    delete user.recoveryCode;
-    return { user, email };
+    const { password, recoveryCode, ...safeUser } = user;
+    return { user: safeUser, email };
   }
 
   async checkRecoveryCode(idUser: number, checkCodeDto: CheckCodeDto) {

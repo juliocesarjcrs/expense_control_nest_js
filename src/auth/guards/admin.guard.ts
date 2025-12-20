@@ -5,6 +5,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
+import { JwtUser } from '../interfaces/jwt-payload.interface';
 
 /**
  * Guard para verificar que el usuario tenga rol de administrador
@@ -16,8 +17,7 @@ export class AdminGuard implements CanActivate {
     context: ExecutionContext,
   ): boolean | Promise<boolean> | Observable<boolean> {
     const request = context.switchToHttp().getRequest();
-    const user = request.user;
-
+    const user: JwtUser = request.user;
     // El usuario ya fue validado por JwtAuthGuard
     if (!user) {
       throw new ForbiddenException('Usuario no autenticado');
