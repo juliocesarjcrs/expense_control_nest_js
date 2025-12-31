@@ -17,6 +17,7 @@ import { UpdateExpenseDto } from './dto/update-expense.dto';
 import { CreateManyExpensesDto } from './dto/create-many-expenses.dto';
 import { ExpenseSearchOptionsDto } from './dto/expense-search-options.dto';
 import { ComparePeriodsDto } from './dto/compare-periods.dto';
+import { AverageBySubcategoriesDto } from './dto/average-by-subcategories.dto';
 
 @Controller('expenses')
 export class ExpensesController {
@@ -150,5 +151,23 @@ export class ExpensesController {
       periodA,
       periodB,
     );
+  }
+
+  @Get('average/by-subcategories')
+  async getAverageBySubcategories(
+    @Request() req,
+    @Query() query: AverageBySubcategoriesDto,
+    @Res() response,
+  ) {
+    const userId = req.user.id;
+    const { year, referenceYear } = query;
+    const yearToCalculate = referenceYear || year - 1;
+
+    const averages = await this.expensesService.getAverageBySubcategories(
+      userId,
+      yearToCalculate,
+    );
+
+    response.status(HttpStatus.OK).json(averages);
   }
 }

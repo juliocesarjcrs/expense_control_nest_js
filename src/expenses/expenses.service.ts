@@ -602,4 +602,87 @@ export class ExpensesService {
       ],
     };
   }
+
+  async getAverageBySubcategories(userId: number, referenceYear: number) {
+    const startDate = new Date(referenceYear, 0, 1);
+    const endDate = new Date(referenceYear, 11, 31, 23, 59, 59);
+
+    const expenses = await this.expensesRepository
+      .createQueryBuilder('expense')
+      .select([
+        'category.id as categoryId',
+        'category.name as categoryName',
+        'category.icon as categoryIcon',
+        'subcategory.id as subcategoryId',
+        'subcategory.name as subcategoryName',
+      ])
+      .addSelect('SUM(expense.cost)', 'totalCost')
+      .addSelect(
+        'COUNT(DISTINCT DATE_FORMAT(expense.date, "%Y-%m"))',
+        'monthsWithExpenses',
+      )
+      .leftJoin('expense.subcategory', 'subcategory')
+      .leftJoin('subcategory.category', 'category')
+      .where('expense.user_id = :userId', { userId })
+      .andWhere('expense.date >= :startDate', { startDate })
+      .andWhere('expense.date <= :endDate', { endDate })
+      .groupBy('category.id')
+      .addGroupBy('subcategory.id')
+      .getRawMany();
+
+    const categoriesMap = new Map<number, any>();
+
+    expenses.forEach((expense) => {
+      const categoryId = expense.categoryId;
+      const totalCost = parseFloat(expense.totalCost);
+      const monthsWithExpenses = parseInt(expense.monthsWithExpenses);
+      const averageMonthly =
+        monthsWithExpenses > 0 ? Math.round(totalCost / monthsWithExpenses) : 0;
+
+      if (!categoriesMap.has(categoryId)) {
+        categoriesMap.set(categoryId, {
+          categoryId,
+          categoryName: expense.categoryName,
+          categoryIcon: expense.categoryIcon,
+          totalCost: 0,
+          averageMonthly: 0,
+          subcategories: [],
+        });
+      }
+
+      const category = categoriesMap.get(categoryId);
+
+      category.subcategories.push({
+        subcategoryId: expense.subcategoryId,
+        subcategoryName: expense.subcategoryName,
+        totalCost,
+        monthsWithExpenses,
+        averageMonthly,
+      });
+
+      category.totalCost += totalCost;
+    });
+
+    const result = Array.from(categoriesMap.values()).map((category) => {
+      const categoryAverageMonthly = category.subcategories.reduce(
+        (sum: number, sub: any) => sum + sub.averageMonthly,
+        0,
+      );
+
+      return {
+        ...category,
+        averageMonthly: Math.round(categoryAverageMonthly),
+      };
+    });
+
+    return {
+      data: result,
+      referenceYear,
+      totalCategories: result.length,
+      totalSubcategories: result.reduce(
+        (sum, cat) => sum + cat.subcategories.length,
+        0,
+      ),
+    };
+  }
 }
