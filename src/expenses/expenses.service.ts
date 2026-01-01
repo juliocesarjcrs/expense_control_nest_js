@@ -607,6 +607,22 @@ export class ExpensesService {
     const startDate = new Date(referenceYear, 0, 1);
     const endDate = new Date(referenceYear, 11, 31, 23, 59, 59);
 
+    // Calcular meses transcurridos del año
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    let monthsToConsider: number;
+
+    if (referenceYear < currentYear) {
+      // Año completo pasado
+      monthsToConsider = 12;
+    } else if (referenceYear === currentYear) {
+      // Año actual: solo meses transcurridos
+      monthsToConsider = now.getMonth() + 1; // +1 porque getMonth() es 0-indexed
+    } else {
+      // Año futuro (no debería pasar, pero por seguridad)
+      monthsToConsider = 12;
+    }
+
     const expenses = await this.expensesRepository
       .createQueryBuilder('expense')
       .select([
@@ -636,8 +652,10 @@ export class ExpensesService {
       const categoryId = expense.categoryId;
       const totalCost = parseFloat(expense.totalCost);
       const monthsWithExpenses = parseInt(expense.monthsWithExpenses);
+
+      // ✅ CAMBIO CLAVE: Dividir entre meses transcurridos, no meses con gastos
       const averageMonthly =
-        monthsWithExpenses > 0 ? Math.round(totalCost / monthsWithExpenses) : 0;
+        monthsToConsider > 0 ? Math.round(totalCost / monthsToConsider) : 0;
 
       if (!categoriesMap.has(categoryId)) {
         categoriesMap.set(categoryId, {
@@ -656,7 +674,8 @@ export class ExpensesService {
         subcategoryId: expense.subcategoryId,
         subcategoryName: expense.subcategoryName,
         totalCost,
-        monthsWithExpenses,
+        monthsWithExpenses, // Mantener para info adicional
+        monthsToConsider, // ✅ Agregar este campo
         averageMonthly,
       });
 
@@ -678,6 +697,7 @@ export class ExpensesService {
     return {
       data: result,
       referenceYear,
+      monthsConsidered: monthsToConsider, // ✅ Info útil para el frontend
       totalCategories: result.length,
       totalSubcategories: result.reduce(
         (sum, cat) => sum + cat.subcategories.length,
