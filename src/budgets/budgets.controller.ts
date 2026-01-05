@@ -42,4 +42,26 @@ export class BudgetsController {
   remove(@Param('id') id: string) {
     return this.budgetsService.remove(+id);
   }
+
+  @Get('summary')
+  async getBudgetSummary(
+    @Request() req,
+    @Query() query: { year: number; city: string },
+  ) {
+    const userId = req.user.id;
+    return this.budgetsService.getSummaryByCategory(userId, query);
+  }
+
+  @Get('detect-city')
+  async detectCurrentCity(@Request() req, @Query() query: { year: number }) {
+    const userId = req.user.id;
+    const city = await this.budgetsService.detectCurrentCity(
+      userId,
+      query.year,
+    );
+    return {
+      city,
+      detected: city !== null,
+    };
+  }
 }
