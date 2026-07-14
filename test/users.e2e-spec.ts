@@ -2,21 +2,23 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import * as request from 'supertest';
 import { AppModule } from 'src/app.module';
-import { Connection } from 'typeorm';
+import { DataSource } from 'typeorm';
 import { AuthService } from 'src/auth/auth.service';
 import { User } from 'src/users/entities/user.entity';
 import { userSaved } from './utils/data';
 
 import {
+  cleanDatabase,
   loadFixtures as loadFixturesBase,
   // tokenForUser as tokenForUserBase,
 } from './utils/utils';
+import { setupTestApp } from './utils/setup-app';
 let app: INestApplication;
 let mod: TestingModule;
-let connection: Connection;
+let dataSource: DataSource;
 
 const loadFixtures = async (sqlFileName: string) =>
-  loadFixturesBase(connection, sqlFileName);
+  loadFixturesBase(dataSource, sqlFileName);
 const passwordUser2 = '123';
 
 const newUser = {
@@ -37,19 +39,17 @@ export const tokenForUser = (user: Partial<User> = userSaved): string => {
 
 describe('UsersController (e2e)', () => {
   beforeAll(async () => {
-    mod = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
-
-    app = mod.createNestApplication();
-    app.useGlobalPipes(new ValidationPipe());
-    await app.init();
-
-    connection = app.get(Connection);
+    app = await setupTestApp();
+    dataSource = app.get(DataSource);
+    await cleanDatabase(dataSource);
     await loadFixtures('1-users.sql');
   });
 
-  afterAll(async () => await app.close());
+  afterAll(async () => {
+    if (app) {
+      await app.close();
+    }
+  });
 
   it('/users (POST) shoud be create user', () => {
     return request(app.getHttpServer())

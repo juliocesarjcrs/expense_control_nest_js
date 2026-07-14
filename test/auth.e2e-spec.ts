@@ -1,19 +1,21 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication } from '@nestjs/common';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
 import * as request from 'supertest';
 import { AppModule } from 'src/app.module';
-import { Connection } from 'typeorm';
+import { DataSource } from 'typeorm';
 import {
+  cleanDatabase,
   loadFixtures as loadFixturesBase,
   // tokenForUser as tokenForUserBase,
 } from './utils/utils';
+import { setupTestApp } from './utils/setup-app';
 
 let app: INestApplication;
 let mod: TestingModule;
-let connection: Connection;
+let dataSource: DataSource;
 
 const loadFixtures = async (sqlFileName: string) =>
-  loadFixturesBase(connection, sqlFileName);
+  loadFixturesBase(dataSource, sqlFileName);
 const passwordUser2 = '123';
 const user2 = {
   email: 'user2@correo.com',
@@ -22,17 +24,15 @@ const user2 = {
 
 describe('AuthController (e2e)', () => {
   beforeAll(async () => {
-    mod = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
-
-    app = mod.createNestApplication();
-    await app.init();
-
-    connection = app.get(Connection);
+    app = await setupTestApp();
+    dataSource = app.get(DataSource);
   });
 
-  afterAll(async () => await app.close());
+  afterAll(async () => {
+    if (app) {
+      await app.close();
+    }
+  });
 
   it('/auth/login (POST) should return a validation body login', async () => {
     return request(app.getHttpServer())
@@ -46,6 +46,8 @@ describe('AuthController (e2e)', () => {
   });
 
   it('/auth/login (POST) should return a JWT token on successful login', async () => {
+    await cleanDatabase(dataSource);
+
     await loadFixtures('1-users.sql');
     return request(app.getHttpServer())
       .post('/auth/login')

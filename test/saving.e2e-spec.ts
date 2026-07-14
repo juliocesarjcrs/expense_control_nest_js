@@ -2,18 +2,19 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
 import { AppModule } from 'src/app.module';
-import { Connection } from 'typeorm';
+import { DataSource } from 'typeorm';
 import { AuthService } from 'src/auth/auth.service';
 import { userSaved } from './utils/data';
 import { User } from 'src/users/entities/user.entity';
-import { loadFixtures as loadFixturesBase } from './utils/utils';
+import { cleanDatabase, loadFixtures as loadFixturesBase } from './utils/utils';
+import { setupTestApp } from './utils/setup-app';
 
 let app: INestApplication;
 let mod: TestingModule;
-let connection: Connection;
+let dataSource: DataSource;
 
 const loadFixtures = async (sqlFileName: string) =>
-  loadFixturesBase(connection, sqlFileName);
+  loadFixturesBase(dataSource, sqlFileName);
 
 export const tokenForUser = (user: Partial<User> = userSaved): string => {
   const res = app.get(AuthService).getTokenForUser(user as User);
@@ -22,14 +23,9 @@ export const tokenForUser = (user: Partial<User> = userSaved): string => {
 
 describe('IncomesController (e2e)', () => {
   beforeAll(async () => {
-    mod = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
-
-    app = mod.createNestApplication();
-    await app.init();
-
-    connection = app.get(Connection);
+    app = await setupTestApp();
+    dataSource = app.get(DataSource);
+    await cleanDatabase(dataSource);
     await loadFixtures('1-users.sql');
     await loadFixtures('2-categories.sql');
     await loadFixtures('3-subcategories.sql');

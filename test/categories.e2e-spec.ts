@@ -2,29 +2,26 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
 import { AppModule } from 'src/app.module';
-import { Connection } from 'typeorm';
+import { DataSource } from 'typeorm';
 import { AuthService } from 'src/auth/auth.service';
 import { User } from 'src/users/entities/user.entity';
-import { loadFixtures as loadFixturesBase } from './utils/utils';
+import { cleanDatabase, loadFixtures as loadFixturesBase } from './utils/utils';
 import { userOneSaved } from './utils/data';
+import { setupTestApp } from './utils/setup-app';
 
 describe('CategoriesController (e2e)', () => {
   let app: INestApplication;
   let moduleFixture: TestingModule;
-  let connection: Connection;
+  let dataSource: DataSource;
 
   const loadFixtures = async (sqlFileName: string) =>
-    loadFixturesBase(connection, sqlFileName);
+    loadFixturesBase(dataSource, sqlFileName);
 
   beforeAll(async () => {
-    moduleFixture = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
+    app = await setupTestApp();
+    dataSource = app.get(DataSource);
+    await cleanDatabase(dataSource);
 
-    app = moduleFixture.createNestApplication();
-    await app.init();
-
-    connection = app.get(Connection);
     await loadFixtures('1-users.sql');
     await loadFixtures('2-categories.sql');
     await loadFixtures('3-subcategories.sql');
@@ -32,7 +29,9 @@ describe('CategoriesController (e2e)', () => {
   });
 
   afterAll(async () => {
-    await app.close();
+    if (app) {
+      await app.close();
+    }
   });
 
   const tokenForUser = (user: Partial<User> = userOneSaved): string => {

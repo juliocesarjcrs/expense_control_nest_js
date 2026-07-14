@@ -48,3 +48,4 @@ uploads/*
 *.sql
 logs.txt
 
+.vscode/settings.json
