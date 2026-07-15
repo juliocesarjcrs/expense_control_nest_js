@@ -27,7 +27,6 @@ export const saveImageToStorage = {
     filename: (req, file, cb) => {
       // const fileExtension: string = path.extname(file.originalname);
       const fileName: string = file.originalname;
-      // const fileName: string = uuidv4() + fileExtension;
       cb(null, fileName);
     },
   }),

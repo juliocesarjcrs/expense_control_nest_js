@@ -13,7 +13,6 @@ import { diskStorage } from 'multer';
 
 import path from 'path';
 import { imageFileFilter } from 'src/utils/helpers/file-helper';
-import { uuid } from 'uuidv4';
 import { IStorageMethod } from './factory/interfaces/storage-method.interface';
 
 @Injectable()
@@ -60,16 +59,6 @@ export class FilesService {
       },
     });
 
-    // storage: diskStorage({
-    //   destination: './uploads/prueba',
-    //   filename: (req, file, cb) => {
-    //     const fileExtension: string = path.extname(file.originalname);
-    //     const fileName: string = file.originalname;
-    //     // const fileName: string = uuidv4() + fileExtension;
-    //     cb(null, fileName);
-    //   },
-    // }),
-
     const upload = multer({
       storage: storage,
       fileFilter: imageFileFilter,
@@ -113,7 +102,8 @@ export class FilesService {
     let nameFile = fileNameOld;
     if (!fileNameOld) {
       const ext = file.originalname.split('.').slice(-1)[0];
-      nameFile = `${uuid()}.${ext}`;
+      const uniqueId = crypto.randomUUID();
+      nameFile = `${uniqueId}.${ext}`;
     }
     this.storageMethod.setFilename(nameFile);
     const result = await this.storageMethod.uploadFile(file);

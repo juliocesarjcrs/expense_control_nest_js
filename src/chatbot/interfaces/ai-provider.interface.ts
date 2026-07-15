@@ -12,9 +12,7 @@ export interface AIProvider {
     messages: ChatMessage[],
     tools?: ToolDefinition[],
     toolChoice?:
-      | 'auto'
-      | 'none'
-      | { type: 'function'; function: { name: string } },
+      'auto' | 'none' | { type: 'function'; function: { name: string } },
     iteration?: number,
   ): Promise<ChatMessageResponse>;
   validateModel(): Promise<boolean>;

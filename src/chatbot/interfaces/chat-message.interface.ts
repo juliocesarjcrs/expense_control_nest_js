@@ -32,9 +32,5 @@ export interface ChatMessageResponse {
     };
   }>;
   finishReason?:
-    | 'length'
-    | 'stop'
-    | 'tool_calls'
-    | 'content_filter'
-    | 'function_call';
+    'length' | 'stop' | 'tool_calls' | 'content_filter' | 'function_call';
 }
