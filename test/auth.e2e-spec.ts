@@ -1,7 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, ValidationPipe } from '@nestjs/common';
-import * as request from 'supertest';
-import { AppModule } from 'src/app.module';
+import { INestApplication } from '@nestjs/common';
+import request from 'supertest';
 import { DataSource } from 'typeorm';
 import {
   cleanDatabase,
@@ -11,7 +10,6 @@ import {
 import { setupTestApp } from './utils/setup-app';
 
 let app: INestApplication;
-let mod: TestingModule;
 let dataSource: DataSource;
 
 const loadFixtures = async (sqlFileName: string) =>
@@ -53,7 +51,7 @@ describe('AuthController (e2e)', () => {
       .post('/auth/login')
       .set('Accept', 'application/json')
       .send(user2)
-      .expect(200)
+      .expect(201)
       .expect((res) => {
         expect(res.body.access_token).toBeDefined();
       });
@@ -81,7 +79,7 @@ describe('AuthController (e2e)', () => {
       .post('/auth/forgot-password')
       .set('Accept', 'application/json')
       .send({ email: user2.email })
-      .expect(200)
+      .expect(201)
       .expect((res) => {
         expect(res.body).toEqual(
           expect.objectContaining({

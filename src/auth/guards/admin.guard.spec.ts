@@ -136,7 +136,9 @@ describe('AdminGuard', () => {
           fail('Should have thrown an exception');
         } catch (error) {
           expect(error).toBeInstanceOf(ForbiddenException);
-          expect(error.message).toBe('Usuario no autenticado');
+          expect(error instanceof ForbiddenException && error.message).toBe(
+            'Usuario no autenticado',
+          );
         }
       });
 
@@ -155,7 +157,7 @@ describe('AdminGuard', () => {
           fail('Should have thrown an exception');
         } catch (error) {
           expect(error).toBeInstanceOf(ForbiddenException);
-          expect(error.message).toBe(
+          expect((error as ForbiddenException).message).toBe(
             'Se requieren permisos de administrador para realizar esta acción',
           );
         }

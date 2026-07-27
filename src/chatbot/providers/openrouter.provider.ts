@@ -14,6 +14,14 @@ import {
   ChatMessageResponse,
 } from '../interfaces/chat-message.interface';
 
+interface RawToolCall {
+  id: string;
+  type: string;
+  function: {
+    name: string;
+    arguments: string;
+  };
+}
 export class OpenRouterProvider implements AIProvider {
   private readonly logger = new Logger(OpenRouterProvider.name);
   private openai: OpenAI;
@@ -78,16 +86,18 @@ export class OpenRouterProvider implements AIProvider {
     } catch (error) {
       this.errorCount++;
 
-      // ✅ Log de error con contexto
       await this.logHealthEvent(
         'error',
         Date.now() - startTime,
-        error.message,
+        error instanceof Error ? error.message : 'Unknown error',
         iteration,
         this.config.supports_tools,
       );
 
-      this.logger.error('Error calling OpenRouter API:', error.message);
+      this.logger.error(
+        'Error calling OpenRouter API:',
+        error instanceof Error ? error.message : 'Unknown error',
+      );
       throw error;
     }
   }
@@ -101,7 +111,9 @@ export class OpenRouterProvider implements AIProvider {
       });
       return !!completion.choices[0];
     } catch (error) {
-      this.logger.warn(`Model validation failed: ${error.message}`);
+      this.logger.warn(
+        `Model validation failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
       return false;
     }
   }
@@ -185,9 +197,9 @@ export class OpenRouterProvider implements AIProvider {
       return [];
     }
 
-    return message.tool_calls
-      .filter((tc) => tc.type === 'function')
-      .map((tc) => ({
+    return (message.tool_calls as RawToolCall[])
+      .filter((tc: RawToolCall) => tc.type === 'function')
+      .map((tc: RawToolCall) => ({
         id: tc.id,
         type: tc.type,
         function: {

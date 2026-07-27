@@ -1,29 +1,29 @@
 import {
   Injectable,
   Logger,
-  OnModuleInit,
+  NotFoundException,
   OnModuleDestroy,
+  OnModuleInit,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { In, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { AIModel } from '../entities/ai-model.entity';
 import { AIModelHealthLog } from '../entities/ai-model-health-log.entity';
-import {
-  AIProvider,
-  AIModelConfig,
-  ProviderHealth,
-  ModelInfo,
-} from '../interfaces/ai-provider.interface';
+import { AIProvider, AIModelConfig } from '../interfaces/ai-provider.interface';
 import { AIProviderException } from '../exceptions/ai-provider.exception';
 import { OpenRouterProvider } from '../providers/openrouter.provider';
+import {
+  ModelErrorEntry,
+  ToolCallAnalysisEntry,
+} from '../interfaces/ai-model-analysis.interface';
 
 @Injectable()
 export class AIModelManagerService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(AIModelManagerService.name);
   private models: AIModel[] = [];
   private currentProvider: AIProvider;
-  private healthCheckInterval: NodeJS.Timer;
+  private healthCheckInterval: NodeJS.Timeout;
   private readonly HEALTH_CHECK_INTERVAL = 5 * 60 * 1000; // 5 minutos
   private readonly HEALTH_SCORE_THRESHOLD = 0.5;
 
@@ -41,7 +41,7 @@ export class AIModelManagerService implements OnModuleInit, OnModuleDestroy {
     } catch (error) {
       this.logger.error(
         'Failed to initialize AI Model Manager on module init:',
-        error,
+        error instanceof Error ? error.message : error,
       );
       // No lanzar error aquí para permitir que la app inicie sin modelos
     }
@@ -49,15 +49,11 @@ export class AIModelManagerService implements OnModuleInit, OnModuleDestroy {
 
   async onModuleDestroy(): Promise<void> {
     // No hay timers que limpiar en uso familiar
-    // if (this.healthCheckInterval) {
-    //   clearInterval(this.healthCheckInterval);
-    // }
   }
 
   async initialize(): Promise<void> {
     await this.loadModelsFromDatabase();
     await this.selectBestProvider();
-    // ❌ ELIMINADO: this.startHealthCheckLoop(); - No necesario para uso familiar
     this.logger.log('AI Model Manager initialized successfully');
   }
 
@@ -70,7 +66,10 @@ export class AIModelManagerService implements OnModuleInit, OnModuleDestroy {
       this.models = models;
       this.logger.log(`Loaded ${models.length} active AI models`);
     } catch (error) {
-      this.logger.error('Failed to load models from database:', error);
+      this.logger.error(
+        'Failed to load models from database:',
+        error instanceof Error ? error.message : error,
+      );
       this.models = [];
     }
   }
@@ -94,7 +93,9 @@ export class AIModelManagerService implements OnModuleInit, OnModuleDestroy {
         }
       } catch (error) {
         this.logger.warn(
-          `Model ${model.model_name} validation failed: ${error.message}`,
+          `Model ${model.model_name} validation failed: ${
+            error instanceof Error ? error.message : 'Unknown error'
+          }`,
         );
       }
     }
@@ -132,8 +133,6 @@ export class AIModelManagerService implements OnModuleInit, OnModuleDestroy {
           this.healthLogRepository,
           model.id,
         );
-      // case 'openai':
-      //   return new OpenAIProvider(config, this.healthLogRepository, model.id);
       default:
         throw new Error(`Unknown provider type: ${model.provider_type}`);
     }
@@ -145,9 +144,9 @@ export class AIModelManagerService implements OnModuleInit, OnModuleDestroy {
     }
     return this.currentProvider;
   }
+
   /**
    * Intenta con el siguiente provider disponible cuando el actual falla
-   * Se llama automáticamente desde el catch del generateResponse
    */
   async switchToNextProvider(): Promise<void> {
     this.logger.warn('Switching to next available provider due to failure...');
@@ -155,7 +154,6 @@ export class AIModelManagerService implements OnModuleInit, OnModuleDestroy {
     const currentModelId = this.currentProvider?.getModelInfo().id;
     const currentIndex = this.models.findIndex((m) => m.id === currentModelId);
 
-    // Buscar siguiente modelo activo
     for (let i = currentIndex + 1; i < this.models.length; i++) {
       try {
         const provider = await this.createProviderInstance(this.models[i]);
@@ -167,7 +165,6 @@ export class AIModelManagerService implements OnModuleInit, OnModuleDestroy {
             `Switched to fallback provider: ${this.models[i].model_name}`,
           );
 
-          // Registrar el cambio en logs
           await this.healthLogRepository.save({
             aiModelId: this.models[i].id,
             status: 'success',
@@ -178,7 +175,7 @@ export class AIModelManagerService implements OnModuleInit, OnModuleDestroy {
 
           return;
         }
-      } catch (error) {
+      } catch {
         this.logger.warn(
           `Fallback model ${this.models[i].model_name} also failed`,
         );
@@ -197,18 +194,26 @@ export class AIModelManagerService implements OnModuleInit, OnModuleDestroy {
       const updated = await this.aiModelRepository.findOne({
         where: { id: modelId },
       });
+
+      if (!updated) {
+        throw new NotFoundException(`Model with id ${modelId} not found`);
+      }
+
       await this.loadModelsFromDatabase();
       await this.selectBestProvider();
       this.logger.log(`Updated model configuration: ${modelId}`);
       return updated;
     } catch (error) {
-      this.logger.error(`Failed to update model: ${modelId}`, error);
+      this.logger.error(
+        `Failed to update model: ${modelId}`,
+        error instanceof Error ? error.message : error,
+      );
       throw error;
     }
   }
 
   async addNewModel(
-    createDto: Omit<AIModel, 'id' | 'createdAt' | 'updatedAt'>,
+    createDto: Partial<Omit<AIModel, 'id' | 'createdAt' | 'updatedAt'>>,
   ): Promise<AIModel> {
     try {
       const model = this.aiModelRepository.create(createDto);
@@ -217,7 +222,10 @@ export class AIModelManagerService implements OnModuleInit, OnModuleDestroy {
       this.logger.log(`New model added: ${saved.model_name}`);
       return saved;
     } catch (error) {
-      this.logger.error('Failed to add new model', error);
+      this.logger.error(
+        'Failed to add new model',
+        error instanceof Error ? error.message : error,
+      );
       throw error;
     }
   }
@@ -227,14 +235,20 @@ export class AIModelManagerService implements OnModuleInit, OnModuleDestroy {
   }
 
   async getModelById(modelId: number): Promise<AIModel> {
-    return this.aiModelRepository.findOne({
+    const model = await this.aiModelRepository.findOne({
       where: { id: modelId },
     });
+
+    if (!model) {
+      throw new NotFoundException(`Model with id ${modelId} not found`);
+    }
+
+    return model;
   }
 
   private startHealthCheckLoop(): void {
-    this.healthCheckInterval = setInterval(async () => {
-      await this.performHealthChecks();
+    this.healthCheckInterval = setInterval(() => {
+      void this.performHealthChecks();
     }, this.HEALTH_CHECK_INTERVAL);
   }
 
@@ -244,14 +258,12 @@ export class AIModelManagerService implements OnModuleInit, OnModuleDestroy {
         const provider = await this.createProviderInstance(model);
         const health = await provider.getHealthStatus();
 
-        // Actualizar health en BD
         await this.aiModelRepository.update(model.id, {
           health_score: health.healthScore,
           error_count: health.errorCount,
           last_tested_at: health.lastTestedAt,
         });
 
-        // Registrar en logs
         await this.healthLogRepository.save({
           aiModelId: model.id,
           status: health.isHealthy ? 'success' : 'error',
@@ -260,7 +272,6 @@ export class AIModelManagerService implements OnModuleInit, OnModuleDestroy {
           createdAt: new Date(),
         });
 
-        // Si el proveedor actual se degradó, cambiar
         if (
           this.currentProvider?.getModelInfo().id === model.id &&
           health.healthScore < this.HEALTH_SCORE_THRESHOLD
@@ -273,7 +284,7 @@ export class AIModelManagerService implements OnModuleInit, OnModuleDestroy {
       } catch (error) {
         this.logger.error(
           `Health check failed for ${model.model_name}:`,
-          error.message,
+          error instanceof Error ? error.message : error,
         );
       }
     }
@@ -290,10 +301,13 @@ export class AIModelManagerService implements OnModuleInit, OnModuleDestroy {
     await this.selectBestProvider();
     this.logger.log('Models reloaded');
   }
+
   /**
    * Obtiene análisis de tool calls para optimización
    */
-  async getToolCallsAnalysis(limit: number = 50) {
+  async getToolCallsAnalysis(
+    limit: number = 50,
+  ): Promise<ToolCallAnalysisEntry[]> {
     const logs = await this.healthLogRepository
       .createQueryBuilder('log')
       .where('log.error_message LIKE :pattern', { pattern: 'TOOL_CALLS:%' })
@@ -301,7 +315,6 @@ export class AIModelManagerService implements OnModuleInit, OnModuleDestroy {
       .limit(limit)
       .getMany();
 
-    // Obtener nombres de modelos
     const modelIds = [...new Set(logs.map((log) => log.aiModelId))];
     const models = await this.aiModelRepository.findBy({ id: In(modelIds) });
     const modelMap = new Map(models.map((m) => [m.id, m.model_name]));
@@ -309,26 +322,30 @@ export class AIModelManagerService implements OnModuleInit, OnModuleDestroy {
     return logs
       .map((log) => {
         try {
-          const toolCallsStr = log.error_message.replace('TOOL_CALLS: ', '');
-          const toolCalls = JSON.parse(toolCallsStr);
+          const toolCallsStr = (log.error_message ?? '').replace(
+            'TOOL_CALLS: ',
+            '',
+          );
+          const toolCalls: unknown = JSON.parse(toolCallsStr);
 
-          return {
+          const entry: ToolCallAnalysisEntry = {
             modelName: modelMap.get(log.aiModelId) || 'Unknown',
             toolCalls,
             responseTime: log.response_time,
             timestamp: log.createdAt,
           };
-        } catch (error) {
+          return entry;
+        } catch {
           return null;
         }
       })
-      .filter(Boolean);
+      .filter((entry): entry is ToolCallAnalysisEntry => entry !== null);
   }
 
   /**
    * Obtiene errores recientes para debugging
    */
-  async getModelErrors(limit: number = 20) {
+  async getModelErrors(limit: number = 20): Promise<ModelErrorEntry[]> {
     const errors = await this.healthLogRepository
       .createQueryBuilder('log')
       .where('log.status = :status', { status: 'error' })
@@ -339,14 +356,13 @@ export class AIModelManagerService implements OnModuleInit, OnModuleDestroy {
       .limit(limit)
       .getMany();
 
-    // Obtener nombres de modelos
     const modelIds = [...new Set(errors.map((log) => log.aiModelId))];
     const models = await this.aiModelRepository.findBy({ id: In(modelIds) });
     const modelMap = new Map(models.map((m) => [m.id, m.model_name]));
 
     return errors.map((log) => ({
       modelName: modelMap.get(log.aiModelId) || 'Unknown',
-      error: log.error_message,
+      error: log.error_message ?? '',
       responseTime: log.response_time,
       timestamp: log.createdAt,
       iteration: log.iteration,

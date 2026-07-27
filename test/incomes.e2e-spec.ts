@@ -1,7 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
-import * as request from 'supertest';
-import { AppModule } from 'src/app.module';
+import request from 'supertest';
 import { DataSource } from 'typeorm';
 import { AuthService } from 'src/auth/auth.service';
 import { userSaved } from './utils/data';
@@ -14,7 +13,6 @@ import {
 import { setupTestApp } from './utils/setup-app';
 
 let app: INestApplication;
-let mod: TestingModule;
 let dataSource: DataSource;
 
 const loadFixtures = async (sqlFileName: string) =>

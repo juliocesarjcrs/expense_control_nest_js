@@ -9,8 +9,9 @@ import {
   Request,
   Query,
   Res,
-  HttpStatus,
+  BadRequestException,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { ExpensesService } from './expenses.service';
 import { CreateExpenseDto } from './dto/create-expense.dto';
 import { UpdateExpenseDto } from './dto/update-expense.dto';
@@ -18,111 +19,113 @@ import { CreateManyExpensesDto } from './dto/create-many-expenses.dto';
 import { ExpenseSearchOptionsDto } from './dto/expense-search-options.dto';
 import { ComparePeriodsDto } from './dto/compare-periods.dto';
 import { AverageBySubcategoriesDto } from './dto/average-by-subcategories.dto';
+import {
+  NumMonthsQueryParams,
+  DateQueryParams,
+  FindLastQueryParams,
+} from './interfaces/expense-query-params.interface';
+import { AuthenticatedRequest } from 'src/common/interfaces/authenticated-request.interface';
 
 @Controller('expenses')
 export class ExpensesController {
   constructor(private readonly expensesService: ExpensesService) {}
 
   @Post()
-  async create(@Body() createExpenseDto: CreateExpenseDto, @Request() req) {
-    createExpenseDto = { ...createExpenseDto, userId: req.user.id };
-    return this.expensesService.create(createExpenseDto);
+  create(
+    @Body() createExpenseDto: CreateExpenseDto,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    return this.expensesService.create({
+      ...createExpenseDto,
+      userId: req.user.id,
+    });
   }
 
   @Post('bulk')
-  async createMany(
+  createMany(
     @Body() createManyExpensesDto: CreateManyExpensesDto,
-    @Request() req,
+    @Request() req: AuthenticatedRequest,
   ) {
-    // Agregar userId a cada gasto
     const expensesWithUser = createManyExpensesDto.expenses.map((expense) => ({
       ...expense,
       userId: req.user.id,
     }));
-
     return this.expensesService.createMany(expensesWithUser);
   }
 
   @Get()
-  async findAll(@Request() req, @Query() query, @Res() response) {
-    const userId = req.user.id;
-    const expenses = await this.expensesService.findAll(userId, query);
-    response.status(HttpStatus.OK).json(expenses);
+  findAll(
+    @Request() req: AuthenticatedRequest,
+    @Query() query: NumMonthsQueryParams,
+  ) {
+    return this.expensesService.findAll(req.user.id, query);
   }
 
   @Get('last/download')
-  async findLastDownload(@Request() req, @Query() query, @Res() response) {
+  findLastDownload(
+    @Request() req: AuthenticatedRequest,
+    @Res() response: Response,
+  ) {
     const userId = req.user.id;
     return this.expensesService.findAllDownload(userId, response);
   }
+
   @Get('subcategory/:id')
   findAllFromSubcategory(
     @Param('id') id: string,
-    @Request() req,
-    @Query() query,
+    @Request() req: AuthenticatedRequest,
+    @Query() query: DateQueryParams,
   ) {
-    const userId = req.user.id;
-    return this.expensesService.findAllFromSubcategory(userId, +id, query);
+    return this.expensesService.findAllFromSubcategory(req.user.id, +id, query);
   }
 
   @Get('by-subcategories')
-  async findExpensesBySubcategories(
-    @Request() req,
+  findExpensesBySubcategories(
+    @Request() req: AuthenticatedRequest,
     @Query() query: ExpenseSearchOptionsDto,
-    @Res() response,
   ) {
     if (!query.subcategoriesId || query.subcategoriesId.length === 0) {
-      return response.status(HttpStatus.BAD_REQUEST).json({
-        error: 'Las subcategories son obligatorias',
-      });
+      throw new BadRequestException('Las subcategories son obligatorias');
     }
-
-    const userId = req.user.id;
-    const expenses = await this.expensesService.findExpensesBySubcategories(
-      userId,
+    return this.expensesService.findExpensesBySubcategories(
+      req.user.id,
       query.subcategoriesId,
       query,
     );
-    response.status(HttpStatus.OK).json(expenses);
   }
 
   @Get('subcategory/:id/last')
-  async findLastMonthsFromSubcategory(
+  findLastMonthsFromSubcategory(
     @Param('id') id: string,
-    @Request() req,
-    @Query() query,
-    @Res() response,
+    @Request() req: AuthenticatedRequest,
+    @Query() query: NumMonthsQueryParams,
   ) {
-    const userId = req.user.id;
-    const expenses = await this.expensesService.findLastMonthsFromSubcategory(
-      userId,
+    return this.expensesService.findLastMonthsFromSubcategory(
+      req.user.id,
       +id,
       query,
     );
-    response.status(HttpStatus.OK).json(expenses);
   }
 
   @Get('category/:id')
-  async findLastMonthsFromOnlyCategory(
+  findLastMonthsFromOnlyCategory(
     @Param('id') id: string,
-    @Request() req,
-    @Query() query,
-    @Res() response,
+    @Request() req: AuthenticatedRequest,
+    @Query() query: NumMonthsQueryParams,
   ) {
-    const userId = req.user.id;
-    const expenses = await this.expensesService.findLastMonthsFromOnlyCategory(
-      userId,
+    return this.expensesService.findLastMonthsFromOnlyCategory(
+      req.user.id,
       +id,
       query,
     );
-    response.status(HttpStatus.OK).json(expenses);
   }
 
   @Get('last')
-  async findLast(@Request() req, @Query() query, @Res() response) {
-    const userId = req.user.id;
-    const expenses = await this.expensesService.findLast(userId, query);
-    response.status(HttpStatus.OK).json(expenses);
+  findLast(
+    @Request() req: AuthenticatedRequest,
+    @Query() query: FindLastQueryParams,
+  ) {
+    return this.expensesService.findLast(req.user.id, query);
   }
 
   @Get(':id')
@@ -141,12 +144,13 @@ export class ExpensesController {
   }
 
   @Post('analysis/compare-periods')
-  async comparePeriods(@Request() req, @Body() body: ComparePeriodsDto) {
-    const userId = req.user.id;
+  comparePeriods(
+    @Request() req: AuthenticatedRequest,
+    @Body() body: ComparePeriodsDto,
+  ) {
     const { categories, periodA, periodB } = body;
-
     return this.expensesService.comparePeriods(
-      userId,
+      req.user.id,
       categories,
       periodA,
       periodB,
@@ -154,20 +158,15 @@ export class ExpensesController {
   }
 
   @Get('average/by-subcategories')
-  async getAverageBySubcategories(
-    @Request() req,
+  getAverageBySubcategories(
+    @Request() req: AuthenticatedRequest,
     @Query() query: AverageBySubcategoriesDto,
-    @Res() response,
   ) {
-    const userId = req.user.id;
     const { year, referenceYear } = query;
     const yearToCalculate = referenceYear || year - 1;
-
-    const averages = await this.expensesService.getAverageBySubcategories(
-      userId,
+    return this.expensesService.getAverageBySubcategories(
+      req.user.id,
       yearToCalculate,
     );
-
-    response.status(HttpStatus.OK).json(averages);
   }
 }

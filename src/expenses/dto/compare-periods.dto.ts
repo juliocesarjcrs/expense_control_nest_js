@@ -7,9 +7,11 @@ import {
 } from 'class-validator';
 
 class PeriodDto {
+  @Type(() => Date)
   @IsDateString()
   start: Date;
 
+  @Type(() => Date)
   @IsDateString()
   end: Date;
 }

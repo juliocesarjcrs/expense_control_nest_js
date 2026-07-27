@@ -114,7 +114,7 @@ export class FeatureFlagsService {
       }),
     );
 
-    return accessibleFeatures.filter((f) => f !== null);
+    return accessibleFeatures.filter((f): f is FeatureFlag => f !== null);
   }
 
   async create(
@@ -290,7 +290,7 @@ export class FeatureFlagsService {
   async getUserPermissions(userId: number): Promise<UserFeaturePermission[]> {
     return this.userPermissionRepository.find({
       where: { userId },
-      relations: ['feature', 'granter'],
+      relations: { feature: true, granter: true },
       order: { featureKey: 'ASC' },
     });
   }
@@ -303,7 +303,7 @@ export class FeatureFlagsService {
   ): Promise<UserFeaturePermission[]> {
     return this.userPermissionRepository.find({
       where: { featureKey },
-      relations: ['user', 'granter'],
+      relations: { user: true, granter: true },
       order: { userId: 'ASC' },
     });
   }

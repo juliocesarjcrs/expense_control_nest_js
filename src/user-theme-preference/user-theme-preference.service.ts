@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-  BadRequestException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UserThemePreference } from './entities/user-theme-preference.entity';
@@ -11,8 +7,8 @@ import {
   SelectThemeDto,
   SetCustomColorsDto,
   UpdateUserThemePreferenceDto,
-  UserThemeResponseDto,
 } from './dto/user-theme-preference.dto';
+import { UserThemeResponseDto } from './interfaces/user-theme-preference.interface';
 import { ThemeConfigService } from '../theme-config/theme-config.service';
 
 @Injectable()
@@ -23,18 +19,12 @@ export class UserThemePreferenceService {
     private readonly themeConfigService: ThemeConfigService,
   ) {}
 
-  /**
-   * Obtener la configuración efectiva del tema para un usuario
-   * Esta es la función principal que usa el frontend
-   */
   async getUserThemeConfig(userId: number): Promise<UserThemeResponseDto> {
-    // Buscar preferencias del usuario
     const preference = await this.userThemePreferenceRepository.findOne({
       where: { userId },
-      relations: ['theme'],
+      relations: { theme: true },
     });
 
-    // Si el usuario no tiene preferencias, usar el tema global activo
     if (!preference) {
       const globalTheme = await this.themeConfigService.getActiveTheme();
       return {
@@ -46,9 +36,7 @@ export class UserThemePreferenceService {
       };
     }
 
-    // Si el usuario usa colores personalizados
     if (preference.useCustomColors && preference.customColors) {
-      // Obtener el tema base (o el global si no tiene)
       let baseTheme: ThemeConfig;
       if (preference.themeId) {
         baseTheme = await this.themeConfigService.findById(preference.themeId);
@@ -56,7 +44,6 @@ export class UserThemePreferenceService {
         baseTheme = await this.themeConfigService.getActiveTheme();
       }
 
-      // Mezclar colores del tema base con los personalizados
       return {
         userId,
         themeName: `${baseTheme.themeName}-custom`,
@@ -69,7 +56,6 @@ export class UserThemePreferenceService {
       };
     }
 
-    // Si el usuario seleccionó un tema predefinido
     if (preference.themeId) {
       const selectedTheme = await this.themeConfigService.findById(
         preference.themeId,
@@ -83,7 +69,6 @@ export class UserThemePreferenceService {
       };
     }
 
-    // Fallback: tema global
     const globalTheme = await this.themeConfigService.getActiveTheme();
     return {
       userId,
@@ -94,35 +79,25 @@ export class UserThemePreferenceService {
     };
   }
 
-  /**
-   * Obtener solo los colores del tema del usuario (endpoint ligero)
-   */
   async getUserColors(userId: number): Promise<Record<string, string>> {
     const config = await this.getUserThemeConfig(userId);
     return config.colors;
   }
 
-  /**
-   * Seleccionar un tema predefinido para el usuario
-   */
   async selectTheme(
     userId: number,
     selectThemeDto: SelectThemeDto,
   ): Promise<UserThemePreference> {
-    // Verificar que el tema existe
     await this.themeConfigService.findById(selectThemeDto.themeId);
 
-    // Buscar o crear preferencia del usuario
     let preference = await this.userThemePreferenceRepository.findOne({
       where: { userId },
     });
 
     if (preference) {
-      // Actualizar preferencia existente
       preference.themeId = selectThemeDto.themeId;
       preference.useCustomColors = 0;
     } else {
-      // Crear nueva preferencia
       preference = this.userThemePreferenceRepository.create({
         userId,
         themeId: selectThemeDto.themeId,
@@ -133,24 +108,18 @@ export class UserThemePreferenceService {
     return this.userThemePreferenceRepository.save(preference);
   }
 
-  /**
-   * Establecer colores personalizados para el usuario
-   */
   async setCustomColors(
     userId: number,
     setCustomColorsDto: SetCustomColorsDto,
   ): Promise<UserThemePreference> {
-    // Buscar o crear preferencia del usuario
     let preference = await this.userThemePreferenceRepository.findOne({
       where: { userId },
     });
 
     if (preference) {
-      // Actualizar colores personalizados
       preference.customColors = setCustomColorsDto.customColors;
       preference.useCustomColors = 1;
     } else {
-      // Crear nueva preferencia con colores personalizados
       preference = this.userThemePreferenceRepository.create({
         userId,
         customColors: setCustomColorsDto.customColors,
@@ -161,14 +130,11 @@ export class UserThemePreferenceService {
     return this.userThemePreferenceRepository.save(preference);
   }
 
-  /**
-   * Actualizar colores personalizados (merge con existentes)
-   */
   async updateCustomColors(
     userId: number,
     colors: Record<string, string>,
   ): Promise<UserThemePreference> {
-    let preference = await this.userThemePreferenceRepository.findOne({
+    const preference = await this.userThemePreferenceRepository.findOne({
       where: { userId },
     });
 
@@ -178,7 +144,6 @@ export class UserThemePreferenceService {
       );
     }
 
-    // Mezclar con colores existentes
     preference.customColors = {
       ...(preference.customColors || {}),
       ...colors,
@@ -188,43 +153,37 @@ export class UserThemePreferenceService {
     return this.userThemePreferenceRepository.save(preference);
   }
 
-  /**
-   * Actualizar preferencias completas del usuario
-   */
   async updatePreference(
     userId: number,
     updateDto: UpdateUserThemePreferenceDto,
   ): Promise<UserThemePreference> {
-    let preference = await this.userThemePreferenceRepository.findOne({
+    const preference = await this.userThemePreferenceRepository.findOne({
       where: { userId },
     });
 
     if (!preference) {
-      // Crear nueva preferencia
-      preference = this.userThemePreferenceRepository.create({
+      const newPreference = this.userThemePreferenceRepository.create({
         userId,
-        ...updateDto,
+        themeId: updateDto.themeId,
+        customColors: updateDto.customColors,
         useCustomColors: updateDto.useCustomColors ? 1 : 0,
       });
-    } else {
-      // Actualizar existente
-      Object.assign(preference, {
-        ...updateDto,
-        useCustomColors:
-          updateDto.useCustomColors !== undefined
-            ? updateDto.useCustomColors
-              ? 1
-              : 0
-            : preference.useCustomColors,
-      });
+      return this.userThemePreferenceRepository.save(newPreference);
+    }
+
+    if (updateDto.themeId !== undefined) {
+      preference.themeId = updateDto.themeId;
+    }
+    if (updateDto.customColors !== undefined) {
+      preference.customColors = updateDto.customColors;
+    }
+    if (updateDto.useCustomColors !== undefined) {
+      preference.useCustomColors = updateDto.useCustomColors ? 1 : 0;
     }
 
     return this.userThemePreferenceRepository.save(preference);
   }
 
-  /**
-   * Resetear preferencias del usuario (volver al tema global)
-   */
   async resetToGlobal(userId: number): Promise<void> {
     const preference = await this.userThemePreferenceRepository.findOne({
       where: { userId },
@@ -235,19 +194,13 @@ export class UserThemePreferenceService {
     }
   }
 
-  /**
-   * Obtener preferencias del usuario (sin procesar)
-   */
   async getUserPreference(userId: number): Promise<UserThemePreference | null> {
     return this.userThemePreferenceRepository.findOne({
       where: { userId },
-      relations: ['theme'],
+      relations: { theme: true },
     });
   }
 
-  /**
-   * Listar todos los temas disponibles para que el usuario elija
-   */
   async getAvailableThemes(): Promise<ThemeConfig[]> {
     return this.themeConfigService.findAll();
   }

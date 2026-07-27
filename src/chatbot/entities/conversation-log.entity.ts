@@ -1,4 +1,4 @@
-import { Entity, Column, CreateDateColumn } from 'typeorm';
+import { Entity, Column } from 'typeorm';
 import { Content } from 'src/entity/entityBase';
 
 @Entity('conversation_logs')
@@ -9,30 +9,27 @@ export class ConversationLog extends Content {
   @Column({ name: 'user_id', nullable: false })
   userId: number;
 
-  @Column({ name: 'ai_model_id', nullable: true })
-  aiModelId: number;
+  @Column({ name: 'ai_model_id', type: 'int', nullable: true })
+  aiModelId: number | null;
 
   @Column({ type: 'varchar', length: 255, nullable: true })
-  model_name: string;
+  model_name: string | null;
 
   @Column('text')
-  user_query: string; // Prompt del usuario
+  user_query: string;
 
   @Column('text', { nullable: true })
-  detected_intent: string; // Tool que decidió llamar
+  detected_intent: string | null;
 
   @Column('json', { nullable: true })
-  extracted_parameters: Record<string, any>;
+  extracted_parameters: Record<string, any> | null;
 
   @Column('json', { nullable: true })
-  tool_result: Record<string, any>;
+  tool_result: Record<string, any> | null;
 
   @Column({ type: 'int' })
   response_time: number;
 
   @Column({ type: 'int', default: 1 })
   iteration: number;
-
-  @CreateDateColumn({ name: 'created_at', type: 'datetime' })
-  createdAt: Date;
 }

@@ -12,15 +12,22 @@ import {
 import { SubcategoriesService } from './subcategories.service';
 import { CreateSubcategoryDto } from './dto/create-subcategory.dto';
 import { UpdateSubcategoryDto } from './dto/update-subcategory.dto';
+import { SubcategoryQueryParams } from './interfaces/subcategory-query-params.interface';
+import { AuthenticatedRequest } from 'src/common/interfaces/authenticated-request.interface';
 
 @Controller('subcategories')
 export class SubcategoriesController {
   constructor(private readonly subcategoriesService: SubcategoriesService) {}
 
   @Post()
-  create(@Body() createSubcategoryDto: CreateSubcategoryDto, @Request() req) {
-    createSubcategoryDto = { ...createSubcategoryDto, userId: req.user.id };
-    return this.subcategoriesService.create(createSubcategoryDto);
+  create(
+    @Body() createSubcategoryDto: CreateSubcategoryDto,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    return this.subcategoriesService.create({
+      ...createSubcategoryDto,
+      userId: req.user.id,
+    });
   }
 
   @Get()
@@ -32,8 +39,12 @@ export class SubcategoriesController {
   findOne(@Param('id') id: string) {
     return this.subcategoriesService.findOne(+id);
   }
+
   @Get('category/:id')
-  findAllByCategory(@Param('id') id: number, @Query() query) {
+  findAllByCategory(
+    @Param('id') id: string,
+    @Query() query: SubcategoryQueryParams,
+  ) {
     return this.subcategoriesService.findAllByCategory(+id, query);
   }
 

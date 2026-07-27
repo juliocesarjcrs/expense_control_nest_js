@@ -1,35 +1,38 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { Brackets, Repository } from 'typeorm';
 import { DatesService } from 'src/utils/dates/dates.service';
-import { Repository, Brackets } from 'typeorm';
 import { CreateIncomeDto } from './dto/create-income.dto';
 import { UpdateIncomeDto } from './dto/update-income.dto';
 import { Income } from './entities/income.entity';
-import { IncomeSearchOptions } from './  income-search-options.interface';
+import {
+  FindLastQueryParams,
+  NumMonthsQueryParams,
+} from './interfaces/income-query-params.interface';
+import { IncomeSearchOptions } from './interfaces/income-search-options.interface';
 
 @Injectable()
 export class IncomesService {
   constructor(
     @InjectRepository(Income)
-    private IncomeRepository: Repository<Income>,
+    private incomeRepository: Repository<Income>,
     private datesService: DatesService,
   ) {}
 
   create(createIncomeDto: CreateIncomeDto): Promise<Income> {
-    const IncomeEntity = new Income();
-    IncomeEntity.amount = createIncomeDto.amount;
-    IncomeEntity.date = createIncomeDto.date;
-    IncomeEntity.userId = createIncomeDto.userId;
-    IncomeEntity.categoryId = createIncomeDto.categoryId;
-    IncomeEntity.commentary = createIncomeDto.commentary;
-    return this.IncomeRepository.save(IncomeEntity);
+    const incomeEntity = new Income();
+    incomeEntity.amount = createIncomeDto.amount;
+    incomeEntity.date = createIncomeDto.date;
+    incomeEntity.userId = createIncomeDto.userId;
+    incomeEntity.categoryId = createIncomeDto.categoryId;
+    incomeEntity.commentary = createIncomeDto.commentary ?? null;
+    return this.incomeRepository.save(incomeEntity);
   }
 
-  async findAll(userId: number, query: { numMonths: number }) {
-    const numMonths = query.numMonths || 4;
-    const incomesGroupByMonth = await this.IncomeRepository.createQueryBuilder(
-      'income',
-    )
+  async findAll(userId: number, query: NumMonthsQueryParams) {
+    const numMonths = Number(query.numMonths) || 4;
+    const incomesGroupByMonth = await this.incomeRepository
+      .createQueryBuilder('income')
       .select(['MONTH(income.date) as month', 'YEAR(income.date) as year'])
       .addSelect('SUM(income.amount)', 'sum')
       .where('income.date >= :mydate', {
@@ -56,26 +59,27 @@ export class IncomesService {
     };
   }
 
-  calculateAverage(costs: any[]): number {
-    const sum = costs.reduce((acu, val) => {
-      return acu + parseFloat(val);
-    }, 0);
+  calculateAverage(costs: Array<number | string>): number {
+    const sum = costs.reduce<number>((acc, value) => acc + Number(value), 0);
+
     return costs.length > 0 ? sum / costs.length : 0;
   }
 
   async findOne(id: number): Promise<Income> {
-    const income = await this.IncomeRepository.findOne({ where: { id: id } });
-    if (!income)
-      throw new HttpException('Income not found', HttpStatus.BAD_REQUEST);
+    const income = await this.incomeRepository.findOne({ where: { id } });
+    if (!income) {
+      throw new NotFoundException(`Income with id ${id} not found`);
+    }
     return income;
   }
 
-  async findLast(userId: number, query) {
-    const take = query.take || 5;
-    const page = query.page || 1;
-    const searchValue = query.query || '';
+  async findLast(userId: number, query: FindLastQueryParams) {
+    const take = Number(query.take) || 5;
+    const page = Number(query.page) || 1;
+    const searchValue = query.query ?? '';
     const skip = (page - 1) * take;
-    const result = await this.IncomeRepository.createQueryBuilder('income')
+    const result = await this.incomeRepository
+      .createQueryBuilder('income')
       .andWhere('income.user_id = :userId', { userId })
       .leftJoinAndSelect(
         'categories',
@@ -105,48 +109,49 @@ export class IncomesService {
       .offset(skip)
       .limit(take)
       .getRawMany();
-    const dataTrasform = result.map((e) => {
-      return {
-        id: e.income_id,
-        createdAt: e.income_created_at,
-        cost: e.income_amount,
-        commentary: e.income_commentary,
-        date: e.income_date,
-        dateFormat: this.datesService.getFormatDate(e.income_date),
-        category: e.categories_name,
-        idCategory: e.categories_id,
-        iconCategory: e.categories_icon,
-      };
-    });
+
+    const dataTransform = result.map((e) => ({
+      id: e.income_id,
+      createdAt: e.income_created_at,
+      cost: e.income_amount,
+      commentary: e.income_commentary,
+      date: e.income_date,
+      dateFormat: this.datesService.getFormatDate(e.income_date),
+      category: e.categories_name,
+      idCategory: e.categories_id,
+      iconCategory: e.categories_icon,
+    }));
+
     return {
-      data: dataTrasform,
+      data: dataTransform,
     };
   }
 
   async update(id: number, updateIncomeDto: UpdateIncomeDto) {
-    const income = await this.IncomeRepository.findOne({ where: { id: id } });
-    if (!income)
-      throw new HttpException('Income not found', HttpStatus.BAD_REQUEST);
+    const income = await this.incomeRepository.findOne({ where: { id } });
+    if (!income) {
+      throw new NotFoundException(`Income with id ${id} not found`);
+    }
     const editIncome = Object.assign(income, updateIncomeDto);
-    return this.IncomeRepository.save(editIncome);
+    return this.incomeRepository.save(editIncome);
   }
 
   async remove(id: number) {
-    const response = await this.IncomeRepository.delete(id);
-    if (response.affected <= 0)
-      throw new HttpException('Income not found', HttpStatus.BAD_REQUEST);
+    const response = await this.incomeRepository.delete(id);
+    if (response.affected === 0) {
+      throw new NotFoundException(`Income with id ${id} not found`);
+    }
     return response;
   }
 
   async findLastMonthsFromOnlyCategory(
     userId: number,
     categoryId: number,
-    query: { numMonths: number },
+    query: NumMonthsQueryParams,
   ) {
-    const numMonths = query.numMonths || 6;
-    const incomesGroupByMonth = await this.IncomeRepository.createQueryBuilder(
-      'income',
-    )
+    const numMonths = Number(query.numMonths) || 6;
+    const incomesGroupByMonth = await this.incomeRepository
+      .createQueryBuilder('income')
       .select(['MONTH(income.date) as month', 'YEAR(income.date) as year'])
       .leftJoin('income.category', 'category')
       .addSelect('SUM(income.amount)', 'sum')
@@ -162,10 +167,10 @@ export class IncomesService {
       .getRawMany();
     const { fullDate, labels } =
       this.datesService.getPreviosMonthsLabelsIndex(numMonths);
-    const incomes = [];
+    const incomes: number[] = [];
     fullDate.forEach((element) => {
       const found = incomesGroupByMonth.some(
-        (a) => a.month == element.month && a.year == element.year,
+        (a) => a.month === element.month && a.year === element.year,
       );
       if (found) {
         let myCost = 0;
@@ -183,9 +188,7 @@ export class IncomesService {
     previosIncomes.pop();
     const average = this.calculateAverage(incomes);
     const previosAverage = this.calculateAverage(previosIncomes);
-    const sum = incomes.reduce((acu, val) => {
-      return acu + parseFloat(val);
-    }, 0);
+    const sum = incomes.reduce((accu, val) => accu + val, 0);
     return {
       graph: incomes,
       labels,
@@ -200,7 +203,7 @@ export class IncomesService {
     categoryId: number,
     options: IncomeSearchOptions = {},
   ) {
-    const query = this.IncomeRepository.createQueryBuilder('income');
+    const query = this.incomeRepository.createQueryBuilder('income');
     query.where('income.categoryId = :categoryId', { categoryId });
     query.andWhere('income.user_id = :userId', { userId });
 
@@ -226,8 +229,9 @@ export class IncomesService {
     if (orderBy && order) {
       query.orderBy(`income.${orderBy}`, order);
     }
+
     const incomes = await query.getMany();
-    const sumIncomes = incomes.reduce((acu, val) => acu + val.amount, 0);
+    const sumIncomes = incomes.reduce((accu, val) => accu + val.amount, 0);
 
     return { incomes, sum: sumIncomes };
   }

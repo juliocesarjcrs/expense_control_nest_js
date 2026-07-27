@@ -58,8 +58,11 @@ import { UserThemePreferenceModule } from './user-theme-preference/user-theme-pr
       autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
       driver: ApolloDriver,
       playground: false,
-      plugins: [ApolloServerPluginLandingPageLocalDefault()],
-      context: ({ req, res }) => ({ req, res }),
+      plugins: [ApolloServerPluginLandingPageLocalDefault() as any],
+      context: ({ req, res }: { req: Request; res: Response }) => ({
+        req,
+        res,
+      }),
       formatError: (error) => {
         const originalError = error.extensions?.originalError as any;
         if (error.extensions?.code === 'BAD_USER_INPUT') {

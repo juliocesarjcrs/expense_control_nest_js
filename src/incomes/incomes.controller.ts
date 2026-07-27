@@ -8,66 +8,72 @@ import {
   Delete,
   Request,
   Query,
-  Res,
-  HttpStatus,
 } from '@nestjs/common';
 import { IncomesService } from './incomes.service';
 import { CreateIncomeDto } from './dto/create-income.dto';
 import { UpdateIncomeDto } from './dto/update-income.dto';
-import { IncomeSearchOptions } from './  income-search-options.interface';
+import { AuthenticatedRequest } from 'src/common/interfaces/authenticated-request.interface';
+import {
+  FindLastQueryParams,
+  NumMonthsQueryParams,
+} from './interfaces/income-query-params.interface';
+import { IncomeSearchOptions } from './interfaces/income-search-options.interface';
 
 @Controller('incomes')
 export class IncomesController {
   constructor(private readonly incomesService: IncomesService) {}
 
   @Post()
-  create(@Body() createIncomeDto: CreateIncomeDto, @Request() req) {
-    createIncomeDto = { ...createIncomeDto, userId: req.user.id };
-    return this.incomesService.create(createIncomeDto);
+  create(
+    @Body() createIncomeDto: CreateIncomeDto,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    return this.incomesService.create({
+      ...createIncomeDto,
+      userId: req.user.id,
+    });
   }
 
   @Get()
-  findAll(@Request() req, @Query() query) {
-    const userId = req.user.id;
-    return this.incomesService.findAll(userId, query);
+  findAll(
+    @Request() req: AuthenticatedRequest,
+    @Query() query: NumMonthsQueryParams,
+  ) {
+    return this.incomesService.findAll(req.user.id, query);
   }
 
   @Get('last')
-  async findLast(@Request() req, @Query() query, @Res() response) {
-    const userId = req.user.id;
-    const incomes = await this.incomesService.findLast(userId, query);
-    response.status(HttpStatus.OK).json(incomes);
+  findLast(
+    @Request() req: AuthenticatedRequest,
+    @Query() query: FindLastQueryParams,
+  ) {
+    return this.incomesService.findLast(req.user.id, query);
   }
 
   @Get('category/:id')
-  async findLastMonthsFromOnlyCategory(
+  findLastMonthsFromOnlyCategory(
     @Param('id') id: string,
-    @Request() req,
-    @Query() query,
-    @Res() response,
+    @Request() req: AuthenticatedRequest,
+    @Query() query: NumMonthsQueryParams,
   ) {
-    const userId = req.user.id;
-    const incomes = await this.incomesService.findLastMonthsFromOnlyCategory(
-      userId,
+    return this.incomesService.findLastMonthsFromOnlyCategory(
+      req.user.id,
       +id,
       query,
     );
-    response.status(HttpStatus.OK).json(incomes);
   }
+
   @Get('by-category/:categoryId')
-  async findIncomesByCategory(
-    @Param('categoryId') categoryId: number,
-    @Request() req,
+  findIncomesByCategory(
+    @Param('categoryId') categoryId: string,
+    @Request() req: AuthenticatedRequest,
     @Query() query: IncomeSearchOptions,
-    @Res() response,
   ) {
-    const userId = req.user.id;
-    const incomes = await this.incomesService.findIncomesByCategoryId(
-      userId,
-      categoryId,
+    return this.incomesService.findIncomesByCategoryId(
+      req.user.id,
+      +categoryId,
       query,
     );
-    response.status(HttpStatus.OK).json(incomes);
   }
 
   @Get(':id')

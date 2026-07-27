@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  HttpException,
   HttpStatus,
   Param,
   Post,
@@ -14,69 +15,54 @@ import {
 import { CategoriesService } from './categories.service';
 import { CreateCategoryDto } from './dto/create-category-dto';
 import { UpdateCategoryDto } from './dto/updated-category.dto';
+import { Response, Request as ExpressRequest } from 'express';
+import { AuthenticatedRequest } from 'src/common/interfaces/authenticated-request.interface';
+import { CategoryQueryParams } from './interfaces/category-query-params.interface';
+import { getErrorMessage } from 'src/common/utils/error.util';
 
 @Controller('categories')
 export class CategoriesController {
   constructor(private categoryService: CategoriesService) {}
+
   @Post()
   create(
     @Body() createCategoryDto: CreateCategoryDto,
-    @Res() response,
-    @Request() req,
+    @Request() req: AuthenticatedRequest,
   ) {
-    createCategoryDto = { ...createCategoryDto, userId: req.user.id };
-    this.categoryService
-      .createCategory(createCategoryDto)
-      .then((category) => {
-        response.status(HttpStatus.CREATED).json(category);
-      })
-      .catch((error) => {
-        response.status(HttpStatus.FORBIDDEN).json({
-          message: error.message || 'Error en la creaciónde una categoria',
-        });
-      });
+    return this.categoryService.createCategory({
+      ...createCategoryDto,
+      userId: req.user.id,
+    });
   }
 
   @Get()
-  async getAll(@Res() response, @Request() req, @Query() query) {
+  async getAll(
+    @Res() response: Response,
+    @Request() req: AuthenticatedRequest,
+    @Query() query: CategoryQueryParams,
+  ) {
     const userId = req.user.id;
     const listCategories = await this.categoryService.findAll(userId, query);
     response.status(HttpStatus.OK).json(listCategories);
   }
 
   @Get('subcategories')
-  findAllWithSubategories(@Res() response, @Request() req) {
-    const userId = req.user.id;
-    this.categoryService
-      .findAllWithSubcategories(userId)
-      .then((listCategories) => {
-        response.status(HttpStatus.OK).json(listCategories);
-      })
-      .catch(() => {
-        response
-          .status(HttpStatus.FORBIDDEN)
-          .json({ message: 'Error en listar categorias con subcategorias' });
-      });
+  findAllWithSubcategories(@Request() req: AuthenticatedRequest) {
+    return this.categoryService.findAllWithSubcategories(req.user.id);
   }
+
   @Get('expenses/month')
-  findAllExpensesByMonth(@Res() response, @Request() req, @Query() query) {
-    const userId = req.user.id;
-    this.categoryService
-      .findAllExpensesByMonth(userId, query)
-      .then((listCategories) => {
-        response.status(HttpStatus.OK).json(listCategories);
-      })
-      .catch(() => {
-        response
-          .status(HttpStatus.FORBIDDEN)
-          .json({ message: 'Error en listar categorias con subcategorias' });
-      });
+  findAllExpensesByMonth(
+    @Request() req: AuthenticatedRequest,
+    @Query() query: CategoryQueryParams,
+  ) {
+    return this.categoryService.findAllExpensesByMonth(req.user.id, query);
   }
   @Get('subcategories/expenses/month')
   findAllSubcategoriesExpensesByMonth(
-    @Res() response,
-    @Request() req,
-    @Query() query,
+    @Res() response: Response,
+    @Request() req: AuthenticatedRequest,
+    @Query() query: CategoryQueryParams,
   ) {
     const userId = req.user.id;
     this.categoryService
@@ -90,22 +76,17 @@ export class CategoriesController {
         });
       });
   }
+
   @Get('incomes')
-  async findAllTypeIncome(@Res() response, @Request() req, @Query() query) {
-    try {
-      const userId = req.user.id;
-      const listCategoriesIncomes =
-        await this.categoryService.findAllTypeIncome(userId, query);
-      response.status(HttpStatus.OK).json(listCategoriesIncomes);
-    } catch (error) {
-      response
-        .status(HttpStatus.FORBIDDEN)
-        .json({ message: 'Error en listar categorias de ingresos' });
-    }
+  findAllTypeIncome(
+    @Request() req: AuthenticatedRequest,
+    @Query() query: CategoryQueryParams,
+  ) {
+    return this.categoryService.findAllTypeIncome(req.user.id, query);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: number) {
+  async findOne(@Param('id') id: number) {
     return this.categoryService.findOne(+id);
   }
 
@@ -118,15 +99,7 @@ export class CategoriesController {
   }
 
   @Delete(':id')
-  async remove(@Param('id') id: string, @Res() response) {
-    try {
-      const data = await this.categoryService.remove(+id);
-      response.status(HttpStatus.OK).json(data);
-    } catch (error) {
-      const message = error.message
-        ? error.message
-        : 'Error en eliminar subcategorias';
-      response.status(HttpStatus.FORBIDDEN).json({ message: message });
-    }
+  async remove(@Param('id') id: string) {
+    return this.categoryService.remove(+id);
   }
 }

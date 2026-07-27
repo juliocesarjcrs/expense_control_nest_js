@@ -14,12 +14,12 @@ import {
 } from '@nestjs/common';
 import { SendMessageDto } from './dto/send-message.dto';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
-import { CreateConversationDto } from './dto/create-conversation.dto';
 import { ChatbotService } from './services/chatbot.service';
 import { AIModelManagerService } from './services/ai-model-manager.service';
 import { CreateAIModelDto } from './dto/create-ai-model.dto';
 import { UpdateAIModelDto } from './dto/update-ai-model.dto';
 import { ToolsRegistry } from './tools/tools.registry';
+import { AuthenticatedRequest } from 'src/common/interfaces/authenticated-request.interface';
 
 @Controller('chatbot')
 @UseGuards(JwtAuthGuard)
@@ -32,45 +32,48 @@ export class ChatbotController {
 
   @Get('conversations')
   async getRecentConversations(
-    @Request() req,
-    @Query('limit') limit?: number,
-    @Query('page') page?: number,
+    @Request() req: AuthenticatedRequest,
+    @Query('limit') limit?: string,
+    @Query('page') page?: string,
   ) {
     return this.chatbotService.getRecentConversations({
       userId: req.user.id,
-      limit: limit ? parseInt(limit.toString()) : 0,
-      page: page ? parseInt(page.toString()) : 1,
+      limit: limit ? parseInt(limit, 10) : 0,
+      page: page ? parseInt(page, 10) : 1,
     });
   }
+
   @Get('conversations/:id/messages')
   async getConversationHistory(
-    @Request() req,
-    @Param('id') conversationId: number,
-    @Query('limit') limit?: number,
-    @Query('page') page?: number,
+    @Request() req: AuthenticatedRequest,
+    @Param('id') conversationId: string,
+    @Query('limit') limit?: string,
+    @Query('page') page?: string,
   ) {
     return this.chatbotService.getConversationHistory({
       conversationId: +conversationId,
       userId: req.user.id,
-      limit: limit ? parseInt(limit.toString()) : 0,
-      page: page ? parseInt(page.toString()) : 1,
+      limit: limit ? parseInt(limit, 10) : 0,
+      page: page ? parseInt(page, 10) : 1,
     });
   }
+
   @Post('conversation')
-  async createConversation(@Request() req) {
+  async createConversation(@Request() req: AuthenticatedRequest) {
     return this.chatbotService.createConversation(req.user.id);
   }
+
   @Delete('conversations/:id')
   async deleteConversation(
-    @Request() req,
-    @Param('id') conversationId: number,
+    @Request() req: AuthenticatedRequest,
+    @Param('id') conversationId: string,
   ) {
     return this.chatbotService.deleteConversation(+conversationId, req.user.id);
   }
 
   @Post('message')
   async sendMessage(
-    @Request() req,
+    @Request() req: AuthenticatedRequest,
     @Body(ValidationPipe) messageDto: SendMessageDto,
   ) {
     return this.chatbotService.sendMessage(
@@ -94,82 +97,64 @@ export class ChatbotController {
     return this.chatbotService.getModelsHealthStatus();
   }
 
-  @Get('models')
-  async getAllModels() {
-    return this.chatbotService.getAllAvailableModels();
-  }
   /**
    * ENDPOINTS ADMINISTRATIVOS - Gestión de modelos
-   * Requieren rol admin (implementar en tu proyecto)
    */
 
   @Post('models')
   @HttpCode(201)
-  // @UseGuards(JwtAuthGuard, RolesGuard)
-  // @Roles('admin')
   async createModel(@Body() createModelDto: CreateAIModelDto) {
     const payload = {
       ...createModelDto,
       is_active: createModelDto.is_active ?? true,
     };
-    return this.aiModelManager.addNewModel(payload as any);
+    return this.aiModelManager.addNewModel(payload);
   }
 
   @Patch('models/:id')
-  // @UseGuards(JwtAuthGuard, RolesGuard)
-  // @Roles('admin')
   async updateModel(
     @Param('id') modelId: string,
     @Body() updateDto: UpdateAIModelDto,
   ) {
-    return this.aiModelManager.updateModelConfiguration(
-      parseInt(modelId),
-      updateDto,
-    );
+    return this.aiModelManager.updateModelConfiguration(+modelId, updateDto);
   }
 
   @Delete('models/:id')
-  // @UseGuards(JwtAuthGuard, RolesGuard)
-  // @Roles('admin')
   async deleteModel(@Param('id') modelId: string) {
-    // Implementar lógica para marcar como inactivo
-    return this.aiModelManager.updateModelConfiguration(parseInt(modelId), {
+    return this.aiModelManager.updateModelConfiguration(+modelId, {
       is_active: false,
     });
   }
 
   @Post('models/reload')
-  // @UseGuards(JwtAuthGuard, RolesGuard)
-  // @Roles('admin')
-  async reloadModels() {
+  async reloadModels(): Promise<{ message: string }> {
     await this.aiModelManager.reloadModels();
     return { message: 'Models reloaded successfully' };
   }
 
+  // Ver nota del hallazgo 1: ruta inalcanzable hoy, pendiente de decisión.
   @Get('models')
   async getModels() {
     const models = await this.aiModelManager.getAllModels();
     return { data: models };
   }
-  /**
-   * ENDPOINT PARA ANALIZAR TOOL CALLS
-   * Útil para optimizar prompts y definiciones de tools
-   */
+
   @Get('models/tool-calls')
   async getToolCallsAnalysis(@Query('limit') limit?: string) {
     return this.aiModelManager.getToolCallsAnalysis(
-      limit ? parseInt(limit) : 50,
+      limit ? parseInt(limit, 10) : 50,
     );
   }
 
   @Get('models/errors')
   async getModelErrors(@Query('limit') limit?: string) {
-    return this.aiModelManager.getModelErrors(limit ? parseInt(limit) : 20);
+    return this.aiModelManager.getModelErrors(limit ? parseInt(limit, 10) : 20);
   }
+
   @Get('analytics/interactions')
   async getInteractionLogs(@Query('limit') limit?: string) {
     return this.chatbotService.getInteractionAnalysis(
-      limit ? parseInt(limit) : 50,
+      limit ? parseInt(limit, 10) : 50,
     );
   }
 
@@ -178,13 +163,9 @@ export class ChatbotController {
     return this.chatbotService.getToolUsageStats();
   }
 
-  /**
-   * 🔄 Recarga SOLO la configuración de tools
-   * Más específico que invalidar todo el cache
-   */
   @Post('tools/reload')
   @HttpCode(200)
-  async reloadToolsConfig(@Request() req) {
+  async reloadToolsConfig() {
     await this.toolsRegistry.reloadToolsConfig();
 
     const activeTools = this.toolsRegistry.getAllToolDefinitions();
@@ -201,9 +182,6 @@ export class ChatbotController {
     };
   }
 
-  /**
-   * 📋 Obtiene configuración actual de tools activas
-   */
   @Get('tools/config')
   async getToolsConfig() {
     const allTools = this.toolsRegistry.getAllToolDefinitions();
@@ -218,9 +196,6 @@ export class ChatbotController {
     };
   }
 
-  /**
-   * 🔍 Verifica estado de una tool específica
-   */
   @Get('tools/:toolName/status')
   async getToolStatus(@Param('toolName') toolName: string) {
     const config = this.toolsRegistry.getToolConfig(toolName);

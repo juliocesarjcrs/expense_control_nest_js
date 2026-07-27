@@ -25,7 +25,7 @@ export class CreateAIModelDto {
   priority: number;
 
   @IsBoolean()
-  // @IsOptional()
+  @IsOptional()
   is_active?: boolean;
 
   @IsNumber()

@@ -1,5 +1,4 @@
 import { Test, TestingModule } from '@nestjs/testing';
-// import { StorageMethodFactory } from './factory/storage-method.factory';
 import { FilesService } from './files.service';
 import { IStorageMethod } from './factory/interfaces/storage-method.interface';
 

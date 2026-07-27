@@ -19,7 +19,7 @@ export class ThemeConfig extends Content {
   @Column('json')
   colors: Record<string, string>;
 
-  @Column({ name: 'updated_by', nullable: true })
+  @Column({ name: 'updated_by', type: 'int', nullable: true })
   updatedBy: number | null;
 
   @ManyToOne(() => User, { nullable: true })

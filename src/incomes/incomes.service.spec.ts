@@ -116,7 +116,7 @@ describe('IncomesService', () => {
       average: 200000,
     };
     const response = await service.findAll(1, {
-      numMonths: 4,
+      numMonths: '4',
     });
     expect(response).toEqual(expected);
     expect(response).toEqual(

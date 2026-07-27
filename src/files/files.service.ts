@@ -1,19 +1,12 @@
-import {
-  HttpException,
-  HttpStatus,
-  Inject,
-  Injectable,
-  Req,
-} from '@nestjs/common';
-import { Request } from 'express';
+import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
+import { Request, Response } from 'express';
 import * as fs from 'fs';
-
-import multer from 'multer';
-import { diskStorage } from 'multer';
-
+import multer, { diskStorage } from 'multer';
 import path from 'path';
+
 import { imageFileFilter } from 'src/utils/helpers/file-helper';
 import { IStorageMethod } from './factory/interfaces/storage-method.interface';
+import { RequestWithFileValidation } from './interfaces/request-with-file-validation.interface';
 
 @Injectable()
 export class FilesService {
@@ -21,37 +14,40 @@ export class FilesService {
     @Inject('IStorageMethod')
     private readonly storageMethod: IStorageMethod,
   ) {}
-  fileExists(path: string): boolean {
-    if (fs.existsSync(path)) {
+
+  fileExists(filePath: string): boolean {
+    if (fs.existsSync(filePath)) {
       return true;
     }
     return false;
   }
 
-  async laodFile(path: string) {
-    // if (!path) {
-    //   throw new HttpException('File not found', HttpStatus.BAD_REQUEST);
-    // }
-    // const existFile = this.fileExists(path);
-    // if (!existFile) {
-    //   throw new HttpException('File not found', HttpStatus.BAD_REQUEST);
-    // }
-    // return res.sendFile(path, { root: './' });
-    const result = await this.storageMethod.readFile(path);
+  async laodFile(filePath: string): Promise<string> {
+    const result = await this.storageMethod.readFile(filePath);
     return result;
   }
 
-  saveFile(res: any, file: Express.Multer.File, @Req() req: Request) {
-    if (!file || res.fileValidationError) {
+  saveFile(
+    res: Response,
+    file: Express.Multer.File,
+    req: RequestWithFileValidation,
+  ): string {
+    if (!file || req.fileValidationError) {
       throw new HttpException('File not found', HttpStatus.BAD_REQUEST);
     }
     const storage = diskStorage({
-      destination: function (req, file, cb) {
+      destination: function (
+        _req: Request,
+        _file: Express.Multer.File,
+        cb: (error: Error | null, destination: string) => void,
+      ) {
         cb(null, 'uploads/prueba');
       },
-
-      // By default, multer removes file extensions so let's add them back
-      filename: function (req, file, cb) {
+      filename: function (
+        _req: Request,
+        file: Express.Multer.File,
+        cb: (error: Error | null, filename: string) => void,
+      ) {
         cb(
           null,
           file.fieldname + '-' + Date.now() + path.extname(file.originalname),
@@ -64,12 +60,9 @@ export class FilesService {
       fileFilter: imageFileFilter,
     }).single('profile_pic');
 
-    upload(req, res, function (err) {
-      // req.file contains information of uploaded file
-      // req.body contains information of text fields, if there were any
-
-      if (res.fileValidationError) {
-        return res.send(res.fileValidationError);
+    upload(req, res, function (err: unknown) {
+      if (req.fileValidationError) {
+        return res.send(req.fileValidationError);
       } else if (!req.file) {
         return res.send('Please select an image to upload');
       } else if (err instanceof multer.MulterError) {
@@ -78,28 +71,25 @@ export class FilesService {
         return res.send(err);
       }
 
-      // Display uploaded image for user validation
       res.send(
         `You have uploaded this image: <hr/><img src="${req.file.path}" width="500"><hr /><a href="./">Upload another image</a>`,
       );
     });
+
     console.log('filse_service', file);
 
     return file.originalname;
-    // const buffer = file.buffer;
-    // const stream = intoStream(file.buffer);
-    // const stream = intoStream(file.buffer).pipe(process.stdout);
   }
 
   async saveFileAwsS3(
-    res: any,
+    req: RequestWithFileValidation,
     file: Express.Multer.File,
     fileNameOld: string | null,
-  ) {
-    if (!file || res.fileValidationError) {
+  ): Promise<string> {
+    if (!file || req.fileValidationError) {
       throw new HttpException('File not found', HttpStatus.BAD_REQUEST);
     }
-    let nameFile = fileNameOld;
+    let nameFile: string = fileNameOld ?? '';
     if (!fileNameOld) {
       const ext = file.originalname.split('.').slice(-1)[0];
       const uniqueId = crypto.randomUUID();
@@ -110,7 +100,7 @@ export class FilesService {
     return result;
   }
 
-  async deleteFile(path: string) {
-    await this.storageMethod.deleteFile(path);
+  async deleteFile(filePath: string): Promise<void> {
+    await this.storageMethod.deleteFile(filePath);
   }
 }

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import * as dayjs from 'dayjs';
-import * as isLeapYear from 'dayjs/plugin/isLeapYear'; // import plugin
+import dayjs from 'dayjs';
+import isLeapYear from 'dayjs/plugin/isLeapYear'; // import plugin
 import 'dayjs/locale/es'; // import locale
 
 dayjs.extend(isLeapYear); // use plugin
@@ -8,13 +8,17 @@ dayjs.locale('es');
 
 @Injectable()
 export class DatesService {
-  startMonth(date: string): Date {
-    const mydate = dayjs(date).startOf('month').format('YYYY-MM-DD');
+  startMonth(date: string | null): Date {
+    const mydate = dayjs(date ?? undefined)
+      .startOf('month')
+      .format('YYYY-MM-DD');
     return new Date(mydate);
   }
 
-  endMonth(date: string): Date {
-    const mydate = dayjs(date).endOf('month').format('YYYY-MM-DD');
+  endMonth(date: string | null): Date {
+    const mydate = dayjs(date ?? undefined)
+      .endOf('month')
+      .format('YYYY-MM-DD');
     return new Date(mydate);
   }
 
@@ -49,15 +53,15 @@ export class DatesService {
     return { labels, fullDate };
   }
 
-  startMonthRaw(date: string): dayjs.Dayjs {
-    return dayjs(date).startOf('month');
+  startMonthRaw(date: string | null): dayjs.Dayjs {
+    return dayjs(date ?? undefined).startOf('month');
   }
 
-  endMonthRaw(date: string): dayjs.Dayjs {
-    return dayjs(date).endOf('month');
+  endMonthRaw(date: string | null): dayjs.Dayjs {
+    return dayjs(date ?? undefined).endOf('month');
   }
 
-  getDate(date: Date): dayjs.Dayjs {
+  getDate(date: string | Date): dayjs.Dayjs {
     return dayjs(date);
   }
 

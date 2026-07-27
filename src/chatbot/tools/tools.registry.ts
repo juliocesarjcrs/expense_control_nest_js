@@ -25,7 +25,8 @@ export class ToolsRegistry implements OnModuleInit {
    */
   private async loadToolsFromConfig(): Promise<void> {
     try {
-      const config = await this.chatbotConfigService.getConfig('tools_config');
+      const config =
+        await this.chatbotConfigService.getConfig<ToolsConfig>('tools_config');
 
       if (config && config.tools) {
         this.toolsConfig = config;
@@ -36,7 +37,10 @@ export class ToolsRegistry implements OnModuleInit {
         this.logger.warn('⚠️ No tools configuration found in database');
       }
     } catch (error) {
-      this.logger.error('Failed to load tools configuration:', error);
+      this.logger.error(
+        'Failed to load tools configuration:',
+        error instanceof Error ? error.message : error,
+      );
     }
   }
 

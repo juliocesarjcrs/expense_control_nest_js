@@ -73,7 +73,8 @@ export class IncomesExecutor implements ToolExecutor {
       this.logger.error('Error fetching incomes:', error);
       return {
         success: false,
-        error: error.message,
+        error:
+          error instanceof Error ? error.message : 'Error fetching incomes',
         metadata: { executionTime: Date.now() - startTime },
       };
     }

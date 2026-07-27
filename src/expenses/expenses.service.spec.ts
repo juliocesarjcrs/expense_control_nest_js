@@ -166,7 +166,7 @@ describe('ExpensesService', () => {
 
   it('should be return all expenses', async () => {
     const expected = {
-      graph: ['10000', '74000'],
+      graph: [10000, 74000],
       labels: ['sep 2021', 'dic 2021'],
       data: [
         {
@@ -198,7 +198,7 @@ describe('ExpensesService', () => {
       ];
     });
     const response = await service.findAll(1, {
-      numMonths: 4,
+      numMonths: '4',
     });
     expect(response).toEqual(expected);
     expect(response).toEqual(
@@ -294,7 +294,7 @@ describe('ExpensesService', () => {
         },
       ],
     };
-    const response = await service.findLast(1, { page: 1, query: '' });
+    const response = await service.findLast(1, { page: '1', query: '' });
     expect(response).toEqual(expected);
   });
 

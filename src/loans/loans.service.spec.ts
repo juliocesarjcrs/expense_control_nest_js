@@ -50,7 +50,7 @@ describe('LoansService', () => {
       const result = await service.findAll(userId);
 
       expect(mockLoanRepository.find).toHaveBeenCalledWith({
-        relations: ['user'],
+        relations: { user: true },
         where: { userId },
       });
       expect(result).toEqual([mockLoan]);
@@ -95,7 +95,7 @@ describe('LoansService', () => {
       mockLoanRepository.delete.mockResolvedValue({ affected: 0 });
 
       await expect(service.remove(1)).rejects.toThrow(
-        new HttpException('loan not found', HttpStatus.BAD_REQUEST),
+        new HttpException('Loan not found', HttpStatus.BAD_REQUEST),
       );
     });
   });

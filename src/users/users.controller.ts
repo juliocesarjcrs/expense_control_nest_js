@@ -2,20 +2,22 @@ import {
   Body,
   Controller,
   Get,
-  HttpStatus,
   Param,
   Post,
   Put,
+  Req,
   Res,
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user-dto';
 import { Public } from 'src/utils/decorators/custumDecorators';
 import { ChangePasswordDto } from './dto/change-password-dto';
 import { UpdatedUserDto } from './dto/updated-user-dto';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { RequestWithFileValidation } from 'src/files/interfaces/request-with-file-validation.interface';
 
 @Controller('users')
 export class UsersController {
@@ -24,48 +26,38 @@ export class UsersController {
   @Public()
   @Post()
   @UseInterceptors(FileInterceptor('image'))
-  async create(
-    @UploadedFile() image: Express.Multer.File,
+  create(
+    @UploadedFile() image: Express.Multer.File | undefined,
     @Body() createUserDto: CreateUserDto,
-    @Res() response,
   ) {
     if (image) {
       createUserDto.image = image.path;
     }
-    const user = await this.userService.createUser(createUserDto);
-    response.status(HttpStatus.CREATED).json(user);
+    return this.userService.createUser(createUserDto);
   }
 
   @Get()
-  async getAll(@Res() response) {
-    const listUsers = await this.userService.findAll();
-    response.status(HttpStatus.OK).json(listUsers);
+  getAll() {
+    return this.userService.findAll();
   }
 
   @Get(':id')
-  findOne(@Param('id') id: number) {
-    return this.userService.findOne(id);
+  findOne(@Param('id') id: string) {
+    return this.userService.findOne(+id);
   }
 
   @Put(':id')
   @UseInterceptors(FileInterceptor('image'))
-  async updateUser(
-    @Res() res,
-    @UploadedFile() image: Express.Multer.File,
-    @Param('id') id: number,
+  updateUser(
+    @Req() req: RequestWithFileValidation,
+    @UploadedFile() image: Express.Multer.File | undefined,
+    @Param('id') id: string,
     @Body() updatedUserDto: UpdatedUserDto,
   ) {
-    const data = await this.userService.updateProfile(
-      +id,
-      updatedUserDto,
-      res,
-      image,
-    );
-    res.status(HttpStatus.OK).json(data);
+    return this.userService.updateProfile(+id, updatedUserDto, req, image);
   }
-
   @Put('change-password/:id')
   update(@Param('id') id: string, @Body() data: ChangePasswordDto) {
-    return this.userService.changePassword(id, data);
+    return this.userService.changePassword(+id, data);
   }
 }

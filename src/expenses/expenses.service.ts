@@ -1,12 +1,19 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DatesService } from 'src/utils/dates/dates.service';
 import { Between, Brackets, Repository } from 'typeorm';
+import { Response } from 'express';
+import { DatesService } from 'src/utils/dates/dates.service';
 import { CreateExpenseDto } from './dto/create-expense.dto';
 import { UpdateExpenseDto } from './dto/update-expense.dto';
 import { Expense } from './entities/expense.entity';
 import { downloadResourceCsv } from 'src/utils/helpers/file-helper';
 import { ExpenseSearchOptionsDto } from './dto/expense-search-options.dto';
+import {
+  NumMonthsQueryParams,
+  DateQueryParams,
+  FindLastQueryParams,
+} from './interfaces/expense-query-params.interface';
+
 @Injectable()
 export class ExpensesService {
   constructor(
@@ -17,7 +24,6 @@ export class ExpensesService {
 
   async create(createExpenseDto: CreateExpenseDto) {
     const ExpenseEntity = new Expense();
-
     ExpenseEntity.userId = createExpenseDto.userId;
     ExpenseEntity.subcategoryId = createExpenseDto.subcategoryId;
     ExpenseEntity.cost = createExpenseDto.cost;
@@ -27,10 +33,9 @@ export class ExpensesService {
   }
 
   async createMany(expenses: CreateExpenseDto[]) {
-    // Usamos un transaction para asegurar la atomicidad
     return this.expensesRepository.manager.transaction(
       async (transactionalEntityManager) => {
-        const createdExpenses = [];
+        const createdExpenses: Expense[] = [];
 
         for (const expense of expenses) {
           const expenseEntity = new Expense();
@@ -50,8 +55,8 @@ export class ExpensesService {
     );
   }
 
-  async findAll(userId: number, query: { numMonths: number }) {
-    const numMonths = query.numMonths || 4;
+  async findAll(userId: number, query: NumMonthsQueryParams) {
+    const numMonths = Number(query.numMonths) || 4;
     const expensesGroupByMonth = await this.expensesRepository
       .createQueryBuilder('expense')
       .select(['MONTH(expense.date) as month', 'YEAR(expense.date) as year'])
@@ -65,7 +70,7 @@ export class ExpensesService {
       .orderBy('YEAR(expense.date)', 'ASC')
       .addOrderBy('MONTH(expense.date)', 'ASC')
       .getRawMany();
-    const costs = expensesGroupByMonth.map((e) => e.sum);
+    const costs = expensesGroupByMonth.map((e) => Number(e.sum));
     const labels = expensesGroupByMonth.map((e) => {
       return `${this.datesService.getMonthString(e.month)} ${e.year}`;
     });
@@ -82,8 +87,12 @@ export class ExpensesService {
     };
   }
 
-  async findAllFromSubcategory(userId: number, subcategoryId: number, query) {
-    const queryDate = query ? query.date : null;
+  async findAllFromSubcategory(
+    userId: number,
+    subcategoryId: number,
+    query: DateQueryParams,
+  ) {
+    const queryDate = query?.date ?? null;
     return this.expensesRepository.find({
       where: {
         userId,
@@ -97,29 +106,36 @@ export class ExpensesService {
     });
   }
 
-  async findOne(id: number) {
-    return this.expensesRepository.findOne({
+  async findOne(id: number): Promise<Expense> {
+    const expense = await this.expensesRepository.findOne({
       where: { id },
-      relations: ['subcategory', 'subcategory.category'],
+      relations: { subcategory: { category: true } },
     });
+    if (!expense) {
+      throw new NotFoundException(`Expense with id ${id} not found`);
+    }
+    return expense;
   }
 
   async update(id: number, updateExpenseDto: UpdateExpenseDto) {
-    const expense = await this.expensesRepository.findOne({
-      where: { id: id },
-    });
-    if (!expense) throw new NotFoundException();
+    const expense = await this.expensesRepository.findOne({ where: { id } });
+    if (!expense)
+      throw new NotFoundException(`Expense with id ${id} not found`);
     const editExpense = Object.assign(expense, updateExpenseDto);
     return this.expensesRepository.save(editExpense);
   }
 
   async remove(id: number) {
-    return this.expensesRepository.delete(id);
+    const result = await this.expensesRepository.delete(id);
+    if (result.affected === 0) {
+      throw new NotFoundException(`Expense with id ${id} not found`);
+    }
+    return result;
   }
 
-  async findLast(userId: number, query) {
-    const take = query.take || 5;
-    const page = query.page || 1;
+  async findLast(userId: number, query: FindLastQueryParams) {
+    const take = Number(query.take) || 5;
+    const page = Number(query.page) || 1;
     const searchValue = query.query || '';
     const skip = (page - 1) * take;
     const orderBy = query.orderBy || 'id';
@@ -150,9 +166,7 @@ export class ExpensesService {
                 searchValue: `%${searchValue}%`,
               });
           } else {
-            qb.where('expense.user_id = :userId', {
-              userId,
-            });
+            qb.where('expense.user_id = :userId', { userId });
           }
         }),
       )
@@ -161,6 +175,7 @@ export class ExpensesService {
       .offset(skip)
       .limit(take)
       .getRawMany();
+
     const dataTrasform = result.map((e) => {
       return {
         id: e.expense_id,
@@ -174,17 +189,15 @@ export class ExpensesService {
         subcategory: e.subcategory_name,
       };
     });
-    return {
-      data: dataTrasform,
-    };
+    return { data: dataTrasform };
   }
 
   async findLastMonthsFromSubcategory(
     userId: number,
     subcategoryId: number,
-    query: { numMonths: number },
+    query: NumMonthsQueryParams,
   ) {
-    const numMonths = query.numMonths || 6;
+    const numMonths = Number(query.numMonths) || 6;
     const expensesOfSubcategoryGroupByMonth = await this.expensesRepository
       .createQueryBuilder('expense')
       .select(['MONTH(expense.date) as month', 'YEAR(expense.date) as year'])
@@ -199,16 +212,17 @@ export class ExpensesService {
       .orderBy('YEAR(expense.date)', 'ASC')
       .addOrderBy('MONTH(expense.date)', 'ASC')
       .getRawMany();
+
     const arrayIdxMonths =
       this.datesService.getPreviosMonthsLabelsIndex(numMonths);
-    const expenses = [];
+    const expenses: number[] = [];
     arrayIdxMonths.fullDate.forEach((element) => {
       const found = expensesOfSubcategoryGroupByMonth.some(
         (a) => a.month === element.month && a.year === element.year,
       );
       if (found) {
         let myCost = 0;
-        expensesOfSubcategoryGroupByMonth.map((e) => {
+        expensesOfSubcategoryGroupByMonth.forEach((e) => {
           if (e.month === element.month && e.year === element.year) {
             myCost = parseFloat(e.sum);
           }
@@ -218,13 +232,12 @@ export class ExpensesService {
         expenses.push(0);
       }
     });
+
     const previosExpenses = expenses.slice(0);
     previosExpenses.pop();
     const average = this.calculateAverage(expenses);
     const previosAverage = this.calculateAverage(previosExpenses);
-    const sum = expenses.reduce((acu, val) => {
-      return acu + parseFloat(val);
-    }, 0);
+    const sum = expenses.reduce((acu, val) => acu + val, 0);
 
     return {
       graph: expenses,
@@ -239,9 +252,9 @@ export class ExpensesService {
   async findLastMonthsFromOnlyCategory(
     userId: number,
     categoryId: number,
-    query: { numMonths: number },
+    query: NumMonthsQueryParams,
   ) {
-    const numMonths = query.numMonths || 6;
+    const numMonths = Number(query.numMonths) || 6;
     const expensesGroupByMonth = await this.expensesRepository
       .createQueryBuilder('expense')
       .select(['MONTH(expense.date) as month', 'YEAR(expense.date) as year'])
@@ -257,16 +270,17 @@ export class ExpensesService {
       .orderBy('YEAR(expense.date)', 'ASC')
       .addOrderBy('MONTH(expense.date)', 'ASC')
       .getRawMany();
+
     const arrayIdxMonths =
       this.datesService.getPreviosMonthsLabelsIndex(numMonths);
-    const expenses = [];
+    const expenses: number[] = [];
     arrayIdxMonths.fullDate.forEach((element) => {
       const found = expensesGroupByMonth.some(
         (a) => a.month === element.month && a.year === element.year,
       );
       if (found) {
         let myCost = 0;
-        expensesGroupByMonth.map((e) => {
+        expensesGroupByMonth.forEach((e) => {
           if (e.month === element.month && e.year === element.year) {
             myCost = parseFloat(e.sum);
           }
@@ -289,14 +303,12 @@ export class ExpensesService {
     };
   }
 
-  calculateAverage(costs: any[]): number {
-    const sum = costs.reduce((acu, val) => {
-      return acu + parseFloat(val);
-    }, 0);
+  calculateAverage(costs: number[]): number {
+    const sum = costs.reduce((acu, val) => acu + val, 0);
     return costs.length > 0 ? sum / costs.length : 0;
   }
 
-  async findAllDownload(userId: number, res) {
+  async findAllDownload(userId: number, res: Response) {
     const data = await this.expensesRepository
       .createQueryBuilder('expense')
       .andWhere('expense.user_id = :userId', { userId })
@@ -314,34 +326,13 @@ export class ExpensesService {
       .getRawMany();
 
     const fields = [
-      {
-        label: 'id',
-        value: 'expense_id',
-      },
-      {
-        label: 'cost',
-        value: 'expense_cost',
-      },
-      {
-        label: 'category',
-        value: 'categories_name',
-      },
-      {
-        label: 'subcategory',
-        value: 'subcategory_name',
-      },
-      {
-        label: 'commentary',
-        value: 'expense_commentary',
-      },
-      {
-        label: 'created at',
-        value: 'expense_created_at',
-      },
-      {
-        label: 'date',
-        value: 'expense_date',
-      },
+      { label: 'id', value: 'expense_id' },
+      { label: 'cost', value: 'expense_cost' },
+      { label: 'category', value: 'categories_name' },
+      { label: 'subcategory', value: 'subcategory_name' },
+      { label: 'commentary', value: 'expense_commentary' },
+      { label: 'created at', value: 'expense_created_at' },
+      { label: 'date', value: 'expense_date' },
     ];
 
     return downloadResourceCsv(res, 'expenses.csv', fields, data);
@@ -407,7 +398,6 @@ export class ExpensesService {
     periodB: { start: Date; end: Date },
   ) {
     const allSubcategories = categories.flatMap((c) => c.subcategoriesId);
-
     const queryBase = this.expensesRepository.createQueryBuilder('expense');
 
     const buildQuery = (period: { start: Date; end: Date }) => {
@@ -453,27 +443,22 @@ export class ExpensesService {
     const sumA = expensesA.reduce((acu, val) => acu + val.cost, 0);
     const sumB = expensesB.reduce((acu, val) => acu + val.cost, 0);
 
-    // Calcular número de meses en cada periodo
     const monthsA = this.calculateMonthsDifference(periodA.start, periodA.end);
     const monthsB = this.calculateMonthsDifference(periodB.start, periodB.end);
 
-    // Promedios mensuales
     const avgMonthlyA = monthsA > 0 ? sumA / monthsA : 0;
     const avgMonthlyB = monthsB > 0 ? sumB / monthsB : 0;
 
-    // Comparación total acumulado
     const totalDifference = sumB - sumA;
     const totalPercentageChange =
       sumA === 0 ? null : ((totalDifference / sumA) * 100).toFixed(2);
 
-    // Comparación promedio mensual
     const avgDifference = avgMonthlyB - avgMonthlyA;
     const avgPercentageChange =
       avgMonthlyA === 0
         ? null
         : ((avgDifference / avgMonthlyA) * 100).toFixed(2);
 
-    // Generar explicación
     const explanation = this.generateExplanation(
       totalDifference,
       totalPercentageChange,
@@ -524,11 +509,9 @@ export class ExpensesService {
   private calculateMonthsDifference(start: Date, end: Date): number {
     const startDate = new Date(start);
     const endDate = new Date(end);
-
     const yearDiff = endDate.getFullYear() - startDate.getFullYear();
     const monthDiff = endDate.getMonth() - startDate.getMonth();
-
-    return yearDiff * 12 + monthDiff + 1; // +1 para incluir ambos meses
+    return yearDiff * 12 + monthDiff + 1;
   }
 
   private generateExplanation(
@@ -546,7 +529,6 @@ export class ExpensesService {
 
     let explanation = '';
 
-    // Análisis de promedio mensual
     if (avgPercentage !== null) {
       const avgTrend = avgDifference > 0 ? 'aumentó' : 'disminuyó';
       explanation += `En promedio mensual, durante el Periodo B el gasto ${avgTrend} un ${Math.abs(
@@ -554,7 +536,6 @@ export class ExpensesService {
       ).toFixed(1)}% (${formatCurrency(avgDifference)})`;
     }
 
-    // Análisis de total acumulado
     if (totalPercentage !== null) {
       const totalTrend = totalDifference > 0 ? 'mayor' : 'menor';
       if (explanation) explanation += ', mientras que ';
@@ -575,7 +556,6 @@ export class ExpensesService {
   }
 
   private buildChartData(expensesA: Expense[], expensesB: Expense[]) {
-    // Agrupar por nombre de subcategoría
     const sumBySubcategory = (expenses: Expense[]) => {
       return expenses.reduce<Record<string, number>>((acc, exp) => {
         const name = exp.subcategory?.name ?? 'Sin subcategoría';
@@ -597,8 +577,8 @@ export class ExpensesService {
     return {
       labels,
       datasets: [
-        { data: dataA, color: '#4CAF50', label: 'Periodo A' }, // String en vez de función
-        { data: dataB, color: '#2196F3', label: 'Periodo B' }, // String en vez de función
+        { data: dataA, color: '#4CAF50', label: 'Periodo A' },
+        { data: dataB, color: '#2196F3', label: 'Periodo B' },
       ],
     };
   }
@@ -607,19 +587,15 @@ export class ExpensesService {
     const startDate = new Date(referenceYear, 0, 1);
     const endDate = new Date(referenceYear, 11, 31, 23, 59, 59);
 
-    // Calcular meses transcurridos del año
     const now = new Date();
     const currentYear = now.getFullYear();
     let monthsToConsider: number;
 
     if (referenceYear < currentYear) {
-      // Año completo pasado
       monthsToConsider = 12;
     } else if (referenceYear === currentYear) {
-      // Año actual: solo meses transcurridos
-      monthsToConsider = now.getMonth() + 1; // +1 porque getMonth() es 0-indexed
+      monthsToConsider = now.getMonth() + 1;
     } else {
-      // Año futuro (no debería pasar, pero por seguridad)
       monthsToConsider = 12;
     }
 
@@ -646,14 +622,29 @@ export class ExpensesService {
       .addGroupBy('subcategory.id')
       .getRawMany();
 
-    const categoriesMap = new Map<number, any>();
+    interface CategoryAverageAccumulator {
+      categoryId: number;
+      categoryName: string;
+      categoryIcon: string;
+      totalCost: number;
+      averageMonthly: number;
+      subcategories: {
+        subcategoryId: number;
+        subcategoryName: string;
+        totalCost: number;
+        monthsWithExpenses: number;
+        monthsToConsider: number;
+        averageMonthly: number;
+      }[];
+    }
+
+    const categoriesMap = new Map<number, CategoryAverageAccumulator>();
 
     expenses.forEach((expense) => {
       const categoryId = expense.categoryId;
       const totalCost = parseFloat(expense.totalCost);
       const monthsWithExpenses = parseInt(expense.monthsWithExpenses);
 
-      // ✅ CAMBIO CLAVE: Dividir entre meses transcurridos, no meses con gastos
       const averageMonthly =
         monthsToConsider > 0 ? Math.round(totalCost / monthsToConsider) : 0;
 
@@ -668,14 +659,14 @@ export class ExpensesService {
         });
       }
 
-      const category = categoriesMap.get(categoryId);
+      const category = categoriesMap.get(categoryId)!;
 
       category.subcategories.push({
         subcategoryId: expense.subcategoryId,
         subcategoryName: expense.subcategoryName,
         totalCost,
-        monthsWithExpenses, // Mantener para info adicional
-        monthsToConsider, // ✅ Agregar este campo
+        monthsWithExpenses,
+        monthsToConsider,
         averageMonthly,
       });
 
@@ -684,7 +675,7 @@ export class ExpensesService {
 
     const result = Array.from(categoriesMap.values()).map((category) => {
       const categoryAverageMonthly = category.subcategories.reduce(
-        (sum: number, sub: any) => sum + sub.averageMonthly,
+        (sum, sub) => sum + sub.averageMonthly,
         0,
       );
 
@@ -697,7 +688,7 @@ export class ExpensesService {
     return {
       data: result,
       referenceYear,
-      monthsConsidered: monthsToConsider, // ✅ Info útil para el frontend
+      monthsConsidered: monthsToConsider,
       totalCategories: result.length,
       totalSubcategories: result.reduce(
         (sum, cat) => sum + cat.subcategories.length,

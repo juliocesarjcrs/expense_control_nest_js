@@ -1,7 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, ValidationPipe } from '@nestjs/common';
-import * as request from 'supertest';
-import { AppModule } from 'src/app.module';
+import { INestApplication } from '@nestjs/common';
+import request from 'supertest';
 import { DataSource } from 'typeorm';
 import { AuthService } from 'src/auth/auth.service';
 import { User } from 'src/users/entities/user.entity';
@@ -14,7 +13,6 @@ import {
 } from './utils/utils';
 import { setupTestApp } from './utils/setup-app';
 let app: INestApplication;
-let mod: TestingModule;
 let dataSource: DataSource;
 
 const loadFixtures = async (sqlFileName: string) =>
@@ -117,7 +115,7 @@ describe('UsersController (e2e)', () => {
     return request(app.getHttpServer())
       .get('/users/100')
       .set('Authorization', `Bearer ${tokenForUser()}`)
-      .expect(400)
+      .expect(404)
       .then((response) => {
         expect(response.body).toEqual(
           expect.objectContaining({

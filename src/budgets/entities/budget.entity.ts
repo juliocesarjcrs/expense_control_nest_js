@@ -30,9 +30,9 @@ export class Budget extends Content {
   userId: number;
 
   @UpdateDateColumn({ name: 'updated_at', type: 'datetime' })
-  createdAt: Date;
+  updatedAt: Date;
 
   @ManyToOne(() => User, { nullable: false })
   @JoinColumn({ name: 'user_id' })
-  user: number;
+  user: User;
 }

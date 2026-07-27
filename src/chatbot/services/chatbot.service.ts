@@ -18,7 +18,16 @@ import { AIModelManagerService } from './ai-model-manager.service';
 import { ConversationLog } from '../entities/conversation-log.entity';
 import { ChatbotConfigService } from 'src/chatbot-config/chatbot-config.service';
 import { CategoriesService } from 'src/categories/categories.service';
+interface CategoryWithSubcategories {
+  name: string;
+  subcategories?: { name: string }[];
+}
 
+interface SystemPromptConfig {
+  template?: string;
+  sections?: Record<string, string>;
+  active_sections?: string[];
+}
 @Injectable()
 export class ChatbotService {
   private readonly logger = new Logger(ChatbotService.name);
@@ -49,7 +58,7 @@ export class ChatbotService {
 
     const [conversations, total] = await this.conversationRepo.findAndCount({
       where: { userId },
-      relations: ['messages'],
+      relations: { messages: true },
       order: { createdAt: 'DESC' },
       take: limit || undefined, // Si limit es 0, no se aplica límite
       skip: limit ? skip : 0, // Solo aplicar skip si hay límite
@@ -82,7 +91,7 @@ export class ChatbotService {
     // Guardar el mensaje del sistema
     const systemPrompt = await this.getSystemPrompt(userId);
     const systemMessage = this.messageRepo.create({
-      content: systemPrompt.content,
+      content: systemPrompt.content ?? '',
       role: 'system',
       conversation: { id: savedConversation.id },
       userId,
@@ -98,7 +107,7 @@ export class ChatbotService {
   async sendMessage(conversationId: number, content: string, userId: number) {
     const conversation = await this.conversationRepo.findOne({
       where: { id: conversationId },
-      relations: ['messages'],
+      relations: { messages: true },
     });
 
     if (!conversation) {
@@ -349,16 +358,17 @@ export class ChatbotService {
           } catch (error) {
             this.logger.error(
               `Error executing tool ${toolCall.function.name}:`,
-              error,
+              error instanceof Error ? error.message : error,
             );
-            // ✅ TAMBIÉN guardar errores de ejecución
             await this.conversationLogRepo.save({
               conversationId: context.conversationId,
               userId: context.userId,
               user_query: messages[messages.length - 1]?.content || '',
               detected_intent: toolCall.function.name,
               extracted_parameters: JSON.parse(toolCall.function.arguments),
-              tool_result: { error: error.message },
+              tool_result: {
+                error: error instanceof Error ? error.message : 'Unknown error',
+              },
               response_time: Date.now() - startTime,
               iteration: iterations,
               createdAt: new Date(),
@@ -367,7 +377,9 @@ export class ChatbotService {
               tool_call_id: toolCall.id,
               role: 'tool' as const,
               name: toolCall.function.name,
-              content: JSON.stringify({ error: error.message }),
+              content: JSON.stringify({
+                error: error instanceof Error ? error.message : 'Unknown error',
+              }),
             };
           }
         }),
@@ -403,9 +415,9 @@ export class ChatbotService {
   };
 
   private async getSystemPrompt(userId: number): Promise<ChatMessage> {
-    // Obtener desde cache (sin query a DB)
-    const promptConfig =
-      await this.chatbotConfigService.getConfig('system_prompt');
+    const promptConfig = (await this.chatbotConfigService.getConfig(
+      'system_prompt',
+    )) as SystemPromptConfig;
 
     const currentDate = new Date().toLocaleDateString('es-ES', {
       weekday: 'long',
@@ -414,18 +426,15 @@ export class ChatbotService {
       day: 'numeric',
     });
 
-    // Procesar template con variables
-    let content = promptConfig.template || promptConfig.sections;
+    let content: string = promptConfig.template ?? '';
     const categoriesContext = await this.getCategoriesContext(userId);
 
-    if (typeof content === 'object') {
-      // Combinar secciones activas
-      content = promptConfig.active_sections
-        .map((section) => promptConfig.sections[section])
+    if (!promptConfig.template && promptConfig.sections) {
+      content = (promptConfig.active_sections ?? [])
+        .map((section) => promptConfig.sections?.[section] ?? '')
         .join('\n\n');
     }
 
-    // Reemplazar variables
     content = content.replace('{{currentDate}}', currentDate);
     content = content.replace('{{categories}}', categoriesContext);
     return {
@@ -565,7 +574,9 @@ export class ChatbotService {
   }
 
   // ✅ FORMATEAR CATEGORÍAS PARA EL PROMPT
-  private formatCategoriesForPrompt(categories: any[]): string {
+  private formatCategoriesForPrompt(
+    categories: CategoryWithSubcategories[],
+  ): string {
     if (!categories || categories.length === 0) {
       return this.getDefaultCategoriesContext();
     }

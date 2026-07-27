@@ -2,6 +2,7 @@ import {
   IsDateString,
   IsInt,
   IsNotEmpty,
+  IsOptional,
   IsString,
   MaxLength,
 } from 'class-validator';
@@ -17,8 +18,9 @@ export class CreateIncomeDto {
   @MaxLength(200, {
     message: 'El comentario supera los 200 caracteres',
   })
+  @IsOptional()
   @IsString()
-  readonly commentary: string;
+  readonly commentary?: string;
 
   @IsDateString()
   readonly date: Date;

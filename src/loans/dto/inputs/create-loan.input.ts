@@ -1,5 +1,11 @@
 import { Field, InputType, Int } from '@nestjs/graphql';
-import { IsInt, IsNotEmpty, IsString, MaxLength } from 'class-validator';
+import {
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  MaxLength,
+} from 'class-validator';
 
 @InputType()
 export class CreateLoanInput {
@@ -13,6 +19,7 @@ export class CreateLoanInput {
   @Field(() => Int)
   readonly amount: number;
 
+  @IsOptional()
   @MaxLength(200, {
     message: 'El comentario supera los 200 caracteres',
   })
@@ -20,6 +27,8 @@ export class CreateLoanInput {
   @Field(() => String, { nullable: true })
   readonly commentary?: string;
 
-  @Field(() => Int, { nullable: true })
+  @IsNotEmpty()
+  @IsInt()
+  @Field(() => Int)
   readonly userId: number;
 }

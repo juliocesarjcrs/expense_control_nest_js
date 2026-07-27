@@ -1,4 +1,9 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import {
+  HttpException,
+  HttpStatus,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Loan } from './entities/loan.entity';
 import { Repository } from 'typeorm';
@@ -13,7 +18,7 @@ export class LoansService {
 
   async findAll(userId: number): Promise<Loan[]> {
     return await this.loanRepository.find({
-      relations: ['user'],
+      relations: { user: true },
       where: { userId },
     });
   }
@@ -23,15 +28,16 @@ export class LoansService {
     loanEntity.type = createLoanInput.type;
     loanEntity.amount = createLoanInput.amount;
     loanEntity.userId = createLoanInput.userId;
-    loanEntity.commentary = createLoanInput.commentary;
+    loanEntity.commentary = createLoanInput.commentary ?? null;
     return this.loanRepository.save(loanEntity);
   }
 
   async remove(id: number): Promise<boolean> {
     const response = await this.loanRepository.delete(id);
-    const deletedItem = response.affected > 0;
-    if (!deletedItem)
-      throw new HttpException('loan not found', HttpStatus.BAD_REQUEST);
+    const deletedItem = (response.affected ?? 0) > 0;
+    if (!deletedItem) {
+      throw new NotFoundException('Loan not found');
+    }
     return deletedItem;
   }
 }

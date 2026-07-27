@@ -2,11 +2,18 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ExpensesService } from 'src/expenses/expenses.service';
 import { IncomesService } from 'src/incomes/incomes.service';
-import { Between, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { CreateSavingDto } from './dto/create-saving.dto';
 import { Saving } from './entities/saving.entity';
 import { DatesService } from 'src/utils/dates/dates.service';
 import { SavingsPeriodAnalysisDto } from './dto/savings-period-analysis.dto';
+import { NumMonthsQueryParams } from 'src/incomes/interfaces/income-query-params.interface';
+
+interface MonthlyAggregate {
+  month: number;
+  year: number;
+  sum: string | number;
+}
 
 @Injectable()
 export class SavingService {
@@ -53,23 +60,24 @@ export class SavingService {
       },
     };
   }
-  async updateAllByUser(userId: number, query: { numMonths: number }) {
-    const numMonths = query.numMonths || 4;
+  async updateAllByUser(userId: number, query: NumMonthsQueryParams) {
+    const numMonths = query.numMonths ? +query.numMonths : 4;
     const { data: dataIncomes }: { data: any } =
       await this.incomesService.findAll(userId, query);
     const { data: dataExpenses }: { data: any } =
       await this.expenseService.findAll(userId, query);
     const { fullDate } =
       this.datesService.getPreviosMonthsLabelsIndex(numMonths);
-    const savingInsert = [];
+    const savingInsert: Saving[] = [];
     const { data: savingsByUser } = await this.findAll(userId);
     fullDate.forEach((element) => {
       const savingRow = new Saving();
-      const idSaving = this.hasId(savingsByUser, element.date);
+      const elementDate = new Date(element.date);
+      const idSaving = this.hasId(savingsByUser, elementDate);
       if (idSaving) {
         savingRow.id = idSaving;
       }
-      savingRow.date = element.date;
+      savingRow.date = elementDate;
       savingRow.userId = userId;
       savingRow.income = this.getValueByDate(dataIncomes, element);
       savingRow.expense = this.getValueByDate(dataExpenses, element);
@@ -95,7 +103,10 @@ export class SavingService {
     };
   }
 
-  getValueByDate(data, element): number {
+  getValueByDate(
+    data: MonthlyAggregate[],
+    element: { month: number; year: number },
+  ): number {
     const found = data.some(
       (a) => a.month === element.month && a.year === element.year,
     );
@@ -103,7 +114,7 @@ export class SavingService {
       let myCost = 0;
       data.map((e) => {
         if (e.month === element.month && e.year === element.year) {
-          myCost = parseFloat(e.sum);
+          myCost = parseFloat(e.sum as string);
         }
       });
       return myCost;
@@ -112,7 +123,7 @@ export class SavingService {
     }
   }
 
-  hasId(savingsByUser, date: Date): number {
+  hasId(savingsByUser: Saving[], date: Date): number {
     const found = savingsByUser.some((a) => a.date === date);
     if (found) {
       let idSaving = 0;
@@ -162,17 +173,11 @@ export class SavingService {
     };
   }
 
-  // ==========================================
-  // MÉTODOS PRIVADOS PARA PERIOD ANALYSIS
-  // ==========================================
-
   private async findSavingsByPeriod(
     userId: number,
     startDate: string,
     endDate: string,
   ): Promise<Saving[]> {
-    // Extraer solo la parte DATE (YYYY-MM-DD) para comparación correcta
-    // Esto maneja tanto "2025-01-01" como "2025-01-01T23:38:00.000Z"
     const startDateOnly = startDate.split('T')[0];
     const endDateOnly = endDate.split('T')[0];
 
@@ -228,7 +233,6 @@ export class SavingService {
         monthIncome,
       );
 
-      // Convertir a Date si viene como string
       const dateObj = s.date instanceof Date ? s.date : new Date(s.date);
 
       return {
@@ -314,10 +318,6 @@ export class SavingService {
     };
   }
 
-  // ==========================================
-  // MÉTODOS UTILITARIOS
-  // ==========================================
-
   private sumField(data: Saving[], field: keyof Saving): number {
     return data.reduce((sum, item) => sum + (item[field] as number), 0);
   }
@@ -350,7 +350,6 @@ export class SavingService {
     const start = new Date(startDate);
     const end = new Date(endDate);
 
-    // Validar que las fechas sean válidas
     if (isNaN(start.getTime()) || isNaN(end.getTime())) {
       throw new Error('Invalid date format');
     }

@@ -1,10 +1,4 @@
-import {
-  Entity,
-  Column,
-  ManyToOne,
-  CreateDateColumn,
-  JoinColumn,
-} from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
 import { Conversation } from './conversation.entity';
 import { Content } from 'src/entity/entityBase';
 
@@ -25,7 +19,4 @@ export class Message extends Content {
   })
   @JoinColumn({ name: 'conversation_id' })
   conversation: Conversation;
-
-  @CreateDateColumn({ name: 'created_at', type: 'datetime' })
-  createdAt: Date;
 }

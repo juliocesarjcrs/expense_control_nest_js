@@ -1,5 +1,6 @@
 import { diskStorage } from 'multer';
 import { Parser } from 'json2csv';
+import { Request, Response } from 'express';
 
 // export const imageFileFilter = (req: any, file: any, callback: any) => {
 //   if (!file.originalname.match(/\.(jpg|jpeg|png|gif)$/)) {
@@ -24,7 +25,11 @@ export const imageFileFilter = function (
 export const saveImageToStorage = {
   storage: diskStorage({
     destination: './uploads/prueba',
-    filename: (req, file, cb) => {
+    filename: (
+      req: Request,
+      file: Express.Multer.File,
+      cb: (error: Error | null, filename: string) => void,
+    ) => {
       // const fileExtension: string = path.extname(file.originalname);
       const fileName: string = file.originalname;
       cb(null, fileName);
@@ -32,7 +37,15 @@ export const saveImageToStorage = {
   }),
 };
 
-export const downloadResourceCsv = (res, fileName, fields, data) => {
+export const downloadResourceCsv = (
+  res: Response,
+  fileName: string,
+  fields: {
+    label: string;
+    value: string;
+  }[],
+  data: Record<string, unknown>[],
+) => {
   const json2csv = new Parser({ fields });
   const csv = json2csv.parse(data);
   res.header('Content-Type', 'text/csv');

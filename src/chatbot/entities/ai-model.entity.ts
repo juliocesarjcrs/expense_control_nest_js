@@ -1,4 +1,4 @@
-import { Entity, Column, CreateDateColumn } from 'typeorm';
+import { Entity, Column } from 'typeorm';
 import { Content } from 'src/entity/entityBase';
 
 @Entity('ai_models')
@@ -31,7 +31,7 @@ export class AIModel extends Content {
   supports_tools: boolean;
 
   @Column({ type: 'datetime', nullable: true })
-  last_tested_at: Date;
+  last_tested_at: Date | null;
 
   @Column({ type: 'float', default: 1 })
   health_score: number; // 0-1
@@ -40,8 +40,5 @@ export class AIModel extends Content {
   error_count: number; // Errores consecutivos
 
   @Column({ type: 'json', nullable: true })
-  metadata: Record<string, any>;
-
-  @CreateDateColumn({ name: 'created_at', type: 'datetime' })
-  createdAt: Date;
+  metadata: Record<string, any> | null;
 }

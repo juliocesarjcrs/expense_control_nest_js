@@ -9,7 +9,7 @@ export class Income extends Content {
   amount: number;
 
   @Column('varchar', { length: 200, nullable: true })
-  commentary: string;
+  commentary: string | null;
 
   @Column({ type: 'date', nullable: false })
   date: Date;
@@ -19,15 +19,15 @@ export class Income extends Content {
 
   @ManyToOne(() => User, { nullable: false })
   @JoinColumn({ name: 'user_id' })
-  user: number;
+  user: User;
 
   @Column({ name: 'category_id', nullable: false })
   categoryId: number;
 
-  @ManyToOne(() => Category, (category) => category.subcategories, {
+  @ManyToOne(() => Category, (category) => category.incomes, {
     nullable: false,
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'category_id' })
-  category: number;
+  category: Category;
 }

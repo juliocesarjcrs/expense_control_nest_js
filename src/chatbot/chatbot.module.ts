@@ -61,10 +61,6 @@ export class ChatbotModule {
       providers: [
         // Manager central
         AIModelManagerService,
-
-        // Servicios core
-        ChatbotService,
-        ToolExecutorService,
         // Registrar ejecutores específicos
         ExpensesExecutor,
         IncomesExecutor,

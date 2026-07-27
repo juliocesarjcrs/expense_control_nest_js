@@ -4,8 +4,7 @@ export const enum TYPE_STORAGE {
   LOCAL = 'LOCAL',
 }
 
-export const TYPE_STORAGE_IMAGE = process.env.TYPE_STORAGE;
-
+export const TYPE_STORAGE_IMAGE = requireEnv('TYPE_STORAGE');
 export const ALLOW_AVATAR_FILE: string[] = ['image/png', 'image/jpeg'];
 
 // FOR TESTING
@@ -19,12 +18,20 @@ export const FTP_STORAGE = {
   // },
 };
 
+function requireEnv(key: string): string {
+  const value = process.env[key];
+  if (!value) {
+    throw new Error(`Missing required environment variable: ${key}`);
+  }
+  return value;
+}
+
 export const AWS_STORAGE = {
-  AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID,
-  AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY,
-  AWS_ENDPOINT: process.env.AWS_ENDPOINT,
-  AWS_BUCKET_NAME: process.env.AWS_BUCKET_NAME,
-  AWS_REGION: process.env.AWS_REGION,
+  AWS_ACCESS_KEY_ID: requireEnv('AWS_ACCESS_KEY_ID'),
+  AWS_SECRET_ACCESS_KEY: requireEnv('AWS_SECRET_ACCESS_KEY'),
+  // AWS_ENDPOINT: requireEnv('AWS_ENDPOINT'),
+  AWS_BUCKET_NAME: requireEnv('AWS_BUCKET_NAME'),
+  AWS_REGION: requireEnv('AWS_REGION'),
   // AWS_ACL: process.env.AWS_ACL,
   // AWS_S3_FORCE_PATH_STYLE: JSON.parse(process.env.AWS_S3_FORCE_PATH_STYLE),
   // AWS_S3_BUCKET_ENDPOINT: JSON.parse(process.env.AWS_S3_BUCKET_ENDPOINT),

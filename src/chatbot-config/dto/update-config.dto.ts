@@ -3,7 +3,7 @@ import { IsNotEmpty, IsObject, IsOptional, IsString } from 'class-validator';
 export class UpdateConfigDto {
   @IsObject()
   @IsNotEmpty()
-  config_value: any;
+  config_value: Record<string, unknown>;
 
   @IsString()
   @IsOptional()

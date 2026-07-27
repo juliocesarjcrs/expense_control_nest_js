@@ -1,4 +1,4 @@
-import { HttpStatus, Injectable } from '@nestjs/common';
+import { HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Category } from './entities/category.entity';
@@ -7,6 +7,10 @@ import { UpdateCategoryDto } from './dto/updated-category.dto';
 
 import { HttpException } from '@nestjs/common';
 import { DatesService } from 'src/utils/dates/dates.service';
+import { CategoryQueryParams } from './interfaces/category-query-params.interface';
+import { Subcategory } from 'src/subcategories/entities/subcategory.entity';
+import { Expense } from 'src/expenses/entities/expense.entity';
+import { Income } from 'src/incomes/entities/income.entity';
 export interface RawExpenseData {
   id: number;
   name: string;
@@ -15,6 +19,20 @@ export interface RawExpenseData {
   total: string | null;
   month: number | null;
   year: number | null;
+}
+
+interface CategoryAccumulator {
+  id: number;
+  name: string;
+  icon: string;
+  type: number;
+  budget: number;
+  userId: number;
+  total: number;
+  subcategories: { id: number; name: string; total: number }[];
+}
+interface HasDate {
+  date: Date;
 }
 
 @Injectable()
@@ -35,15 +53,15 @@ export class CategoriesService {
     CategoryEntity.budget = createCategoryDto.budget;
     return this.categoriesRepository.save(CategoryEntity);
   }
-  async findAll(userId: number, query) {
+  async findAll(userId: number, query: CategoryQueryParams) {
     const type = query ? query.type : 0;
     return this.categoriesRepository.find({
       where: { userId: userId, type },
       order: { name: 'ASC' },
     });
   }
-  async findAllExpensesByMonth(userId: number, query) {
-    const queryDate = query ? query.date : null;
+  async findAllExpensesByMonth(userId: number, query: CategoryQueryParams) {
+    const queryDate = query?.date ?? null;
 
     const startDate = query.startDate;
     const endDate = query.endDate;
@@ -86,17 +104,17 @@ export class CategoriesService {
 
   async findAllWithSubcategories(userId: number) {
     const data = await this.categoriesRepository.find({
-      relations: ['subcategories'],
+      relations: { subcategories: true },
       where: { userId: userId, type: 0 },
       order: { name: 'ASC' },
     });
     return { data };
   }
 
-  async findAllWithSubcategories2(userId: number, query) {
-    const queryDate = query ? query.date : null;
+  async findAllWithSubcategories2(userId: number, query: CategoryQueryParams) {
+    const queryDate = query?.date ?? null;
     const data = await this.categoriesRepository.find({
-      relations: ['subcategories', 'subcategories.expenses'],
+      relations: { subcategories: { expenses: true } },
       where: { userId: userId, type: 0 },
       order: { name: 'ASC' },
     });
@@ -111,54 +129,61 @@ export class CategoriesService {
     });
     return { data: dataFormat, total: totalGeneraly };
   }
-  mappingSubcategories(array, queryDate) {
+  mappingSubcategories(array: Subcategory[], queryDate: string | null) {
     let totalCategory = 0;
     const subcategories = array.map((m) => {
-      const filtrado = this.filterByDate(m.expenses, queryDate);
+      let filtrado: Expense[] = [];
+      if (queryDate) {
+        filtrado = this.filterByDate(m.expenses, queryDate);
+      }
       const total = this.calculateTotal(filtrado);
       totalCategory += total;
       return { ...m, expenses: filtrado, total };
     });
     return { totalCategory, subcategories };
   }
-  filterByDate(array, queryDate) {
+  filterByDate<T extends HasDate>(array: T[], queryDate: string | null): T[] {
     const start = this.datesService.startMonthRaw(queryDate);
     const end = this.datesService.endMonthRaw(queryDate);
     const filter = array.filter((e) => {
       const actual = this.datesService.getDate(e.date);
-      if (actual >= start && actual <= end) {
-        return true;
-      } else {
-        return false;
-      }
+      return actual >= start && actual <= end;
     });
     return filter;
   }
-  calculateTotal(array) {
-    return array.reduce((acu: number, val) => acu + parseFloat(val.cost), 0);
+  calculateTotal(array: Expense[]) {
+    return array.reduce((acu: number, val) => acu + val.cost, 0);
   }
 
   async findOne(id: number): Promise<Category> {
-    return this.categoriesRepository.findOne({ where: { id: id } });
+    const category = await this.categoriesRepository.findOne({ where: { id } });
+    if (!category) {
+      throw new NotFoundException(`Category with id ${id} not found`);
+    }
+    return category;
   }
 
   async update(id: number, updateCategoryDto: UpdateCategoryDto) {
-    const category = await this.categoriesRepository.findOne({
-      where: { id: id },
-    });
-    if (!category)
-      throw new HttpException('Id not fount', HttpStatus.NOT_FOUND);
+    const category = await this.categoriesRepository.findOne({ where: { id } });
+    if (!category) {
+      throw new NotFoundException(`Category with id ${id} not found`);
+    }
     const editCategory = Object.assign(category, updateCategoryDto);
     return this.categoriesRepository.save(editCategory);
   }
+
   async remove(id: number) {
-    return this.categoriesRepository.delete(id);
+    const result = await this.categoriesRepository.delete(id);
+    if (result.affected === 0) {
+      throw new NotFoundException(`Category with id ${id} not found`);
+    }
+    return result;
   }
 
-  async findAllTypeIncome(userId: number, query) {
-    const queryDate = query ? query.date : null;
+  async findAllTypeIncome(userId: number, query: CategoryQueryParams) {
+    const queryDate = query?.date ?? null;
     const data = await this.categoriesRepository.find({
-      relations: ['incomes'],
+      relations: { incomes: true },
       where: { userId: userId, type: 1 },
       order: { name: 'ASC' },
     });
@@ -171,14 +196,14 @@ export class CategoriesService {
     });
     return { data: dataFormat, total: totalGeneraly };
   }
-  calculateTotalIncomes(myArray) {
-    return myArray.reduce(
-      (acu: number, val) => acu + parseFloat(val.amount),
-      0,
-    );
+  calculateTotalIncomes(myArray: Income[]) {
+    return myArray.reduce((acu: number, val) => acu + val.amount, 0);
   }
-  async findAllSubcategoriesExpensesByMonth(userId: number, query) {
-    const queryDate = query ? query.date : null;
+  async findAllSubcategoriesExpensesByMonth(
+    userId: number,
+    query: CategoryQueryParams,
+  ) {
+    const queryDate = query?.date ?? null;
 
     const data = await this.categoriesRepository
       .createQueryBuilder('category')
@@ -210,7 +235,7 @@ export class CategoriesService {
       .addOrderBy('subcategory.name', 'ASC')
       .getRawMany();
     let totalGeneraly = 0;
-    const response = data.reduce((acc, category) => {
+    const response = data.reduce((acc: CategoryAccumulator[], category) => {
       const {
         id,
         name,

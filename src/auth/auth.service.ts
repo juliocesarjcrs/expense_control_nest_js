@@ -1,4 +1,8 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from 'src/users/users.service';
 import * as bcrypt from 'bcrypt';
@@ -8,6 +12,7 @@ import { CheckCodeDto } from './dto/check-code-dto';
 import { RecoveryPasswordDto } from './dto/recovery-password-dto';
 import { User } from 'src/users/entities/user.entity';
 import { LoginDto } from './dto/login-dto';
+import { UpdatedUserDto } from 'src/users/dto/updated-user-dto';
 
 @Injectable()
 export class AuthService {
@@ -16,30 +21,29 @@ export class AuthService {
     private jwtService: JwtService,
     private mailService: MailService,
   ) {}
-  async validateUser(email: string, pass: string): Promise<any> {
+
+  async validateUser(
+    email: string,
+    pass: string,
+  ): Promise<Omit<User, 'password'> | null> {
     const user = await this.usersService.findOneEmail(email);
-    if (user && pass === user.password) {
-      delete user.password;
-      return user;
+    if (user && (await bcrypt.compare(pass, user.password))) {
+      const { password, ...safeUser } = user;
+      return safeUser;
     }
     return null;
   }
+
   async login(user: LoginDto) {
     const email = user.email;
     const pass = user.password;
     const userFound = await this.usersService.findOneEmail(email);
     if (!userFound) {
-      throw new HttpException(
-        'Email or password incorrect',
-        HttpStatus.BAD_REQUEST,
-      );
+      throw new BadRequestException('Email or password incorrect');
     }
     const valid = await bcrypt.compare(pass, userFound.password);
     if (!valid) {
-      throw new HttpException(
-        'Email or password incorrect',
-        HttpStatus.BAD_REQUEST,
-      );
+      throw new BadRequestException('Email or password incorrect');
     }
     const { password, recoveryCode, ...safeUser } = userFound;
     return {
@@ -47,13 +51,13 @@ export class AuthService {
       user: safeUser,
     };
   }
+
   public getTokenForUser(user: User): string {
     return this.jwtService.sign({
       sub: user.id,
       email: user.email,
       role: user.role,
       name: user.name,
-      // NO incluir: password, recoveryCode, ni datos sensibles
     });
   }
 
@@ -62,11 +66,12 @@ export class AuthService {
       forgotPasswordDto.email,
     );
     if (!userFound) {
-      throw new HttpException('Email not found', HttpStatus.BAD_REQUEST);
+      throw new BadRequestException('Email not found');
     }
     const randomNumber = this.generateRandomNumber(1000, 9999);
-    const editUser = Object.assign(userFound, { recoveryCode: randomNumber });
-    const user = await this.usersService.update(editUser.id, editUser);
+    const user = await this.usersService.update(userFound.id, {
+      recoveryCode: randomNumber,
+    } as UpdatedUserDto);
     const email = await this.mailService.sendUserCode(userFound, randomNumber);
     const { password, recoveryCode, ...safeUser } = user;
     return { user: safeUser, email };
@@ -75,13 +80,10 @@ export class AuthService {
   async checkRecoveryCode(idUser: number, checkCodeDto: CheckCodeDto) {
     const userFound = await this.usersService.findOne(idUser);
     if (!userFound) {
-      throw new HttpException('User not found', HttpStatus.UNAUTHORIZED);
+      throw new UnauthorizedException('User not found');
     }
     if (userFound.recoveryCode !== parseInt(checkCodeDto.recoveryCode)) {
-      throw new HttpException(
-        'Código expiró o es incorrecto',
-        HttpStatus.BAD_REQUEST,
-      );
+      throw new BadRequestException('Código expiró o es incorrecto');
     }
     return { checkCode: true };
   }
@@ -92,16 +94,16 @@ export class AuthService {
   ) {
     const userFound = await this.usersService.findOne(idUser);
     if (!userFound) {
-      throw new HttpException('User not found', HttpStatus.UNAUTHORIZED);
+      throw new UnauthorizedException('User not found');
     }
     const passBycrypt = await this.usersService.getHash(
       recoveryPasswordDto.password,
     );
-    const editUser = Object.assign(userFound, { password: passBycrypt });
-    const user = await this.usersService.update(editUser.id, editUser);
-    delete user.password;
-    delete user.recoveryCode;
-    return { user };
+    const user = await this.usersService.update(userFound.id, {
+      password: passBycrypt,
+    } as UpdatedUserDto);
+    const { password, recoveryCode, ...safeUser } = user;
+    return { user: safeUser };
   }
 
   generateRandomNumber(min: number, max: number): number {

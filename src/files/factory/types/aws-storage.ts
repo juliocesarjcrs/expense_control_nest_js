@@ -27,7 +27,7 @@ export class AwsStorage implements IStorageMethod {
     });
   }
 
-  setFilename(value: string) {
+  setFilename(value: string): void {
     this.fileName = value;
   }
 
@@ -71,21 +71,13 @@ export class AwsStorage implements IStorageMethod {
     return await getSignedUrl(this.s3Client, command, { expiresIn });
   }
 
-  async deleteFile(fileName: string) {
+  async deleteFile(fileName: string): Promise<void> {
     try {
       const command = new DeleteObjectCommand({
         Bucket: AWS_STORAGE.AWS_BUCKET_NAME,
         Key: fileName,
       });
-      const response = await this.s3Client.send(command);
-      // if (response.$metadata.httpStatusCode === 200) {
-      //
-      //   return response;
-      // }else if (response.$metadata.httpStatusCode === 204) {
-      //   throw new HttpException('Image not found into s3', HttpStatus.NO_CONTENT);
-      // }
-      // throw new HttpException('Image cannnot deleted to s3', HttpStatus.BAD_REQUEST);
-      return response;
+      await this.s3Client.send(command);
     } catch (error) {
       throw new HttpException(
         'Cannot  cannnot delete file inside s3',

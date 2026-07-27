@@ -1,7 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ChatbotService } from './chatbot.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { Conversation } from '../entities/conversation.entity';
 import { Message } from '../entities/message.entity';
 import { ConversationLog } from '../entities/conversation-log.entity';
@@ -260,8 +259,8 @@ describe('ChatbotService - getSystemPrompt', () => {
         'noviembre',
         'diciembre',
       ];
-      const hasSpanishMonth = spanishMonths.some((month) =>
-        result.content.toLowerCase().includes(month),
+      const hasSpanishMonth = spanishMonths.some(
+        (month) => result.content?.toLowerCase().includes(month) ?? false,
       );
       expect(hasSpanishMonth).toBe(true);
     });

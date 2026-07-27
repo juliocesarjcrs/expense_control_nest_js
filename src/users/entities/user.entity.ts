@@ -10,9 +10,9 @@ export class User extends Content {
   @Field(() => String)
   name: string;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   @Field(() => String, { nullable: true })
-  image: string;
+  image: string | null;
 
   @Column({ unique: true, length: 120 })
   @Field(() => String)
@@ -22,9 +22,9 @@ export class User extends Content {
   @Field(() => String)
   password: string;
 
-  @Column({ nullable: true })
+  @Column({ type: 'int', nullable: true })
   @Field(() => String, { nullable: true })
-  recoveryCode: number;
+  recoveryCode: number | null;
 
   @Column('tinyint', { default: 0, comment: '0-Normal, 1-Admin' })
   @Field(() => Int, { defaultValue: 0 })

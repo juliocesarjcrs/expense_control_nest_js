@@ -16,7 +16,7 @@ export class Loan extends Content {
 
   @Column('varchar', { length: 200, nullable: true })
   @Field(() => String, { nullable: true })
-  commentary?: string;
+  commentary: string | null;
 
   @Column({ name: 'user_id', nullable: false })
   @Field(() => Int)
@@ -25,5 +25,5 @@ export class Loan extends Content {
   @ManyToOne(() => User, { nullable: false })
   @JoinColumn({ name: 'user_id' })
   @Field(() => User)
-  user: number;
+  user: User;
 }

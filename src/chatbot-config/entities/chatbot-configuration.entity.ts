@@ -14,7 +14,7 @@ export class ChatbotConfiguration extends Content {
   config_key: string;
 
   @Column({ type: 'json' })
-  config_value: any;
+  config_value: Record<string, unknown>;
 
   @Column({ type: 'varchar', length: 500, nullable: true })
   description: string;

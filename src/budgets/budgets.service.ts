@@ -1,8 +1,25 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { DeleteResult, Repository } from 'typeorm';
 import { Budget } from './entities/budget.entity';
-import { Repository } from 'typeorm';
 import { CreateBudgetDto } from './dto/create-budget.dto';
+import { BudgetFilterQuery } from './interfaces/budget-filter-query.interface';
+import {
+  BudgetSummaryRawRow,
+  BudgetSummaryResult,
+  DetectCityRawRow,
+} from './interfaces/budget-summary-raw-row.interface';
+
+interface CategorySummary {
+  categoryId: number;
+  categoryName: string;
+  budget: number;
+  subcategories: Array<{
+    subcategoryId: number;
+    subcategoryName: string;
+    budget: number;
+  }>;
+}
 
 @Injectable()
 export class BudgetsService {
@@ -18,13 +35,9 @@ export class BudgetsService {
 
   async findAll(
     userId: number,
-    query: {
-      year: number;
-      city: string;
-    },
-  ) {
-    const year = query.year;
-    const city = query.city;
+    query: BudgetFilterQuery,
+  ): Promise<{ data: Budget[] }> {
+    const { year, city } = query;
     const budgetByuser = await this.budgetRepository
       .createQueryBuilder('budget')
       .where('budget.user_id = :userId', { userId })
@@ -36,10 +49,11 @@ export class BudgetsService {
     };
   }
 
-  async remove(id: number) {
+  async remove(id: number): Promise<DeleteResult> {
     const response = await this.budgetRepository.delete(id);
-    if (response.affected <= 0)
-      throw new HttpException('Budget not found', HttpStatus.BAD_REQUEST);
+    if ((response.affected ?? 0) <= 0) {
+      throw new NotFoundException('Budget not found');
+    }
     return response;
   }
 
@@ -52,25 +66,10 @@ export class BudgetsService {
    */
   async getSummaryByCategory(
     userId: number,
-    query: { year: number; city: string },
-  ): Promise<{
-    data: Array<{
-      categoryId: number;
-      categoryName: string;
-      budget: number;
-      subcategories: Array<{
-        subcategoryId: number;
-        subcategoryName: string;
-        budget: number;
-      }>;
-    }>;
-    year: number;
-    city: string;
-    hasData: boolean;
-  }> {
+    query: BudgetFilterQuery,
+  ): Promise<BudgetSummaryResult> {
     const { year, city } = query;
 
-    // Obtener presupuestos del usuario para ese año/ciudad
     const budgets = await this.budgetRepository
       .createQueryBuilder('budget')
       .leftJoinAndSelect(
@@ -93,7 +92,7 @@ export class BudgetsService {
       .where('budget.user_id = :userId', { userId })
       .andWhere('budget.year = :year', { year })
       .andWhere('budget.city = :city', { city })
-      .getRawMany();
+      .getRawMany<BudgetSummaryRawRow>();
 
     if (budgets.length === 0) {
       return {
@@ -104,39 +103,27 @@ export class BudgetsService {
       };
     }
 
-    // Agrupar por categoría
-    const categoryMap = new Map<
-      number,
-      {
-        categoryId: number;
-        categoryName: string;
-        budget: number;
-        subcategories: Array<{
-          subcategoryId: number;
-          subcategoryName: string;
-          budget: number;
-        }>;
-      }
-    >();
+    const categoryMap = new Map<number, CategorySummary>();
 
-    budgets.forEach((budget) => {
-      const categoryId = budget.categoryId;
+    budgets.forEach((row) => {
+      const categoryId = row.categoryId;
+      let category = categoryMap.get(categoryId);
 
-      if (!categoryMap.has(categoryId)) {
-        categoryMap.set(categoryId, {
+      if (!category) {
+        category = {
           categoryId,
-          categoryName: budget.categoryName,
+          categoryName: row.categoryName,
           budget: 0,
           subcategories: [],
-        });
+        };
+        categoryMap.set(categoryId, category);
       }
 
-      const category = categoryMap.get(categoryId);
-      category.budget += parseInt(budget.budget);
+      category.budget += parseInt(row.budget, 10);
       category.subcategories.push({
-        subcategoryId: budget.subcategoryId,
-        subcategoryName: budget.subcategoryName,
-        budget: parseInt(budget.budget),
+        subcategoryId: row.subcategoryId,
+        subcategoryName: row.subcategoryName,
+        budget: parseInt(row.budget, 10),
       });
     });
 
@@ -154,7 +141,7 @@ export class BudgetsService {
    */
   async detectCurrentCity(
     userId: number,
-    year: number,
+    year: string,
   ): Promise<string | null> {
     const result = await this.budgetRepository
       .createQueryBuilder('budget')
@@ -165,8 +152,8 @@ export class BudgetsService {
       .groupBy('budget.city')
       .orderBy('lastUpdate', 'DESC')
       .limit(1)
-      .getRawOne();
+      .getRawOne<DetectCityRawRow>();
 
-    return result?.budget_city || null;
+    return result?.budget_city ?? null;
   }
 }

@@ -66,7 +66,8 @@ export class BudgetsExecutor implements ToolExecutor {
       this.logger.error('Error fetching budgets:', error);
       return {
         success: false,
-        error: error.message,
+        error:
+          error instanceof Error ? error.message : 'Error fetching budgets',
         metadata: { executionTime: Date.now() - startTime },
       };
     }

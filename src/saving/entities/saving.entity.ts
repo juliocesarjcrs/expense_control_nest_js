@@ -22,7 +22,7 @@ export class Saving extends Content {
   income: number;
 
   @Column('varchar', { length: 200, nullable: true })
-  commentary: string;
+  commentary: string | null;
 
   @Column({ type: 'date', nullable: false })
   date: Date;
@@ -31,9 +31,9 @@ export class Saving extends Content {
   userId: number;
 
   @UpdateDateColumn({ name: 'updated_at', type: 'datetime' })
-  createdAt: Date;
+  updatedAt: Date;
 
   @ManyToOne(() => User, { nullable: false })
   @JoinColumn({ name: 'user_id' })
-  user: number;
+  user: User;
 }

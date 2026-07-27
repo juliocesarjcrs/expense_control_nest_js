@@ -1,4 +1,5 @@
 import { IsDateString, IsNotEmpty, IsString, MaxLength } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class CreateSavingDto {
   @IsNotEmpty()
@@ -17,6 +18,7 @@ export class CreateSavingDto {
   readonly commentary: string;
 
   @IsDateString()
+  @Type(() => Date)
   readonly date: Date;
 
   readonly userId: number;

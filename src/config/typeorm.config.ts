@@ -15,7 +15,7 @@ export default class TypeOrmConfig {
       database: configService.get('DB_NAME'),
       entities: [__dirname + '/../**/*.entity{.ts,.js}'],
       synchronize: true,
-      dropSchema: Boolean(parseInt(configService.get('DB_DROP_SCHEMA'))),
+      dropSchema: Boolean(parseInt(configService.get('DB_DROP_SCHEMA', '0'))),
       charset: 'utf8mb4',
     };
   }
@@ -43,7 +43,7 @@ export default class TypeOrmConfig {
       database: configService.get('DB_NAME'),
       entities: [__dirname + '/../**/*.entity{.ts,.js}'],
       synchronize: true,
-      dropSchema: Boolean(parseInt(configService.get('DB_DROP_SCHEMA'))),
+      dropSchema: Boolean(parseInt(configService.get('DB_DROP_SCHEMA', '0'))),
     };
   }
 }

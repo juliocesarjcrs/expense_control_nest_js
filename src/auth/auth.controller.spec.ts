@@ -65,43 +65,43 @@ describe('AuthController', () => {
 
     it('should call authService.login with correct parameters', async () => {
       mockAuthService.login.mockResolvedValue(mockLoginResponse);
-      const res = mockResponse();
 
-      await controller.login(loginDto, res);
+      await controller.login(loginDto);
 
       expect(service.login).toHaveBeenCalledWith(loginDto);
       expect(service.login).toHaveBeenCalledTimes(1);
     });
 
-    it('should return 200 status and login data', async () => {
+    it('should return login data', async () => {
       mockAuthService.login.mockResolvedValue(mockLoginResponse);
-      const res = mockResponse();
 
-      await controller.login(loginDto, res);
+      const result = await controller.login(loginDto);
 
-      expect(res.status).toHaveBeenCalledWith(HttpStatus.OK);
-      expect(res.json).toHaveBeenCalledWith(mockLoginResponse);
+      expect(mockAuthService.login).toHaveBeenCalledWith(loginDto);
+      expect(result).toEqual(mockLoginResponse);
     });
 
     it('should handle service errors', async () => {
       const error = new Error('Invalid credentials');
       mockAuthService.login.mockRejectedValue(error);
-      const res = mockResponse();
-
-      await expect(controller.login(loginDto, res)).rejects.toThrow(error);
+      await expect(controller.login(loginDto)).rejects.toThrow(error);
     });
 
     it('should work with admin credentials', async () => {
       const adminResponse = {
         ...mockLoginResponse,
-        user: { ...mockLoginResponse.user, role: 1 },
+        user: {
+          ...mockLoginResponse.user,
+          role: 1,
+        },
       };
+
       mockAuthService.login.mockResolvedValue(adminResponse);
-      const res = mockResponse();
 
-      await controller.login(loginDto, res);
+      const result = await controller.login(loginDto);
 
-      expect(res.json).toHaveBeenCalledWith(adminResponse);
+      expect(mockAuthService.login).toHaveBeenCalledWith(loginDto);
+      expect(result).toEqual(adminResponse);
     });
   });
 
@@ -123,24 +123,23 @@ describe('AuthController', () => {
       mockAuthService.forgotPassword.mockResolvedValue(
         mockForgotPasswordResponse,
       );
-      const res = mockResponse();
-
-      await controller.forgotPassword(forgotPasswordDto, res);
+      await controller.forgotPassword(forgotPasswordDto);
 
       expect(service.forgotPassword).toHaveBeenCalledWith(forgotPasswordDto);
       expect(service.forgotPassword).toHaveBeenCalledTimes(1);
     });
 
-    it('should return 200 status and forgot password data', async () => {
+    it('should return forgot password data', async () => {
       mockAuthService.forgotPassword.mockResolvedValue(
         mockForgotPasswordResponse,
       );
-      const res = mockResponse();
 
-      await controller.forgotPassword(forgotPasswordDto, res);
+      const result = await controller.forgotPassword(forgotPasswordDto);
 
-      expect(res.status).toHaveBeenCalledWith(HttpStatus.OK);
-      expect(res.json).toHaveBeenCalledWith(mockForgotPasswordResponse);
+      expect(mockAuthService.forgotPassword).toHaveBeenCalledWith(
+        forgotPasswordDto,
+      );
+      expect(result).toEqual(mockForgotPasswordResponse);
     });
 
     it('should handle service errors', async () => {
@@ -149,13 +148,13 @@ describe('AuthController', () => {
       const res = mockResponse();
 
       await expect(
-        controller.forgotPassword(forgotPasswordDto, res),
+        controller.forgotPassword(forgotPasswordDto),
       ).rejects.toThrow(error);
     });
   });
 
   describe('checkRecoveryCode', () => {
-    const userId = 1;
+    const userId = '1';
     const checkCodeDto: CheckCodeDto = {
       recoveryCode: '1234',
     };
@@ -168,27 +167,28 @@ describe('AuthController', () => {
       mockAuthService.checkRecoveryCode.mockResolvedValue(
         mockCheckCodeResponse,
       );
-      const res = mockResponse();
 
-      await controller.checkRecoveryCode(userId, checkCodeDto, res);
+      await controller.checkRecoveryCode(userId, checkCodeDto);
 
       expect(service.checkRecoveryCode).toHaveBeenCalledWith(
-        userId,
+        Number(userId),
         checkCodeDto,
       );
       expect(service.checkRecoveryCode).toHaveBeenCalledTimes(1);
     });
 
-    it('should return 200 status and check code result', async () => {
+    it('should return check code result', async () => {
       mockAuthService.checkRecoveryCode.mockResolvedValue(
         mockCheckCodeResponse,
       );
-      const res = mockResponse();
 
-      await controller.checkRecoveryCode(userId, checkCodeDto, res);
+      const result = await controller.checkRecoveryCode(userId, checkCodeDto);
 
-      expect(res.status).toHaveBeenCalledWith(HttpStatus.OK);
-      expect(res.json).toHaveBeenCalledWith(mockCheckCodeResponse);
+      expect(mockAuthService.checkRecoveryCode).toHaveBeenCalledWith(
+        Number(userId),
+        checkCodeDto,
+      );
+      expect(result).toEqual(mockCheckCodeResponse);
     });
 
     it('should handle incorrect recovery code', async () => {
@@ -197,7 +197,7 @@ describe('AuthController', () => {
       const res = mockResponse();
 
       await expect(
-        controller.checkRecoveryCode(userId, checkCodeDto, res),
+        controller.checkRecoveryCode(userId, checkCodeDto),
       ).rejects.toThrow(error);
     });
 
@@ -205,13 +205,12 @@ describe('AuthController', () => {
       mockAuthService.checkRecoveryCode.mockResolvedValue(
         mockCheckCodeResponse,
       );
-      const res = mockResponse();
-      const userIds = [1, 5, 100, 999];
+      const userIds = ['1', '5', '100', '999'];
 
       for (const id of userIds) {
-        await controller.checkRecoveryCode(id, checkCodeDto, res);
+        await controller.checkRecoveryCode(id, checkCodeDto);
         expect(service.checkRecoveryCode).toHaveBeenCalledWith(
-          id,
+          Number(userId),
           checkCodeDto,
         );
       }
@@ -219,7 +218,7 @@ describe('AuthController', () => {
   });
 
   describe('setPasswordRecovery', () => {
-    const userId = 1;
+    const userId = '1';
     const recoveryPasswordDto: RecoveryPasswordDto = {
       password: 'newPassword123',
     };
@@ -237,27 +236,30 @@ describe('AuthController', () => {
       mockAuthService.setPasswordRecovery.mockResolvedValue(
         mockRecoveryResponse,
       );
-      const res = mockResponse();
-
-      await controller.setPasswordRecovery(userId, recoveryPasswordDto, res);
+      await controller.setPasswordRecovery(userId, recoveryPasswordDto);
 
       expect(service.setPasswordRecovery).toHaveBeenCalledWith(
-        userId,
+        Number(userId),
         recoveryPasswordDto,
       );
       expect(service.setPasswordRecovery).toHaveBeenCalledTimes(1);
     });
 
-    it('should return 200 status and updated user', async () => {
+    it('should return updated user', async () => {
       mockAuthService.setPasswordRecovery.mockResolvedValue(
         mockRecoveryResponse,
       );
-      const res = mockResponse();
 
-      await controller.setPasswordRecovery(userId, recoveryPasswordDto, res);
+      const result = await controller.setPasswordRecovery(
+        userId,
+        recoveryPasswordDto,
+      );
 
-      expect(res.status).toHaveBeenCalledWith(HttpStatus.OK);
-      expect(res.json).toHaveBeenCalledWith(mockRecoveryResponse);
+      expect(mockAuthService.setPasswordRecovery).toHaveBeenCalledWith(
+        Number(userId),
+        recoveryPasswordDto,
+      );
+      expect(result).toEqual(mockRecoveryResponse);
     });
 
     it('should handle service errors', async () => {
@@ -266,7 +268,7 @@ describe('AuthController', () => {
       const res = mockResponse();
 
       await expect(
-        controller.setPasswordRecovery(userId, recoveryPasswordDto, res),
+        controller.setPasswordRecovery(userId, recoveryPasswordDto),
       ).rejects.toThrow(error);
     });
 
@@ -274,13 +276,12 @@ describe('AuthController', () => {
       mockAuthService.setPasswordRecovery.mockResolvedValue(
         mockRecoveryResponse,
       );
-      const res = mockResponse();
-      const userIds = [1, 10, 50, 999];
+      const userIds = ['1', '10', '50', '999'];
 
       for (const id of userIds) {
-        await controller.setPasswordRecovery(id, recoveryPasswordDto, res);
+        await controller.setPasswordRecovery(id, recoveryPasswordDto);
         expect(service.setPasswordRecovery).toHaveBeenCalledWith(
-          id,
+          Number(id),
           recoveryPasswordDto,
         );
       }
@@ -330,85 +331,87 @@ describe('AuthController', () => {
     it('should propagate service errors to caller', async () => {
       const serviceError = new Error('Service Error');
       mockAuthService.login.mockRejectedValue(serviceError);
-      const res = mockResponse();
 
       await expect(
-        controller.login({ email: 'test@test.com', password: 'pass' }, res),
+        controller.login({ email: 'test@test.com', password: 'pass' }),
       ).rejects.toThrow(serviceError);
     });
 
     it('should not catch or modify service errors', async () => {
       const specificError = new Error('Specific error message');
       mockAuthService.forgotPassword.mockRejectedValue(specificError);
-      const res = mockResponse();
 
       try {
-        await controller.forgotPassword({ email: 'test@test.com' }, res);
+        await controller.forgotPassword({ email: 'test@test.com' });
         fail('Should have thrown an error');
       } catch (error) {
-        expect(error.message).toBe('Specific error message');
+        expect(error).toBeInstanceOf(Error);
+        expect((error as Error).message).toBe('Specific error message');
       }
     });
   });
 
   describe('Response Format', () => {
-    it('should always use res.status().json() pattern', async () => {
-      mockAuthService.login.mockResolvedValue({
+    it('should return the service response', async () => {
+      const response = {
         access_token: 'token',
         user: {},
+      };
+
+      mockAuthService.login.mockResolvedValue(response);
+
+      const result = await controller.login({
+        email: 'a@a.com',
+        password: 'pass',
       });
-      const res = mockResponse();
 
-      await controller.login({ email: 'a@a.com', password: 'pass' }, res);
-
-      expect(res.status).toHaveBeenCalled();
-      expect(res.json).toHaveBeenCalled();
+      expect(result).toEqual(response);
     });
 
-    it('should use HttpStatus.OK for successful responses', async () => {
-      const endpoints = [
+    it('should return the value from the service for successful responses', async () => {
+      const endpoints: Array<{ method: keyof AuthController; dto: any }> = [
         { method: 'login', dto: { email: 'a@a.com', password: 'pass' } },
         { method: 'forgotPassword', dto: { email: 'a@a.com' } },
       ];
 
       for (const endpoint of endpoints) {
-        mockAuthService[endpoint.method].mockResolvedValue({});
-        const res = mockResponse();
+        const expectedResult = { success: true };
+        (mockAuthService[endpoint.method] as jest.Mock).mockResolvedValue(
+          expectedResult,
+        );
 
-        await controller[endpoint.method](endpoint.dto, res);
+        const result = await (controller[endpoint.method] as any)(endpoint.dto);
 
-        expect(res.status).toHaveBeenCalledWith(HttpStatus.OK);
+        expect(result).toEqual(expectedResult);
       }
     });
   });
 
   describe('Integration', () => {
     it('should work with all endpoints sequentially', async () => {
-      const res = mockResponse();
-
       // Login
       mockAuthService.login.mockResolvedValue({
         access_token: 'token',
         user: { id: 1 },
       });
-      await controller.login({ email: 'a@a.com', password: 'pass' }, res);
+      await controller.login({ email: 'a@a.com', password: 'pass' });
 
       // Forgot password
       mockAuthService.forgotPassword.mockResolvedValue({
         user: { id: 1 },
         email: 'sent',
       });
-      await controller.forgotPassword({ email: 'a@a.com' }, res);
+      await controller.forgotPassword({ email: 'a@a.com' });
 
       // Check code
       mockAuthService.checkRecoveryCode.mockResolvedValue({ checkCode: true });
-      await controller.checkRecoveryCode(1, { recoveryCode: '1234' }, res);
+      await controller.checkRecoveryCode('1', { recoveryCode: '1234' });
 
       // Set new password
       mockAuthService.setPasswordRecovery.mockResolvedValue({
         user: { id: 1 },
       });
-      await controller.setPasswordRecovery(1, { password: 'newpass' }, res);
+      await controller.setPasswordRecovery('1', { password: 'newpass' });
 
       // Verificar que todos fueron llamados
       expect(service.login).toHaveBeenCalled();

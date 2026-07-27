@@ -3,17 +3,23 @@ import {
   Logger,
   OnModuleInit,
   NotFoundException,
+  ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { FindOptionsWhere, Repository } from 'typeorm';
 import { ChatbotConfiguration } from './entities/chatbot-configuration.entity';
 import { CreateConfigDto } from './dto/create-config.dto';
 import { ChatbotConfigHistory } from './entities/chatbot-config-history.entity';
+import {
+  AllConfigsResult,
+  ImportConfigItem,
+  ImportConfigsResult,
+} from './interfaces/chatbot-config.interfaces';
 
 @Injectable()
 export class ChatbotConfigService implements OnModuleInit {
   private readonly logger = new Logger(ChatbotConfigService.name);
-  private configCache: Map<string, any> = new Map();
+  private configCache: Map<string, unknown> = new Map();
   private readonly CACHE_TTL = 60 * 60 * 1000; // 1 hora
   private cacheTimestamps: Map<string, number> = new Map();
 
@@ -24,14 +30,11 @@ export class ChatbotConfigService implements OnModuleInit {
     private historyRepo: Repository<ChatbotConfigHistory>,
   ) {}
 
-  async onModuleInit() {
+  async onModuleInit(): Promise<void> {
     await this.loadAllConfigs();
     this.logger.log('✅ Chatbot configurations loaded into cache');
   }
 
-  /**
-   * Carga todas las configs activas en memoria (rápido)
-   */
   private async loadAllConfigs(): Promise<void> {
     const configs = await this.configRepo.find({
       where: { is_active: true },
@@ -45,40 +48,42 @@ export class ChatbotConfigService implements OnModuleInit {
     this.logger.log(`📦 Loaded ${configs.length} configurations into cache`);
   }
 
-  /**
-   * Obtiene configuración desde cache (sin DB query) ⚡
-   */
-  async getConfig(configKey: string): Promise<any> {
+  async getConfig<T = unknown>(configKey: string): Promise<T> {
     const timestamp = this.cacheTimestamps.get(configKey);
 
-    // Si el cache está vencido, recargar
     if (!timestamp || Date.now() - timestamp > this.CACHE_TTL) {
       await this.reloadConfig(configKey);
     }
 
-    return this.configCache.get(configKey);
+    return this.configCache.get(configKey) as T;
   }
 
   /**
    * Obtiene la entidad completa (para admin panel)
    */
-  async getConfigEntity(configKey: string): Promise<ChatbotConfiguration> {
+  async getConfigEntity(
+    configKey: string,
+  ): Promise<ChatbotConfiguration | null> {
     return this.configRepo.findOne({
       where: { config_key: configKey },
-      relations: ['updatedByUser'],
+      relations: { updatedByUser: true },
     });
   }
 
   /**
    * Obtiene todas las configuraciones (admin)
    */
-  async getAllConfigs(includeInactive: boolean = false) {
-    const where = includeInactive ? {} : { is_active: true };
+  async getAllConfigs(
+    includeInactive: boolean = false,
+  ): Promise<AllConfigsResult<ChatbotConfiguration>> {
+    const where: FindOptionsWhere<ChatbotConfiguration> = includeInactive
+      ? {}
+      : { is_active: true };
 
     const configs = await this.configRepo.find({
       where,
       order: { config_key: 'ASC' },
-      relations: ['updatedByUser'],
+      relations: { updatedByUser: true },
     });
 
     return {
@@ -87,9 +92,6 @@ export class ChatbotConfigService implements OnModuleInit {
     };
   }
 
-  /**
-   * Recarga una config específica desde DB
-   */
   private async reloadConfig(configKey: string): Promise<void> {
     const config = await this.configRepo.findOne({
       where: { config_key: configKey, is_active: true },
@@ -101,9 +103,6 @@ export class ChatbotConfigService implements OnModuleInit {
     }
   }
 
-  /**
-   * Crea una nueva configuración
-   */
   async createConfig(
     createDto: CreateConfigDto,
     userId: number,
@@ -113,7 +112,9 @@ export class ChatbotConfigService implements OnModuleInit {
     });
 
     if (existing) {
-      throw new Error(`Configuration ${createDto.config_key} already exists`);
+      throw new ConflictException(
+        `Configuration ${createDto.config_key} already exists`,
+      );
     }
 
     const config = this.configRepo.create({
@@ -123,7 +124,6 @@ export class ChatbotConfigService implements OnModuleInit {
 
     const saved = await this.configRepo.save(config);
 
-    // Actualizar cache
     if (saved.is_active) {
       this.configCache.set(saved.config_key, saved.config_value);
       this.cacheTimestamps.set(saved.config_key, Date.now());
@@ -134,12 +134,9 @@ export class ChatbotConfigService implements OnModuleInit {
     return saved;
   }
 
-  /**
-   * Actualiza configuración (guarda en DB y actualiza cache)
-   */
   async updateConfig(
     configKey: string,
-    newValue: any,
+    newValue: Record<string, unknown>,
     userId: number,
     changeReason?: string,
   ): Promise<ChatbotConfiguration> {
@@ -151,7 +148,6 @@ export class ChatbotConfigService implements OnModuleInit {
       throw new NotFoundException(`Configuration ${configKey} not found`);
     }
 
-    // Guardar historial
     await this.historyRepo.save({
       config_id: existing.id,
       config_key: configKey,
@@ -161,13 +157,11 @@ export class ChatbotConfigService implements OnModuleInit {
       change_reason: changeReason || 'Manual update',
     });
 
-    // Actualizar config
     existing.config_value = newValue;
     existing.version += 1;
     existing.updated_by = userId;
     const updated = await this.configRepo.save(existing);
 
-    // Actualizar cache inmediatamente
     if (updated.is_active) {
       this.configCache.set(configKey, newValue);
       this.cacheTimestamps.set(configKey, Date.now());
@@ -180,9 +174,6 @@ export class ChatbotConfigService implements OnModuleInit {
     return updated;
   }
 
-  /**
-   * Activa/desactiva una configuración
-   */
   async toggleActive(
     configKey: string,
     isActive: boolean,
@@ -200,7 +191,6 @@ export class ChatbotConfigService implements OnModuleInit {
     config.updated_by = userId;
     const updated = await this.configRepo.save(config);
 
-    // Actualizar cache
     if (isActive) {
       this.configCache.set(configKey, config.config_value);
       this.cacheTimestamps.set(configKey, Date.now());
@@ -216,23 +206,20 @@ export class ChatbotConfigService implements OnModuleInit {
     return updated;
   }
 
-  /**
-   * Invalida cache manualmente (útil después de cambios)
-   */
   async invalidateCache(): Promise<void> {
     await this.loadAllConfigs();
     this.logger.log('🔄 Cache invalidated and reloaded');
   }
 
-  /**
-   * Obtiene historial de cambios
-   */
-  async getConfigHistory(configKey: string, limit: number = 10) {
+  async getConfigHistory(
+    configKey: string,
+    limit: number = 10,
+  ): Promise<AllConfigsResult<ChatbotConfigHistory>> {
     const history = await this.historyRepo.find({
       where: { config_key: configKey },
       order: { createdAt: 'DESC' },
       take: limit,
-      relations: ['changedByUser'],
+      relations: { changedByUser: true },
     });
 
     return {
@@ -241,9 +228,6 @@ export class ChatbotConfigService implements OnModuleInit {
     };
   }
 
-  /**
-   * Revierte a una versión anterior
-   */
   async revertToVersion(
     configKey: string,
     historyId: number,
@@ -261,21 +245,27 @@ export class ChatbotConfigService implements OnModuleInit {
       configKey,
       historyEntry.previous_value,
       userId,
-      `Reverted to version from ${historyEntry.createdAt}`,
+      `Reverted to version from ${historyEntry.createdAt.toISOString()}`,
     );
   }
 
-  /**
-   * Elimina una configuración (soft delete)
-   */
-  async deleteConfig(configKey: string, userId: number) {
+  async deleteConfig(
+    configKey: string,
+    userId: number,
+  ): Promise<ChatbotConfiguration> {
     return this.toggleActive(configKey, false, userId);
   }
 
-  /**
-   * Exporta todas las configuraciones
-   */
-  async exportAllConfigs() {
+  async exportAllConfigs(): Promise<{
+    exported_at: string;
+    count: number;
+    configurations: Array<{
+      config_key: string;
+      config_value: Record<string, unknown>;
+      description: string;
+      version: number;
+    }>;
+  }> {
     const configs = await this.configRepo.find({
       where: { is_active: true },
     });
@@ -292,14 +282,14 @@ export class ChatbotConfigService implements OnModuleInit {
     };
   }
 
-  /**
-   * Importa configuraciones desde backup
-   */
-  async importConfigs(configs: any[], userId: number) {
-    const results = {
+  async importConfigs(
+    configs: ImportConfigItem[],
+    userId: number,
+  ): Promise<ImportConfigsResult> {
+    const results: ImportConfigsResult = {
       created: 0,
       updated: 0,
-      errors: [] as string[],
+      errors: [],
     };
 
     for (const config of configs) {
@@ -329,7 +319,11 @@ export class ChatbotConfigService implements OnModuleInit {
           results.created++;
         }
       } catch (error) {
-        results.errors.push(`${config.config_key}: ${error.message}`);
+        results.errors.push(
+          `${config.config_key}: ${
+            error instanceof Error ? error.message : 'Unknown error'
+          }`,
+        );
       }
     }
 

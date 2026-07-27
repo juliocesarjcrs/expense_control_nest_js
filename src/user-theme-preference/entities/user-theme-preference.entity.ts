@@ -21,7 +21,7 @@ export class UserThemePreference extends Content {
   user: User;
 
   // Referencia al tema predefinido (puede ser null si usa colores custom)
-  @Column({ name: 'theme_id', nullable: true })
+  @Column({ name: 'theme_id', type: 'int', nullable: true })
   themeId: number | null;
 
   @ManyToOne(() => ThemeConfig, { nullable: true, onDelete: 'SET NULL' })

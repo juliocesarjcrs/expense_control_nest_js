@@ -18,6 +18,7 @@ import {
 } from './dto/theme-config.dto';
 import { Public } from 'src/utils/decorators/custumDecorators';
 import { AdminGuard } from 'src/auth/guards/admin.guard';
+import { AuthenticatedRequest } from 'src/common/interfaces/authenticated-request.interface';
 
 @Controller('theme-config')
 export class ThemeConfigController {
@@ -58,7 +59,10 @@ export class ThemeConfigController {
    */
   @Post()
   @UseGuards(AdminGuard)
-  async create(@Body() createDto: CreateThemeDto, @Request() req) {
+  async create(
+    @Body() createDto: CreateThemeDto,
+    @Request() req: AuthenticatedRequest,
+  ) {
     const userId = req.user.id;
     return this.themeConfigService.create(createDto, userId);
   }
@@ -78,7 +82,10 @@ export class ThemeConfigController {
    */
   @Put('activate')
   @UseGuards(AdminGuard)
-  async activate(@Body() activateDto: ActivateThemeDto, @Request() req) {
+  async activate(
+    @Body() activateDto: ActivateThemeDto,
+    @Request() req: AuthenticatedRequest,
+  ) {
     const userId = req.user.id;
     return this.themeConfigService.activateTheme(activateDto, userId);
   }
@@ -92,12 +99,11 @@ export class ThemeConfigController {
   async update(
     @Param('name') name: string,
     @Body() updateDto: UpdateThemeDto,
-    @Request() req,
+    @Request() req: AuthenticatedRequest,
   ) {
     const userId = req.user.id;
     return this.themeConfigService.update(name, updateDto, userId);
   }
-
   /**
    * PUT /theme-config/:name/colors
    * Actualizar solo colores de un tema (solo admin)
@@ -107,12 +113,11 @@ export class ThemeConfigController {
   async updateColors(
     @Param('name') name: string,
     @Body() updateColorsDto: UpdateColorsDto,
-    @Request() req,
+    @Request() req: AuthenticatedRequest,
   ) {
     const userId = req.user.id;
     return this.themeConfigService.updateColors(name, updateColorsDto, userId);
   }
-
   /**
    * DELETE /theme-config/:name
    * Eliminar tema (solo admin, no se puede eliminar el activo ni default)

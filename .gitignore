@@ -49,3 +49,7 @@ uploads/*
 logs.txt
 
 .vscode/settings.json
+
+# TypeScript incremental build cache
+*.tsbuildinfo
+

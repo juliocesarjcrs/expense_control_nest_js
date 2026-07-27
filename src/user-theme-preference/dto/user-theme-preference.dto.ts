@@ -7,9 +7,6 @@ import {
   Min,
 } from 'class-validator';
 
-/**
- * DTO para seleccionar un tema predefinido
- */
 export class SelectThemeDto {
   @IsInt()
   @Min(1)
@@ -17,18 +14,12 @@ export class SelectThemeDto {
   themeId: number;
 }
 
-/**
- * DTO para establecer colores personalizados
- */
 export class SetCustomColorsDto {
   @IsObject()
   @IsNotEmpty()
   customColors: Record<string, string>;
 }
 
-/**
- * DTO para actualizar preferencias de tema
- */
 export class UpdateUserThemePreferenceDto {
   @IsInt()
   @IsOptional()
@@ -42,15 +33,4 @@ export class UpdateUserThemePreferenceDto {
   @IsBoolean()
   @IsOptional()
   useCustomColors?: boolean;
-}
-
-/**
- * DTO de respuesta con la configuración efectiva del usuario
- */
-export interface UserThemeResponseDto {
-  userId: number;
-  themeName: string;
-  colors: Record<string, string>;
-  isCustom: boolean;
-  themeId: number | null;
 }

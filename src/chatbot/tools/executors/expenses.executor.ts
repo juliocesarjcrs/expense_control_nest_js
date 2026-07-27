@@ -139,10 +139,9 @@ export class ExpensesExecutor implements ToolExecutor {
       this.logger.error('Error fetching expenses:', error);
       return {
         success: false,
-        error: error.message,
-        metadata: {
-          executionTime: Date.now() - startTime,
-        },
+        error:
+          error instanceof Error ? error.message : 'Error fetching expenses',
+        metadata: { executionTime: Date.now() - startTime },
       };
     }
   }

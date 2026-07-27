@@ -1,4 +1,12 @@
-import { IsEmail, IsNotEmpty, IsString, MaxLength } from 'class-validator';
+import { Type } from 'class-transformer';
+import {
+  IsEmail,
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  MaxLength,
+} from 'class-validator';
 
 export class CreateUserDto {
   @IsNotEmpty()
@@ -16,9 +24,11 @@ export class CreateUserDto {
   @MaxLength(120)
   readonly password: string;
 
+  @IsOptional()
+  @IsString()
   image: string;
 
-  readonly recoveryCode: number;
-  @IsString()
+  @Type(() => Number)
+  @IsInt()
   readonly role: number;
 }

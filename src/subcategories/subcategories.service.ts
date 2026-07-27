@@ -1,9 +1,10 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Equal, Repository } from 'typeorm';
+import { Equal, FindOptionsRelations, Repository } from 'typeorm';
 import { CreateSubcategoryDto } from './dto/create-subcategory.dto';
 import { UpdateSubcategoryDto } from './dto/update-subcategory.dto';
 import { Subcategory } from './entities/subcategory.entity';
+import { SubcategoryQueryParams } from './interfaces/subcategory-query-params.interface';
 
 @Injectable()
 export class SubcategoriesService {
@@ -11,6 +12,7 @@ export class SubcategoriesService {
     @InjectRepository(Subcategory)
     private subcategoriesRepository: Repository<Subcategory>,
   ) {}
+
   async create(createSubcategoryDto: CreateSubcategoryDto) {
     const SubcategoryEntity = new Subcategory();
     SubcategoryEntity.name = createSubcategoryDto.name;
@@ -24,16 +26,22 @@ export class SubcategoriesService {
     return `This action returns all subcategories`;
   }
 
-  async findOne(id: number) {
-    return await this.subcategoriesRepository.findOne({ where: { id: id } });
+  async findOne(id: number): Promise<Subcategory> {
+    const subcategory = await this.subcategoriesRepository.findOne({
+      where: { id },
+    });
+    if (!subcategory) {
+      throw new NotFoundException(`Subcategory with id ${id} not found`);
+    }
+    return subcategory;
   }
 
-  async findAllByCategory(idCategory: number, query) {
-    const queryWithExpenses = query ? query.withExpenses : false;
-    const relations = [];
+  async findAllByCategory(idCategory: number, query: SubcategoryQueryParams) {
+    const queryWithExpenses = query?.withExpenses ?? false;
+    const relations: FindOptionsRelations<Subcategory> = {};
     if (queryWithExpenses === 'true') {
-      relations.push('expenses');
-      relations.push('category');
+      relations.expenses = true;
+      relations.category = true;
     }
     return await this.subcategoriesRepository.find({
       where: { categoryId: Equal(idCategory) },
@@ -43,15 +51,20 @@ export class SubcategoriesService {
 
   async update(id: number, updateSubcategoryDto: UpdateSubcategoryDto) {
     const subcategory = await this.subcategoriesRepository.findOne({
-      where: { id: id },
+      where: { id },
     });
-    if (!subcategory)
-      throw new HttpException('Id not found', HttpStatus.NOT_FOUND);
+    if (!subcategory) {
+      throw new NotFoundException(`Subcategory with id ${id} not found`);
+    }
     const editSubcategory = Object.assign(subcategory, updateSubcategoryDto);
     return this.subcategoriesRepository.save(editSubcategory);
   }
 
   async remove(id: number) {
-    return await this.subcategoriesRepository.delete(id);
+    const result = await this.subcategoriesRepository.delete(id);
+    if (result.affected === 0) {
+      throw new NotFoundException(`Subcategory with id ${id} not found`);
+    }
+    return result;
   }
 }

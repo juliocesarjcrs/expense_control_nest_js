@@ -63,7 +63,7 @@ export class LoansExecutor implements ToolExecutor {
       this.logger.error('Error fetching loans:', error);
       return {
         success: false,
-        error: error.message,
+        error: error instanceof Error ? error.message : 'Error fetching loans',
         metadata: { executionTime: Date.now() - startTime },
       };
     }

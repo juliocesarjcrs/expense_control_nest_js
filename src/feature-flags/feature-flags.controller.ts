@@ -8,7 +8,6 @@ import {
   Param,
   UseGuards,
   Request,
-  Query,
   ParseIntPipe,
 } from '@nestjs/common';
 import { FeatureFlagsService } from './feature-flags.service';
@@ -22,6 +21,9 @@ import {
 } from './dto/feature-flag.dto';
 import { Public } from 'src/utils/decorators/custumDecorators';
 import { AdminGuard } from 'src/auth/guards/admin.guard';
+import { AuthenticatedRequestWithRole } from './interfaces/authenticated-request-with-role.interface';
+import { FeatureFlag } from './entities/feature-flag.entity';
+import { UserFeaturePermission } from './entities/user-feature-permission.entity';
 
 @Controller('feature-flags')
 export class FeatureFlagsController {
@@ -32,7 +34,9 @@ export class FeatureFlagsController {
   // ============================================
 
   @Get()
-  async findAll(@Request() req) {
+  async findAll(
+    @Request() req: AuthenticatedRequestWithRole,
+  ): Promise<FeatureFlag[]> {
     const user = req.user;
 
     if (user.role === 1) {
@@ -44,7 +48,7 @@ export class FeatureFlagsController {
 
   @Public()
   @Get('enabled')
-  async findEnabled() {
+  async findEnabled(): Promise<FeatureFlag[]> {
     return this.featureFlagsService.findAllEnabled();
   }
 
@@ -52,25 +56,32 @@ export class FeatureFlagsController {
    * NUEVO: Obtener features accesibles para el usuario actual
    */
   @Get('my-features')
-  async getMyFeatures(@Request() req) {
+  async getMyFeatures(
+    @Request() req: AuthenticatedRequestWithRole,
+  ): Promise<FeatureFlag[]> {
     const userId = req.user.id;
     return this.featureFlagsService.getUserAccessibleFeatures(userId);
   }
 
   @Public()
   @Get('chatbot/status')
-  async getChatbotStatus() {
+  async getChatbotStatus(): Promise<{
+    featureKey: string;
+    isEnabled: boolean;
+  }> {
     const isEnabled = await this.featureFlagsService.getChatbotStatus();
     return { featureKey: 'chatbot', isEnabled };
   }
 
   @Get(':key')
-  async findOne(@Param('key') key: string) {
+  async findOne(@Param('key') key: string): Promise<FeatureFlag> {
     return this.featureFlagsService.findByKey(key);
   }
 
   @Get(':key/status')
-  async checkStatus(@Param('key') key: string) {
+  async checkStatus(
+    @Param('key') key: string,
+  ): Promise<{ featureKey: string; isEnabled: boolean }> {
     const isEnabled = await this.featureFlagsService.isEnabled(key);
     return { featureKey: key, isEnabled };
   }
@@ -79,7 +90,10 @@ export class FeatureFlagsController {
    * NUEVO: Verificar si el usuario actual puede acceder a una feature
    */
   @Get(':key/can-access')
-  async canAccess(@Param('key') key: string, @Request() req) {
+  async canAccess(
+    @Param('key') key: string,
+    @Request() req: AuthenticatedRequestWithRole,
+  ): Promise<{ featureKey: string; canAccess: boolean }> {
     const userId = req.user.id;
     const canAccess = await this.featureFlagsService.canUserAccessFeature(
       userId,
@@ -90,7 +104,10 @@ export class FeatureFlagsController {
 
   @Post()
   @UseGuards(AdminGuard)
-  async create(@Body() createDto: CreateFeatureFlagDto, @Request() req) {
+  async create(
+    @Body() createDto: CreateFeatureFlagDto,
+    @Request() req: AuthenticatedRequestWithRole,
+  ): Promise<FeatureFlag> {
     const userId = req.user.id;
     return this.featureFlagsService.create(createDto, userId);
   }
@@ -100,8 +117,8 @@ export class FeatureFlagsController {
   async update(
     @Param('key') key: string,
     @Body() updateDto: UpdateFeatureFlagDto,
-    @Request() req,
-  ) {
+    @Request() req: AuthenticatedRequestWithRole,
+  ): Promise<FeatureFlag> {
     const userId = req.user.id;
     return this.featureFlagsService.update(key, updateDto, userId);
   }
@@ -111,15 +128,15 @@ export class FeatureFlagsController {
   async toggle(
     @Param('key') key: string,
     @Body() toggleDto: ToggleFeatureDto,
-    @Request() req,
-  ) {
+    @Request() req: AuthenticatedRequestWithRole,
+  ): Promise<FeatureFlag> {
     const userId = req.user.id;
     return this.featureFlagsService.toggle(key, toggleDto, userId);
   }
 
   @Delete(':key')
   @UseGuards(AdminGuard)
-  async remove(@Param('key') key: string) {
+  async remove(@Param('key') key: string): Promise<{ message: string }> {
     await this.featureFlagsService.remove(key);
     return { message: `Feature flag "${key}" eliminada exitosamente` };
   }
@@ -128,44 +145,39 @@ export class FeatureFlagsController {
   // NUEVOS ENDPOINTS (User Permissions)
   // ============================================
 
-  /**
-   * Obtener permisos de un usuario específico
-   */
   @Get('permissions/user/:userId')
   @UseGuards(AdminGuard)
-  async getUserPermissions(@Param('userId', ParseIntPipe) userId: number) {
+  async getUserPermissions(
+    @Param('userId', ParseIntPipe) userId: number,
+  ): Promise<UserFeaturePermission[]> {
     return this.featureFlagsService.getUserPermissions(userId);
   }
 
-  /**
-   * Obtener todos los usuarios con permiso para una feature
-   */
   @Get('permissions/feature/:featureKey')
   @UseGuards(AdminGuard)
-  async getFeaturePermissions(@Param('featureKey') featureKey: string) {
+  async getFeaturePermissions(
+    @Param('featureKey') featureKey: string,
+  ): Promise<UserFeaturePermission[]> {
     return this.featureFlagsService.getFeaturePermissions(featureKey);
   }
 
-  /**
-   * Otorgar o denegar permiso a un usuario
-   */
   @Post('permissions')
   @UseGuards(AdminGuard)
-  async grantPermission(@Body() dto: GrantUserPermissionDto, @Request() req) {
+  async grantPermission(
+    @Body() dto: GrantUserPermissionDto,
+    @Request() req: AuthenticatedRequestWithRole,
+  ): Promise<UserFeaturePermission> {
     const grantedBy = req.user.id;
     return this.featureFlagsService.grantUserPermission(dto, grantedBy);
   }
 
-  /**
-   * Actualizar permiso existente
-   */
   @Put('permissions/:userId/:featureKey')
   @UseGuards(AdminGuard)
   async updatePermission(
     @Param('userId', ParseIntPipe) userId: number,
     @Param('featureKey') featureKey: string,
     @Body() dto: UpdateUserPermissionDto,
-  ) {
+  ): Promise<UserFeaturePermission> {
     return this.featureFlagsService.updateUserPermission(
       userId,
       featureKey,
@@ -173,38 +185,29 @@ export class FeatureFlagsController {
     );
   }
 
-  /**
-   * Revocar permiso (eliminar)
-   */
   @Delete('permissions/:userId/:featureKey')
   @UseGuards(AdminGuard)
   async revokePermission(
     @Param('userId', ParseIntPipe) userId: number,
     @Param('featureKey') featureKey: string,
-  ) {
+  ): Promise<{ message: string }> {
     await this.featureFlagsService.revokeUserPermission(userId, featureKey);
     return { message: 'Permiso revocado exitosamente' };
   }
 
-  /**
-   * Otorgar permisos a múltiples usuarios
-   */
   @Post('permissions/bulk')
   @UseGuards(AdminGuard)
   async bulkGrantPermissions(
     @Body() dto: BulkGrantPermissionsDto,
-    @Request() req,
-  ) {
+    @Request() req: AuthenticatedRequestWithRole,
+  ): Promise<UserFeaturePermission[]> {
     const grantedBy = req.user.id;
     return this.featureFlagsService.bulkGrantPermissions(dto, grantedBy);
   }
 
-  /**
-   * Limpiar permisos expirados (endpoint de mantenimiento)
-   */
   @Post('permissions/cleanup')
   @UseGuards(AdminGuard)
-  async cleanupExpiredPermissions() {
+  async cleanupExpiredPermissions(): Promise<{ message: string }> {
     const count = await this.featureFlagsService.cleanExpiredPermissions();
     return { message: `${count} permisos expirados eliminados` };
   }

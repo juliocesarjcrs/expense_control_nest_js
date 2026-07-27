@@ -1,4 +1,4 @@
-import { Entity, Column, CreateDateColumn } from 'typeorm';
+import { Entity, Column } from 'typeorm';
 import { Content } from 'src/entity/entityBase';
 
 @Entity('model_health_logs')
@@ -10,7 +10,7 @@ export class AIModelHealthLog extends Content {
   status: 'success' | 'timeout' | 'error' | 'rate_limit';
 
   @Column({ type: 'text', nullable: true })
-  error_message: string;
+  error_message: string | null;
 
   @Column({ type: 'int' })
   response_time: number; // en ms
@@ -22,11 +22,8 @@ export class AIModelHealthLog extends Content {
   supports_tools: boolean;
 
   @Column({ type: 'int', nullable: true })
-  token_count: number;
+  token_count: number | null;
 
   @Column({ type: 'varchar', length: 50, nullable: true })
-  finish_reason: string; // 'stop', 'length', 'tool_calls', 'content_filter'
-
-  @CreateDateColumn({ name: 'created_at', type: 'datetime' })
-  createdAt: Date;
+  finish_reason: string | null; // 'stop', 'length', 'tool_calls', 'content_filter'
 }

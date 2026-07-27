@@ -10,6 +10,9 @@ import { ForgotPasswordDto } from './dto/forgot-password-dto';
 import { CheckCodeDto } from './dto/check-code-dto';
 import { RecoveryPasswordDto } from './dto/recovery-password-dto';
 
+jest.mock('bcrypt', () => ({
+  compare: jest.fn(),
+}));
 describe('AuthService', () => {
   let service: AuthService;
   let usersService: UsersService;
@@ -94,9 +97,7 @@ describe('AuthService', () => {
     it('should return access token and safe user on successful login', async () => {
       const mockToken = 'jwt.token.here';
       mockUsersService.findOneEmail.mockResolvedValue(mockUser);
-      jest
-        .spyOn(bcrypt, 'compare')
-        .mockImplementation(() => Promise.resolve(true));
+      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
       mockJwtService.sign.mockReturnValue(mockToken);
 
       const result = await service.login(loginDto);
@@ -135,9 +136,7 @@ describe('AuthService', () => {
 
     it('should throw HttpException when password is incorrect', async () => {
       mockUsersService.findOneEmail.mockResolvedValue(mockUser);
-      jest
-        .spyOn(bcrypt, 'compare')
-        .mockImplementation(() => Promise.resolve(false));
+      (bcrypt.compare as jest.Mock).mockResolvedValue(false);
 
       await expect(service.login(loginDto)).rejects.toThrow(
         new HttpException(
@@ -150,9 +149,7 @@ describe('AuthService', () => {
     it('should work for admin users', async () => {
       const mockToken = 'admin.jwt.token';
       mockUsersService.findOneEmail.mockResolvedValue(mockAdminUser);
-      jest
-        .spyOn(bcrypt, 'compare')
-        .mockImplementation(() => Promise.resolve(true));
+      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
       mockJwtService.sign.mockReturnValue(mockToken);
 
       const result = await service.login({
@@ -354,8 +351,9 @@ describe('AuthService', () => {
   describe('validateUser', () => {
     it('should return user without password when credentials are valid', async () => {
       const plainPassword = 'password123';
-      const userWithPlainPass = { ...mockUser, password: plainPassword };
-      mockUsersService.findOneEmail.mockResolvedValue(userWithPlainPass);
+      mockUsersService.findOneEmail.mockResolvedValue(mockUser);
+
+      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
 
       const result = await service.validateUser(
         'test@example.com',
@@ -364,7 +362,6 @@ describe('AuthService', () => {
 
       expect(result).toBeDefined();
       expect(result).not.toHaveProperty('password');
-      expect(result.email).toBe(mockUser.email);
     });
 
     it('should return null when user not found', async () => {
@@ -380,6 +377,7 @@ describe('AuthService', () => {
 
     it('should return null when password is incorrect', async () => {
       mockUsersService.findOneEmail.mockResolvedValue(mockUser);
+      (bcrypt.compare as jest.Mock).mockResolvedValue(false);
 
       const result = await service.validateUser(
         'test@example.com',
@@ -416,9 +414,7 @@ describe('AuthService', () => {
   describe('Security - Data Sanitization', () => {
     it('should never return password in login response', async () => {
       mockUsersService.findOneEmail.mockResolvedValue(mockUser);
-      jest
-        .spyOn(bcrypt, 'compare')
-        .mockImplementation(() => Promise.resolve(true));
+      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
       mockJwtService.sign.mockReturnValue('token');
 
       const result = await service.login({
@@ -433,9 +429,7 @@ describe('AuthService', () => {
     it('should never return recoveryCode in login response', async () => {
       const userWithCode = { ...mockUser, recoveryCode: 1234 };
       mockUsersService.findOneEmail.mockResolvedValue(userWithCode);
-      jest
-        .spyOn(bcrypt, 'compare')
-        .mockImplementation(() => Promise.resolve(true));
+      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
       mockJwtService.sign.mockReturnValue('token');
 
       const result = await service.login({

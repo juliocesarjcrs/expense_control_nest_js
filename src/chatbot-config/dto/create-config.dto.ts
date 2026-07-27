@@ -13,7 +13,7 @@ export class CreateConfigDto {
 
   @IsObject()
   @IsNotEmpty()
-  config_value: any;
+  config_value: Record<string, unknown>;
 
   @IsString()
   @IsOptional()
