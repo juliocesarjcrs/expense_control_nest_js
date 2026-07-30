@@ -23,6 +23,15 @@ export class Expense extends Content {
   @Column({ name: 'subcategory_id', nullable: false })
   subcategoryId: number;
 
+  @Column({
+    name: 'idempotency_key',
+    type: 'varchar',
+    length: 36,
+    nullable: true,
+    unique: true,
+  })
+  idempotencyKey: string | null;
+
   @ManyToOne(() => Subcategory, (subcategory) => subcategory.expenses, {
     nullable: false,
     onDelete: 'CASCADE',

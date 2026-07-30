@@ -2,7 +2,9 @@ import {
   IsDateString,
   IsInt,
   IsNotEmpty,
+  IsOptional,
   IsString,
+  IsUUID,
   MaxLength,
 } from 'class-validator';
 // import { Subcategory } from 'src/subcategories/entities/subcategory.entity';
@@ -25,4 +27,8 @@ export class CreateExpenseDto {
   @IsNotEmpty()
   @IsInt()
   readonly subcategoryId: number;
+
+  @IsOptional()
+  @IsUUID()
+  readonly idempotencyKey?: string;
 }

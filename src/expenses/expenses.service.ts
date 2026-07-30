@@ -24,18 +24,31 @@ export class ExpensesService {
 
   async create(createExpenseDto: CreateExpenseDto) {
     const ExpenseEntity = new Expense();
+
     ExpenseEntity.userId = createExpenseDto.userId;
     ExpenseEntity.subcategoryId = createExpenseDto.subcategoryId;
     ExpenseEntity.cost = createExpenseDto.cost;
     ExpenseEntity.commentary = createExpenseDto.commentary;
     ExpenseEntity.date = createExpenseDto.date;
-    return this.expensesRepository.save(ExpenseEntity);
+    ExpenseEntity.idempotencyKey = createExpenseDto.idempotencyKey ?? null;
+
+    try {
+      return await this.expensesRepository.save(ExpenseEntity);
+    } catch (error) {
+      if (this.isDuplicateKeyError(error) && createExpenseDto.idempotencyKey) {
+        const existing = await this.expensesRepository.findOne({
+          where: { idempotencyKey: createExpenseDto.idempotencyKey },
+        });
+        if (existing) return existing;
+      }
+      throw error;
+    }
   }
 
   async createMany(expenses: CreateExpenseDto[]) {
     return this.expensesRepository.manager.transaction(
       async (transactionalEntityManager) => {
-        const createdExpenses: Expense[] = [];
+        const createdExpenses = [];
 
         for (const expense of expenses) {
           const expenseEntity = new Expense();
@@ -44,15 +57,36 @@ export class ExpensesService {
           expenseEntity.cost = expense.cost;
           expenseEntity.commentary = expense.commentary;
           expenseEntity.date = expense.date;
+          expenseEntity.idempotencyKey = expense.idempotencyKey ?? null;
 
-          const savedExpense =
-            await transactionalEntityManager.save(expenseEntity);
-          createdExpenses.push(savedExpense);
+          try {
+            const savedExpense =
+              await transactionalEntityManager.save(expenseEntity);
+            createdExpenses.push(savedExpense);
+          } catch (error) {
+            if (this.isDuplicateKeyError(error) && expense.idempotencyKey) {
+              const existing = await transactionalEntityManager.findOne(
+                Expense,
+                {
+                  where: { idempotencyKey: expense.idempotencyKey },
+                },
+              );
+              if (existing) {
+                createdExpenses.push(existing);
+                continue;
+              }
+            }
+            throw error;
+          }
         }
 
         return createdExpenses;
       },
     );
+  }
+
+  private isDuplicateKeyError(error: any): boolean {
+    return error?.code === 'ER_DUP_ENTRY';
   }
 
   async findAll(userId: number, query: NumMonthsQueryParams) {
