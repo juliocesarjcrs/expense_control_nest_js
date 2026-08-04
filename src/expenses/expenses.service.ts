@@ -13,6 +13,7 @@ import {
   DateQueryParams,
   FindLastQueryParams,
 } from './interfaces/expense-query-params.interface';
+import { ExpenseNature } from './enums/expense-nature.enum';
 
 @Injectable()
 export class ExpensesService {
@@ -31,6 +32,7 @@ export class ExpensesService {
     ExpenseEntity.commentary = createExpenseDto.commentary;
     ExpenseEntity.date = createExpenseDto.date;
     ExpenseEntity.idempotencyKey = createExpenseDto.idempotencyKey ?? null;
+    ExpenseEntity.nature = createExpenseDto.nature ?? ExpenseNature.OPERATIONAL;
 
     try {
       return await this.expensesRepository.save(ExpenseEntity);
@@ -91,14 +93,20 @@ export class ExpensesService {
 
   async findAll(userId: number, query: NumMonthsQueryParams) {
     const numMonths = Number(query.numMonths) || 4;
-    const expensesGroupByMonth = await this.expensesRepository
+    const qb = this.expensesRepository
       .createQueryBuilder('expense')
       .select(['MONTH(expense.date) as month', 'YEAR(expense.date) as year'])
       .addSelect('SUM(expense.cost)', 'sum')
       .where('expense.date >= :mydate', {
         mydate: this.datesService.monthAgo(numMonths),
       })
-      .andWhere('expense.user_id = :userId', { userId })
+      .andWhere('expense.user_id = :userId', { userId });
+
+    if (query.nature) {
+      qb.andWhere('expense.nature = :nature', { nature: query.nature });
+    }
+
+    const expensesGroupByMonth = await qb
       .groupBy('MONTH(expense.date)')
       .addGroupBy('YEAR(expense.date)')
       .orderBy('YEAR(expense.date)', 'ASC')
@@ -617,7 +625,11 @@ export class ExpensesService {
     };
   }
 
-  async getAverageBySubcategories(userId: number, referenceYear: number) {
+  async getAverageBySubcategories(
+    userId: number,
+    referenceYear: number,
+    nature?: ExpenseNature,
+  ) {
     const startDate = new Date(referenceYear, 0, 1);
     const endDate = new Date(referenceYear, 11, 31, 23, 59, 59);
 
@@ -632,8 +644,7 @@ export class ExpensesService {
     } else {
       monthsToConsider = 12;
     }
-
-    const expenses = await this.expensesRepository
+    const query = this.expensesRepository
       .createQueryBuilder('expense')
       .select([
         'category.id as categoryId',
@@ -651,7 +662,13 @@ export class ExpensesService {
       .leftJoin('subcategory.category', 'category')
       .where('expense.user_id = :userId', { userId })
       .andWhere('expense.date >= :startDate', { startDate })
-      .andWhere('expense.date <= :endDate', { endDate })
+      .andWhere('expense.date <= :endDate', { endDate });
+
+    if (nature) {
+      query.andWhere('expense.nature = :nature', { nature });
+    }
+
+    const expenses = await query
       .groupBy('category.id')
       .addGroupBy('subcategory.id')
       .getRawMany();

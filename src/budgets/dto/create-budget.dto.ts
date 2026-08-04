@@ -1,10 +1,13 @@
 import {
+  IsEnum,
   IsInt,
   IsNotEmpty,
   IsNumber,
+  IsOptional,
   IsString,
   MaxLength,
 } from 'class-validator';
+import { ExpenseNature } from 'src/expenses/enums/expense-nature.enum';
 
 export class CreateBudgetDto {
   @IsNotEmpty()
@@ -30,4 +33,8 @@ export class CreateBudgetDto {
   @IsNotEmpty()
   @IsInt()
   readonly categoryId: number;
+
+  @IsOptional()
+  @IsEnum(ExpenseNature)
+  readonly nature?: ExpenseNature;
 }

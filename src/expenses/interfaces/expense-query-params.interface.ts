@@ -1,5 +1,7 @@
+import { ExpenseNature } from '../enums/expense-nature.enum';
 export interface NumMonthsQueryParams {
   numMonths?: string;
+  nature?: ExpenseNature;
 }
 
 export interface DateQueryParams {

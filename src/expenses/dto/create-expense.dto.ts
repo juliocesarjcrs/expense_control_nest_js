@@ -1,5 +1,6 @@
 import {
   IsDateString,
+  IsEnum,
   IsInt,
   IsNotEmpty,
   IsOptional,
@@ -7,6 +8,7 @@ import {
   IsUUID,
   MaxLength,
 } from 'class-validator';
+import { ExpenseNature } from '../enums/expense-nature.enum';
 // import { Subcategory } from 'src/subcategories/entities/subcategory.entity';
 
 export class CreateExpenseDto {
@@ -31,4 +33,8 @@ export class CreateExpenseDto {
   @IsOptional()
   @IsUUID()
   readonly idempotencyKey?: string;
+
+  @IsOptional()
+  @IsEnum(ExpenseNature)
+  readonly nature?: ExpenseNature;
 }

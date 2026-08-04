@@ -1,4 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ExpensesService } from 'src/expenses/expenses.service';
 import { IncomesService } from 'src/incomes/incomes.service';
@@ -8,6 +12,7 @@ import { Saving } from './entities/saving.entity';
 import { DatesService } from 'src/utils/dates/dates.service';
 import { SavingsPeriodAnalysisDto } from './dto/savings-period-analysis.dto';
 import { NumMonthsQueryParams } from 'src/incomes/interfaces/income-query-params.interface';
+import { ExpenseNature } from 'src/expenses/enums/expense-nature.enum';
 
 interface MonthlyAggregate {
   month: number;
@@ -17,6 +22,7 @@ interface MonthlyAggregate {
 
 @Injectable()
 export class SavingService {
+  private readonly logger = new Logger(SavingService.name);
   constructor(
     @InjectRepository(Saving)
     private SavingRepository: Repository<Saving>,
@@ -66,6 +72,11 @@ export class SavingService {
       await this.incomesService.findAll(userId, query);
     const { data: dataExpenses }: { data: any } =
       await this.expenseService.findAll(userId, query);
+    const { data: dataExpensesOperational }: { data: any } =
+      await this.expenseService.findAll(userId, {
+        ...query,
+        nature: ExpenseNature.OPERATIONAL,
+      });
     const { fullDate } =
       this.datesService.getPreviosMonthsLabelsIndex(numMonths);
     const savingInsert: Saving[] = [];
@@ -81,7 +92,13 @@ export class SavingService {
       savingRow.userId = userId;
       savingRow.income = this.getValueByDate(dataIncomes, element);
       savingRow.expense = this.getValueByDate(dataExpenses, element);
+      savingRow.operationalExpense = this.getValueByDate(
+        dataExpensesOperational,
+        element,
+      );
       savingRow.saving = savingRow.income - savingRow.expense;
+      savingRow.operationalSaving =
+        savingRow.income - savingRow.operationalExpense;
       savingInsert.push(savingRow);
     });
     let result = null;
@@ -95,7 +112,11 @@ export class SavingService {
         })
         .execute();
     } catch (error) {
-      console.log('error', error);
+      this.logger.error(
+        `Failed to update savings for user ${userId}`,
+        error instanceof Error ? error.stack : error,
+      );
+      throw new InternalServerErrorException('Error updating savings data');
     }
 
     return {

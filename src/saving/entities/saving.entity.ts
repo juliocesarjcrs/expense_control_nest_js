@@ -18,6 +18,10 @@ export class Saving extends Content {
   @Column('int')
   expense: number;
 
+  @Column('int') operationalExpense: number; // suma de Expense.cost WHERE nature = 'operational'
+
+  @Column('int') operationalSaving: number; // income - operationalExpense
+
   @Column('int')
   income: number;
 

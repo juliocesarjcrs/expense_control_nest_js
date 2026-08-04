@@ -167,6 +167,7 @@ export class ExpensesController {
     return this.expensesService.getAverageBySubcategories(
       req.user.id,
       yearToCalculate,
+      query.nature,
     );
   }
 }

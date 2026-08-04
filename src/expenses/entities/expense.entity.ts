@@ -2,10 +2,19 @@ import { Content } from 'src/entity/entityBase';
 import { Subcategory } from 'src/subcategories/entities/subcategory.entity';
 import { User } from 'src/users/entities/user.entity';
 import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
+import { ExpenseNature } from '../enums/expense-nature.enum';
 @Entity()
 export class Expense extends Content {
   @Column('int')
   cost: number;
+
+  @Column({
+    type: 'enum',
+    enum: ExpenseNature,
+    default: ExpenseNature.OPERATIONAL,
+    name: 'nature',
+  })
+  nature: ExpenseNature;
 
   @Column('varchar', { length: 200, nullable: true })
   commentary: string;

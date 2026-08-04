@@ -1,5 +1,6 @@
-import { IsNumber, IsOptional } from 'class-validator';
+import { IsEnum, IsNumber, IsOptional } from 'class-validator';
 import { Type } from 'class-transformer';
+import { ExpenseNature } from '../enums/expense-nature.enum';
 
 export class AverageBySubcategoriesDto {
   @IsNumber()
@@ -10,4 +11,8 @@ export class AverageBySubcategoriesDto {
   @IsNumber()
   @Type(() => Number)
   referenceYear?: number;
+
+  @IsOptional()
+  @IsEnum(ExpenseNature)
+  nature?: ExpenseNature;
 }

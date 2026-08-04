@@ -161,7 +161,8 @@ describe('ExpensesService', () => {
       date,
       commentary: '',
       userId: 1000,
-      idempotencyKey: null
+      idempotencyKey: null,
+      nature: 'operational',
     });
   });
 
