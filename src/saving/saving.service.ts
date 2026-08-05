@@ -124,6 +124,7 @@ export class SavingService {
           ['user_id'],
           { skipUpdateIfNoValuesChanged: true },
         )
+        .updateEntity(false)
         .execute();
     } catch (error) {
       this.logger.error(
