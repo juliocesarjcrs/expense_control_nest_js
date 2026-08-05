@@ -13,6 +13,7 @@ import { DatesService } from 'src/utils/dates/dates.service';
 import { SavingsPeriodAnalysisDto } from './dto/savings-period-analysis.dto';
 import { NumMonthsQueryParams } from 'src/incomes/interfaces/income-query-params.interface';
 import { ExpenseNature } from 'src/expenses/enums/expense-nature.enum';
+import { TrendInfo } from './interfaces/trend-info.interface';
 
 interface MonthlyAggregate {
   month: number;
@@ -53,6 +54,8 @@ export class SavingService {
     const expenses = savingsByuser.map((e) => e.expense);
     const incomes = savingsByuser.map((e) => e.income);
     const savings = savingsByuser.map((e) => e.saving);
+    const operationalExpenses = savingsByuser.map((e) => e.operationalExpense);
+    const operationalSavings = savingsByuser.map((e) => e.operationalSaving);
     const labels = savingsByuser.map((e) =>
       this.datesService.getFormatDate(e.date, 'MMMM-YYYY'),
     );
@@ -63,9 +66,12 @@ export class SavingService {
         expenses,
         incomes,
         savings,
+        operationalExpenses,
+        operationalSavings,
       },
     };
   }
+
   async updateAllByUser(userId: number, query: NumMonthsQueryParams) {
     const numMonths = query.numMonths ? +query.numMonths : 4;
     const { data: dataIncomes }: { data: any } =
@@ -107,9 +113,17 @@ export class SavingService {
         .insert()
         .into('saving')
         .values(savingInsert)
-        .orUpdate(['saving', 'income', 'expense'], ['user_id'], {
-          skipUpdateIfNoValuesChanged: true,
-        })
+        .orUpdate(
+          [
+            'saving',
+            'income',
+            'expense',
+            'operationalExpense',
+            'operationalSaving',
+          ],
+          ['user_id'],
+          { skipUpdateIfNoValuesChanged: true },
+        )
         .execute();
     } catch (error) {
       this.logger.error(
@@ -219,11 +233,19 @@ export class SavingService {
         avgMonthlySaving: 0,
         savingPercentage: 0,
         monthsCount: 0,
+        totalOperationalExpense: 0,
+        totalOperationalSaving: 0,
+        avgMonthlyOperationalSaving: 0,
+        operationalSavingPercentage: 0,
       },
       monthlyBreakdown: [],
       trend: {
         direction: 'stable' as const,
         percentage: 0,
+        operational: {
+          direction: 'stable' as const,
+          percentage: 0,
+        },
       },
     };
   }
@@ -236,6 +258,20 @@ export class SavingService {
     const avgMonthlySaving = totalSaving / monthsCount;
     const savingPercentage = this.calculatePercentage(totalSaving, totalIncome);
 
+    const totalOperationalExpense = this.sumField(
+      periodSavings,
+      'operationalExpense',
+    );
+    const totalOperationalSaving = this.sumField(
+      periodSavings,
+      'operationalSaving',
+    );
+    const avgMonthlyOperationalSaving = totalOperationalSaving / monthsCount;
+    const operationalSavingPercentage = this.calculatePercentage(
+      totalOperationalSaving,
+      totalIncome,
+    );
+
     return {
       totalSaving,
       totalIncome,
@@ -243,6 +279,14 @@ export class SavingService {
       avgMonthlySaving: parseFloat(avgMonthlySaving.toFixed(2)),
       savingPercentage: parseFloat(savingPercentage.toFixed(2)),
       monthsCount,
+      totalOperationalExpense,
+      totalOperationalSaving,
+      avgMonthlyOperationalSaving: parseFloat(
+        avgMonthlyOperationalSaving.toFixed(2),
+      ),
+      operationalSavingPercentage: parseFloat(
+        operationalSavingPercentage.toFixed(2),
+      ),
     };
   }
 
@@ -251,6 +295,10 @@ export class SavingService {
       const monthIncome = s.income || 0;
       const monthSavingPercentage = this.calculatePercentage(
         s.saving,
+        monthIncome,
+      );
+      const monthOperationalSavingPercentage = this.calculatePercentage(
+        s.operationalSaving,
         monthIncome,
       );
 
@@ -264,23 +312,41 @@ export class SavingService {
         income: s.income,
         expense: s.expense,
         savingPercentage: parseFloat(monthSavingPercentage.toFixed(2)),
+        operationalExpense: s.operationalExpense,
+        operationalSaving: s.operationalSaving,
+        operationalSavingPercentage: parseFloat(
+          monthOperationalSavingPercentage.toFixed(2),
+        ),
       };
     });
   }
 
   private calculateTrend(periodSavings: Saving[]) {
+    return {
+      ...this.calculateTrendForField(periodSavings, 'saving'),
+      operational: this.calculateTrendForField(
+        periodSavings,
+        'operationalSaving',
+      ),
+    };
+  }
+
+  private calculateTrendForField(
+    periodSavings: Saving[],
+    field: 'saving' | 'operationalSaving',
+  ): TrendInfo {
     const monthsCount = periodSavings.length;
 
     if (monthsCount < 2) {
-      return { direction: 'stable' as const, percentage: 0 };
+      return { direction: 'stable', percentage: 0 };
     }
 
     const midPoint = Math.floor(monthsCount / 2);
     const firstHalf = periodSavings.slice(0, midPoint);
     const secondHalf = periodSavings.slice(midPoint);
 
-    const avgFirstHalf = this.calculateAverage(firstHalf, 'saving');
-    const avgSecondHalf = this.calculateAverage(secondHalf, 'saving');
+    const avgFirstHalf = this.calculateAverage(firstHalf, field);
+    const avgSecondHalf = this.calculateAverage(secondHalf, field);
 
     const trendPercentage = this.calculateChangePercentage(
       avgFirstHalf,
@@ -328,14 +394,40 @@ export class SavingService {
       currentPeriodData.totalSaving,
     );
 
+    const prevTotalOperationalSaving = this.sumField(
+      previousSavings,
+      'operationalSaving',
+    );
+    const prevAvgMonthlyOperationalSaving =
+      prevTotalOperationalSaving / previousSavings.length;
+    const prevOperationalSavingPercentage = this.calculatePercentage(
+      prevTotalOperationalSaving,
+      prevTotalIncome,
+    );
+    const operationalDifference =
+      currentPeriodData.totalOperationalSaving - prevTotalOperationalSaving;
+    const operationalPercentageChange = this.calculateChangePercentage(
+      prevTotalOperationalSaving,
+      currentPeriodData.totalOperationalSaving,
+    );
+
     return {
       previousPeriod: {
         totalSaving: prevTotalSaving,
         avgMonthlySaving: prevAvgMonthlySaving,
         savingPercentage: parseFloat(prevSavingPercentage.toFixed(2)),
+        totalOperationalSaving: prevTotalOperationalSaving,
+        avgMonthlyOperationalSaving: prevAvgMonthlyOperationalSaving,
+        operationalSavingPercentage: parseFloat(
+          prevOperationalSavingPercentage.toFixed(2),
+        ),
       },
       difference,
       percentageChange: parseFloat(percentageChange.toFixed(2)),
+      operationalDifference,
+      operationalPercentageChange: parseFloat(
+        operationalPercentageChange.toFixed(2),
+      ),
     };
   }
 

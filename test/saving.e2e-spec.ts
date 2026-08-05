@@ -19,7 +19,7 @@ export const tokenForUser = (user: Partial<User> = userSaved): string => {
   return res;
 };
 
-describe('IncomesController (e2e)', () => {
+describe('SavingController (e2e)', () => {
   beforeAll(async () => {
     app = await setupTestApp();
     dataSource = app.get(DataSource);
