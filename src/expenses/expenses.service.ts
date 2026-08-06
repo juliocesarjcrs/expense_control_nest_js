@@ -225,6 +225,7 @@ export class ExpensesService {
         cost: e.expense_cost,
         commentary: e.expense_commentary,
         date: e.expense_date,
+        nature: e.expense_nature,
         dateFormat: this.datesService.getFormatDate(e.expense_date),
         category: e.categories_name,
         iconCategory: e.categories_icon,
