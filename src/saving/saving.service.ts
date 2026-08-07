@@ -76,6 +76,8 @@ export class SavingService {
 
   async updateAllByUser(userId: number, query: NumMonthsQueryParams) {
     const numMonths = query.numMonths ? +query.numMonths : 4;
+    const { data: dataIncomes }: { data: any } =
+      await this.incomesService.findAll(userId, query);
     const { data: dataIncomesOperational }: { data: any } =
       await this.incomesService.findAll(userId, {
         ...query,
@@ -101,10 +103,14 @@ export class SavingService {
       }
       savingRow.date = elementDate;
       savingRow.userId = userId;
-      savingRow.income = this.getValueByDate(dataIncomesOperational, element);
+      savingRow.income = this.getValueByDate(dataIncomes, element);
       savingRow.expense = this.getValueByDate(dataExpenses, element);
       savingRow.operationalExpense = this.getValueByDate(
         dataExpensesOperational,
+        element,
+      );
+      savingRow.operationalIncome = this.getValueByDate(
+        dataIncomesOperational,
         element,
       );
       savingRow.saving = savingRow.income - savingRow.expense;
