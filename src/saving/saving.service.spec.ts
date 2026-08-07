@@ -117,6 +117,7 @@ describe('SavingService', () => {
         savings: [27925],
         operationalExpenses: [undefined],
         operationalSavings: [undefined],
+        operationalIncomes: [undefined],
       },
       data: mockGetMany,
     };

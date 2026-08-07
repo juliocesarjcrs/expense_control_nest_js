@@ -51,6 +51,7 @@ export class CategoriesService {
     CategoryEntity.userId = createCategoryDto.userId;
     CategoryEntity.type = createCategoryDto.type;
     CategoryEntity.budget = createCategoryDto.budget;
+    CategoryEntity.isOperational = createCategoryDto.isOperational ?? true;
     return this.categoriesRepository.save(CategoryEntity);
   }
   async findAll(userId: number, query: CategoryQueryParams) {

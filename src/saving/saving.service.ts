@@ -55,6 +55,7 @@ export class SavingService {
     const incomes = savingsByuser.map((e) => e.income);
     const savings = savingsByuser.map((e) => e.saving);
     const operationalExpenses = savingsByuser.map((e) => e.operationalExpense);
+    const operationalIncomes = savingsByuser.map((e) => e.operationalIncome);
     const operationalSavings = savingsByuser.map((e) => e.operationalSaving);
     const labels = savingsByuser.map((e) =>
       this.datesService.getFormatDate(e.date, 'MMMM-YYYY'),
@@ -67,6 +68,7 @@ export class SavingService {
         incomes,
         savings,
         operationalExpenses,
+        operationalIncomes,
         operationalSavings,
       },
     };
@@ -74,8 +76,11 @@ export class SavingService {
 
   async updateAllByUser(userId: number, query: NumMonthsQueryParams) {
     const numMonths = query.numMonths ? +query.numMonths : 4;
-    const { data: dataIncomes }: { data: any } =
-      await this.incomesService.findAll(userId, query);
+    const { data: dataIncomesOperational }: { data: any } =
+      await this.incomesService.findAll(userId, {
+        ...query,
+        operationalOnly: true,
+      });
     const { data: dataExpenses }: { data: any } =
       await this.expenseService.findAll(userId, query);
     const { data: dataExpensesOperational }: { data: any } =
@@ -96,7 +101,7 @@ export class SavingService {
       }
       savingRow.date = elementDate;
       savingRow.userId = userId;
-      savingRow.income = this.getValueByDate(dataIncomes, element);
+      savingRow.income = this.getValueByDate(dataIncomesOperational, element);
       savingRow.expense = this.getValueByDate(dataExpenses, element);
       savingRow.operationalExpense = this.getValueByDate(
         dataExpensesOperational,
@@ -104,7 +109,7 @@ export class SavingService {
       );
       savingRow.saving = savingRow.income - savingRow.expense;
       savingRow.operationalSaving =
-        savingRow.income - savingRow.operationalExpense;
+        savingRow.operationalIncome - savingRow.operationalExpense;
       savingInsert.push(savingRow);
     });
     let result = null;
@@ -120,6 +125,7 @@ export class SavingService {
             'expense',
             'operationalExpense',
             'operationalSaving',
+            'operationalIncome',
           ],
           ['user_id'],
           { skipUpdateIfNoValuesChanged: true },
@@ -235,6 +241,7 @@ export class SavingService {
         savingPercentage: 0,
         monthsCount: 0,
         totalOperationalExpense: 0,
+        totalOperationalIncome: 0,
         totalOperationalSaving: 0,
         avgMonthlyOperationalSaving: 0,
         operationalSavingPercentage: 0,
@@ -263,6 +270,10 @@ export class SavingService {
       periodSavings,
       'operationalExpense',
     );
+    const totalOperationalIncome = this.sumField(
+      periodSavings,
+      'operationalIncome',
+    );
     const totalOperationalSaving = this.sumField(
       periodSavings,
       'operationalSaving',
@@ -270,7 +281,7 @@ export class SavingService {
     const avgMonthlyOperationalSaving = totalOperationalSaving / monthsCount;
     const operationalSavingPercentage = this.calculatePercentage(
       totalOperationalSaving,
-      totalIncome,
+      totalOperationalIncome, // denominador operacional, confirmado
     );
 
     return {
@@ -281,6 +292,7 @@ export class SavingService {
       savingPercentage: parseFloat(savingPercentage.toFixed(2)),
       monthsCount,
       totalOperationalExpense,
+      totalOperationalIncome,
       totalOperationalSaving,
       avgMonthlyOperationalSaving: parseFloat(
         avgMonthlyOperationalSaving.toFixed(2),
@@ -294,13 +306,14 @@ export class SavingService {
   private buildMonthlyBreakdown(periodSavings: Saving[]) {
     return periodSavings.map((s) => {
       const monthIncome = s.income || 0;
+      const monthOperationalIncome = s.operationalIncome || 0;
       const monthSavingPercentage = this.calculatePercentage(
         s.saving,
         monthIncome,
       );
       const monthOperationalSavingPercentage = this.calculatePercentage(
         s.operationalSaving,
-        monthIncome,
+        monthOperationalIncome, // denominador operacional, consistente con el período
       );
 
       const dateObj = s.date instanceof Date ? s.date : new Date(s.date);
@@ -314,6 +327,7 @@ export class SavingService {
         expense: s.expense,
         savingPercentage: parseFloat(monthSavingPercentage.toFixed(2)),
         operationalExpense: s.operationalExpense,
+        operationalIncome: s.operationalIncome,
         operationalSaving: s.operationalSaving,
         operationalSavingPercentage: parseFloat(
           monthOperationalSavingPercentage.toFixed(2),
@@ -395,6 +409,10 @@ export class SavingService {
       currentPeriodData.totalSaving,
     );
 
+    const prevTotalOperationalIncome = this.sumField(
+      previousSavings,
+      'operationalIncome',
+    );
     const prevTotalOperationalSaving = this.sumField(
       previousSavings,
       'operationalSaving',
@@ -403,7 +421,7 @@ export class SavingService {
       prevTotalOperationalSaving / previousSavings.length;
     const prevOperationalSavingPercentage = this.calculatePercentage(
       prevTotalOperationalSaving,
-      prevTotalIncome,
+      prevTotalOperationalIncome, // denominador operacional
     );
     const operationalDifference =
       currentPeriodData.totalOperationalSaving - prevTotalOperationalSaving;
@@ -417,6 +435,7 @@ export class SavingService {
         totalSaving: prevTotalSaving,
         avgMonthlySaving: prevAvgMonthlySaving,
         savingPercentage: parseFloat(prevSavingPercentage.toFixed(2)),
+        totalOperationalIncome: prevTotalOperationalIncome,
         totalOperationalSaving: prevTotalOperationalSaving,
         avgMonthlyOperationalSaving: prevAvgMonthlyOperationalSaving,
         operationalSavingPercentage: parseFloat(
@@ -431,7 +450,6 @@ export class SavingService {
       ),
     };
   }
-
   private sumField(data: Saving[], field: keyof Saving): number {
     return data.reduce((sum, item) => sum + (item[field] as number), 0);
   }

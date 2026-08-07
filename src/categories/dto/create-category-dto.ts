@@ -1,4 +1,4 @@
-import { IsOptional, IsString } from 'class-validator';
+import { IsBoolean, IsOptional, IsString } from 'class-validator';
 
 // import { IsUserAlreadyExist } from 'src/utils/validations/validation';
 
@@ -14,6 +14,10 @@ export class CreateCategoryDto {
 
   @IsOptional()
   readonly budget: number;
+
+  @IsOptional()
+  @IsBoolean()
+  readonly isOperational?: boolean;
 
   readonly userId: number;
   // @IsInt()

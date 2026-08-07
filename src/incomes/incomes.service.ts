@@ -31,14 +31,23 @@ export class IncomesService {
 
   async findAll(userId: number, query: NumMonthsQueryParams) {
     const numMonths = Number(query.numMonths) || 4;
-    const incomesGroupByMonth = await this.incomeRepository
+    const qb = this.incomeRepository
       .createQueryBuilder('income')
       .select(['MONTH(income.date) as month', 'YEAR(income.date) as year'])
       .addSelect('SUM(income.amount)', 'sum')
       .where('income.date >= :mydate', {
         mydate: this.datesService.monthAgo(numMonths),
       })
-      .andWhere('income.user_id = :userId', { userId })
+      .andWhere('income.user_id = :userId', { userId });
+
+    if (query.operationalOnly) {
+      qb.innerJoin('income.category', 'category').andWhere(
+        'category.isOperational = :isOperational',
+        { isOperational: true },
+      );
+    }
+
+    const incomesGroupByMonth = await qb
       .groupBy('MONTH(income.date)')
       .addGroupBy('YEAR(income.date)')
       .orderBy('YEAR(income.date)', 'ASC')
@@ -48,7 +57,6 @@ export class IncomesService {
     const costs = incomesGroupByMonth.map((e) => e.sum);
     const previosIncomes = costs.slice(0);
     previosIncomes.pop();
-
     const previosAverage = this.calculateAverage(previosIncomes);
 
     return {

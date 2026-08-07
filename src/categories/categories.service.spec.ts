@@ -39,6 +39,7 @@ describe('CategoriesService', () => {
         userId: 1,
         type: 0,
         budget: 100,
+        isOperational: true,
         user: 1,
         subcategories: [],
         incomes: [],

@@ -18,6 +18,9 @@ export class Category extends Content {
   @Column('int', { default: 0 })
   budget: number;
 
+  @Column('boolean', { default: true })
+  isOperational: boolean;
+
   @Column({ name: 'user_id', nullable: false })
   userId: number;
 
