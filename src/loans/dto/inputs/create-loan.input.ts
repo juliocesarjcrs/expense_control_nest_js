@@ -26,9 +26,4 @@ export class CreateLoanInput {
   @IsString()
   @Field(() => String, { nullable: true })
   readonly commentary?: string;
-
-  @IsNotEmpty()
-  @IsInt()
-  @Field(() => Int)
-  readonly userId: number;
 }

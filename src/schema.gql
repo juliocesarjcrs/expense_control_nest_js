@@ -41,5 +41,4 @@ input CreateLoanInput {
   type: Int!
   amount: Int!
   commentary: String
-  userId: Int!
 }

@@ -62,7 +62,6 @@ describe('LoansResolver', () => {
         type: 0,
         amount: 1000,
         commentary: 'Test loan',
-        userId: 1,
       };
 
       const savedLoan = { ...mockLoan, id: 1 };
@@ -71,10 +70,10 @@ describe('LoansResolver', () => {
 
       const result = await resolver.createLoan(mockUser, createLoanInput);
 
-      expect(mockLoansService.create).toHaveBeenCalledWith({
-        ...createLoanInput,
-        userId: mockUser.id,
-      });
+      expect(mockLoansService.create).toHaveBeenCalledWith(
+        createLoanInput,
+        mockUser.id,
+      );
       expect(result).toEqual(savedLoan);
     });
   });

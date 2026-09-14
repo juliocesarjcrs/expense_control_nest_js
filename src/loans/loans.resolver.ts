@@ -21,8 +21,9 @@ export class LoansResolver {
     @CurrentUser() user: CurrentUserPayload,
     @Args('createLoanInput') createLoanInput: CreateLoanInput,
   ): Promise<Loan> {
-    const loanInput = { ...createLoanInput, userId: user.id };
-    return await this.loansService.create(loanInput);
+    // const loanInput = { ...createLoanInput, userId: user.id };
+    // return await this.loansService.create(loanInput);
+    return await this.loansService.create(createLoanInput, user.id);
   }
 
   @Mutation(() => Boolean)

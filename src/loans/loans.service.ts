@@ -1,9 +1,4 @@
-import {
-  HttpException,
-  HttpStatus,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Loan } from './entities/loan.entity';
 import { Repository } from 'typeorm';
@@ -23,12 +18,15 @@ export class LoansService {
     });
   }
 
-  async create(createLoanInput: CreateLoanInput): Promise<Loan> {
+  async create(
+    createLoanInput: CreateLoanInput,
+    userId: number,
+  ): Promise<Loan> {
     const loanEntity = new Loan();
     loanEntity.type = createLoanInput.type;
     loanEntity.amount = createLoanInput.amount;
-    loanEntity.userId = createLoanInput.userId;
     loanEntity.commentary = createLoanInput.commentary ?? null;
+    loanEntity.userId = userId;
     return this.loanRepository.save(loanEntity);
   }
 
