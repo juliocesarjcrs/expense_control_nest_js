@@ -392,6 +392,7 @@ export class ExpensesService {
       'expense.cost',
       'expense.commentary',
       'expense.date',
+      'expense.nature',
       'expense.createdAt',
     ]);
 

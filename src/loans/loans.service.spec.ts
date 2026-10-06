@@ -62,19 +62,18 @@ describe('LoansService', () => {
       const createLoanInput: CreateLoanInput = {
         type: 0,
         amount: 1000,
-        userId: 1,
         commentary: 'Test loan',
       };
       const savedLoan = { ...mockLoan, id: 1 };
 
       mockLoanRepository.save.mockResolvedValue(savedLoan);
 
-      const result = await service.create(createLoanInput);
+      const result = await service.create(createLoanInput, mockLoan.userId);
 
       expect(mockLoanRepository.save).toHaveBeenCalledWith({
         type: createLoanInput.type,
         amount: createLoanInput.amount,
-        userId: createLoanInput.userId,
+        userId: mockLoan.userId,
         commentary: createLoanInput.commentary,
       });
       expect(result).toEqual(savedLoan);
