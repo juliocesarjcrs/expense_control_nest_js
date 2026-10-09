@@ -1,16 +1,15 @@
-import { HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Category } from './entities/category.entity';
 import { CreateCategoryDto } from './dto/create-category-dto';
 import { UpdateCategoryDto } from './dto/updated-category.dto';
-
-import { HttpException } from '@nestjs/common';
 import { DatesService } from 'src/utils/dates/dates.service';
-import { CategoryQueryParams } from './interfaces/category-query-params.interface';
+import { CategoryQueryParams, ExpenseAnalysisQueryParams } from './interfaces/category-query-params.interface';
 import { Subcategory } from 'src/subcategories/entities/subcategory.entity';
 import { Expense } from 'src/expenses/entities/expense.entity';
 import { Income } from 'src/incomes/entities/income.entity';
+import { ExpenseNature } from 'src/expenses/enums/expense-nature.enum';
 export interface RawExpenseData {
   id: number;
   name: string;
@@ -30,6 +29,23 @@ interface CategoryAccumulator {
   userId: number;
   total: number;
   subcategories: { id: number; name: string; total: number }[];
+}
+interface ExpenseAnalysisRawRow {
+  categoryId: number;
+  categoryName: string;
+  categoryIcon: string | null;
+  subcategoryId: number;
+  subcategoryName: string;
+  nature: ExpenseNature;
+  total: string;
+}
+
+interface AnalysisCategoryAcc {
+  id: number;
+  name: string;
+  icon: string | null;
+  total: number;
+  subcategories: Map<number, { id: number; name: string; total: number }>;
 }
 interface HasDate {
   date: Date;
@@ -395,5 +411,150 @@ export class CategoriesService {
     rows.push(totalsRow);
 
     return { tableHead, rows };
+  }
+
+  async findExpensesAnalysis(
+    userId: number,
+    query: ExpenseAnalysisQueryParams,
+  ) {
+      if (!query?.startDate || !query?.endDate) {
+      throw new BadRequestException('startDate y endDate son requeridos');
+    }
+
+    // Normalizamos a meses completos usando DatesService
+    const start = this.datesService.startMonthRaw(query.startDate);
+    const end = this.datesService.endMonthRaw(query.endDate);
+    if (!start.isValid() || !end.isValid() || start.isAfter(end)) {
+      throw new BadRequestException('Rango de fechas inválido');
+    }
+    const months =
+      (end.year() - start.year()) * 12 + (end.month() - start.month()) + 1;
+    const selectedNatures = this.parseNatures(query.natures);
+
+    // Una sola consulta, agrupada también por nature
+    const rows = await this.categoriesRepository
+      .createQueryBuilder('category')
+      .innerJoin('category.subcategories', 'subcategory')
+      .innerJoin('subcategory.expenses', 'expense')
+      .select([
+        'category.id AS categoryId',
+        'category.name AS categoryName',
+        'category.icon AS categoryIcon',
+        'subcategory.id AS subcategoryId',
+        'subcategory.name AS subcategoryName',
+        'expense.nature AS nature',
+        'SUM(expense.cost) AS total',
+      ])
+      .where('category.userId = :userId', { userId })
+      .andWhere('category.type = :type', { type: 0 })
+      .andWhere('expense.date BETWEEN :startDate AND :endDate', {
+        startDate: start.format('YYYY-MM-DD'),
+        endDate: end.format('YYYY-MM-DD'),
+      })
+      .groupBy('category.id')
+      .addGroupBy('subcategory.id')
+      .addGroupBy('expense.nature')
+      .getRawMany<ExpenseAnalysisRawRow>();
+
+    // byNature se calcula con TODAS las naturalezas, para que el resumen
+    // siga mostrando el peso de cada una aunque el usuario filtre
+    const byNature = Object.values(ExpenseNature).reduce(
+      (acc, nature) => ({ ...acc, [nature]: 0 }),
+      {} as Record<ExpenseNature, number>,
+    );
+    rows.forEach((row) => {
+      byNature[row.nature] += Number(row.total);
+    });
+
+    const filteredRows =
+      selectedNatures.length === 0
+        ? rows
+        : rows.filter((row) => selectedNatures.includes(row.nature));
+
+    // Agrupar por categoría y subcategoría (se suman las naturalezas)
+    const categoriesMap = new Map<number, AnalysisCategoryAcc>();
+    let total = 0;
+    filteredRows.forEach((row) => {
+      const amount = Number(row.total);
+      total += amount;
+
+      let category = categoriesMap.get(row.categoryId);
+      if (!category) {
+        category = {
+          id: row.categoryId,
+          name: row.categoryName,
+          icon: row.categoryIcon,
+          total: 0,
+          subcategories: new Map(),
+        };
+        categoriesMap.set(row.categoryId, category);
+      }
+      category.total += amount;
+
+      const sub = category.subcategories.get(row.subcategoryId);
+      if (sub) {
+        sub.total += amount;
+      } else {
+        category.subcategories.set(row.subcategoryId, {
+          id: row.subcategoryId,
+          name: row.subcategoryName,
+          total: amount,
+        });
+      }
+    });
+
+    const percent = (value: number, base: number) =>
+      base > 0 ? (value / base) * 100 : 0;
+
+    const categories = Array.from(categoriesMap.values())
+      .sort((a, b) => b.total - a.total)
+      .map((category) => ({
+        id: category.id,
+        name: category.name,
+        icon: category.icon,
+        total: category.total,
+        percentage: percent(category.total, total),
+        monthlyAverage: category.total / months,
+        subcategories: Array.from(category.subcategories.values())
+          .sort((a, b) => b.total - a.total)
+          .map((sub) => ({
+            id: sub.id,
+            name: sub.name,
+            total: sub.total,
+            percentageOfTotal: percent(sub.total, total),
+            percentageOfCategory: percent(sub.total, category.total),
+            monthlyAverage: sub.total / months,
+          })),
+      }));
+
+    return {
+      period: {
+        startDate: start.format('YYYY-MM-DD'),
+        endDate: end.format('YYYY-MM-DD'),
+        months,
+      },
+      summary: {
+        total,
+        monthlyAverage: total / months,
+        byNature,
+      },
+      categories,
+    };
+  }
+
+  private parseNatures(raw?: string): ExpenseNature[] {
+    if (!raw) return [];
+    const validValues = Object.values(ExpenseNature) as string[];
+    const parsed = raw
+      .split(',')
+      .map((value) => value.trim())
+      .filter(Boolean);
+    const invalid = parsed.filter((value) => !validValues.includes(value));
+    if (invalid.length > 0) {
+      throw new BadRequestException(
+        `Naturalezas inválidas: ${invalid.join(', ')}`,
+      );
+    }
+    return parsed as ExpenseNature[];
   }
 }

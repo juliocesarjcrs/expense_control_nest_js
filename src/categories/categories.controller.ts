@@ -17,7 +17,7 @@ import { CreateCategoryDto } from './dto/create-category-dto';
 import { UpdateCategoryDto } from './dto/updated-category.dto';
 import { Response, Request as ExpressRequest } from 'express';
 import { AuthenticatedRequest } from 'src/common/interfaces/authenticated-request.interface';
-import { CategoryQueryParams } from './interfaces/category-query-params.interface';
+import { CategoryQueryParams, ExpenseAnalysisQueryParams } from './interfaces/category-query-params.interface';
 import { getErrorMessage } from 'src/common/utils/error.util';
 
 @Controller('categories')
@@ -58,6 +58,15 @@ export class CategoriesController {
   ) {
     return this.categoryService.findAllExpensesByMonth(req.user.id, query);
   }
+
+  @Get('expenses/analysis')
+  findExpensesAnalysis(
+    @Request() req: AuthenticatedRequest,
+    @Query() query: ExpenseAnalysisQueryParams,
+  ) {
+    return this.categoryService.findExpensesAnalysis(req.user.id, query);
+  }
+
   @Get('subcategories/expenses/month')
   findAllSubcategoriesExpensesByMonth(
     @Res() response: Response,
