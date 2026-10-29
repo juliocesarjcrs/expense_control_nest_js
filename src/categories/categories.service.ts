@@ -1,11 +1,19 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Category } from './entities/category.entity';
 import { CreateCategoryDto } from './dto/create-category-dto';
 import { UpdateCategoryDto } from './dto/updated-category.dto';
 import { DatesService } from 'src/utils/dates/dates.service';
-import { CategoryQueryParams, ExpenseAnalysisQueryParams } from './interfaces/category-query-params.interface';
+import {
+  CategoryQueryParams,
+  ExpenseAnalysisQueryParams,
+} from './interfaces/category-query-params.interface';
 import { Subcategory } from 'src/subcategories/entities/subcategory.entity';
 import { Expense } from 'src/expenses/entities/expense.entity';
 import { Income } from 'src/incomes/entities/income.entity';
@@ -51,6 +59,11 @@ interface HasDate {
   date: Date;
 }
 
+export interface CategoryUsage {
+  subcategories: number;
+  expenses: number;
+  incomes: number;
+}
 @Injectable()
 export class CategoriesService {
   constructor(
@@ -172,29 +185,18 @@ export class CategoriesService {
     return array.reduce((acu: number, val) => acu + val.cost, 0);
   }
 
-  async findOne(id: number): Promise<Category> {
-    const category = await this.categoriesRepository.findOne({ where: { id } });
-    if (!category) {
-      throw new NotFoundException(`Category with id ${id} not found`);
-    }
-    return category;
+  async findOne(id: number, userId: number): Promise<Category> {
+    return await this.findOwned(id, userId);
   }
 
-  async update(id: number, updateCategoryDto: UpdateCategoryDto) {
-    const category = await this.categoriesRepository.findOne({ where: { id } });
-    if (!category) {
-      throw new NotFoundException(`Category with id ${id} not found`);
-    }
+  async update(
+    id: number,
+    updateCategoryDto: UpdateCategoryDto,
+    userId: number,
+  ) {
+    const category = await this.findOwned(id, userId);
     const editCategory = Object.assign(category, updateCategoryDto);
     return this.categoriesRepository.save(editCategory);
-  }
-
-  async remove(id: number) {
-    const result = await this.categoriesRepository.delete(id);
-    if (result.affected === 0) {
-      throw new NotFoundException(`Category with id ${id} not found`);
-    }
-    return result;
   }
 
   async findAllTypeIncome(userId: number, query: CategoryQueryParams) {
@@ -417,7 +419,7 @@ export class CategoriesService {
     userId: number,
     query: ExpenseAnalysisQueryParams,
   ) {
-      if (!query?.startDate || !query?.endDate) {
+    if (!query?.startDate || !query?.endDate) {
       throw new BadRequestException('startDate y endDate son requeridos');
     }
 
@@ -556,5 +558,78 @@ export class CategoriesService {
       );
     }
     return parsed as ExpenseNature[];
+  }
+
+  private async findOwned(id: number, userId: number): Promise<Category> {
+    const category = await this.categoriesRepository.findOne({
+      where: { id, userId },
+    });
+    if (!category)
+      throw new NotFoundException(`Category with id ${id} not found`);
+    return category;
+  }
+
+  private async countUsage(id: number): Promise<CategoryUsage> {
+    const base = () =>
+      this.categoriesRepository
+        .createQueryBuilder('category')
+        .where('category.id = :id', { id });
+
+    const [subs, exp, inc] = await Promise.all([
+      base()
+        .innerJoin('category.subcategories', 's')
+        .select('COUNT(s.id)', 'count')
+        .getRawOne<{ count: string }>(),
+      base()
+        .innerJoin('category.subcategories', 's')
+        .innerJoin('s.expenses', 'e')
+        .select('COUNT(e.id)', 'count')
+        .getRawOne<{ count: string }>(),
+      base()
+        .innerJoin('category.incomes', 'i')
+        .select('COUNT(i.id)', 'count')
+        .getRawOne<{ count: string }>(),
+    ]);
+
+    return {
+      subcategories: Number(subs?.count ?? 0),
+      expenses: Number(exp?.count ?? 0),
+      incomes: Number(inc?.count ?? 0),
+    };
+  }
+
+  async getUsage(id: number, userId: number): Promise<CategoryUsage> {
+    await this.findOwned(id, userId);
+    return this.countUsage(id);
+  }
+
+  async remove(id: number, userId: number) {
+    await this.findOwned(id, userId);
+
+    return this.categoriesRepository.manager.transaction(async (manager) => {
+      const usage = await this.countUsage(id);
+
+      if (usage.expenses > 0 || usage.incomes > 0) {
+        throw new ConflictException({
+          code: 'CATEGORY_HAS_DATA',
+          message:
+            'No puedes eliminar la categoría porque tiene gastos o ingresos asociados.',
+          usage,
+        });
+      }
+
+      if (usage.subcategories > 0) {
+        const subs = await manager.find(Subcategory, {
+          where: { category: { id } },
+          select: { id: true },
+        });
+        await manager.delete(
+          Subcategory,
+          subs.map((s) => s.id),
+        );
+      }
+
+      return manager.delete(Category, { id, userId });
+    });
   }
 }

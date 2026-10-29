@@ -6,6 +6,7 @@ import {
   HttpException,
   HttpStatus,
   Param,
+  ParseIntPipe,
   Post,
   Put,
   Query,
@@ -17,7 +18,10 @@ import { CreateCategoryDto } from './dto/create-category-dto';
 import { UpdateCategoryDto } from './dto/updated-category.dto';
 import { Response, Request as ExpressRequest } from 'express';
 import { AuthenticatedRequest } from 'src/common/interfaces/authenticated-request.interface';
-import { CategoryQueryParams, ExpenseAnalysisQueryParams } from './interfaces/category-query-params.interface';
+import {
+  CategoryQueryParams,
+  ExpenseAnalysisQueryParams,
+} from './interfaces/category-query-params.interface';
 import { getErrorMessage } from 'src/common/utils/error.util';
 
 @Controller('categories')
@@ -95,20 +99,35 @@ export class CategoriesController {
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: number) {
-    return this.categoryService.findOne(+id);
+  async findOne(
+    @Param('id', ParseIntPipe) id: number,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    return this.categoryService.findOne(id, req.user.id);
   }
 
   @Put(':id')
   update(
     @Param('id') id: string,
     @Body() updateCategoryDto: UpdateCategoryDto,
+    @Request() req: AuthenticatedRequest,
   ) {
-    return this.categoryService.update(+id, updateCategoryDto);
+    return this.categoryService.update(+id, updateCategoryDto, req.user.id);
+  }
+
+  @Get(':id/usage')
+  getUsage(
+    @Param('id', ParseIntPipe) id: number,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    return this.categoryService.getUsage(id, req.user.id);
   }
 
   @Delete(':id')
-  async remove(@Param('id') id: string) {
-    return this.categoryService.remove(+id);
+  remove(
+    @Param('id', ParseIntPipe) id: number,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    return this.categoryService.remove(id, req.user.id);
   }
 }
